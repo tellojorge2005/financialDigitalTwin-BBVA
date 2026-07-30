@@ -6,4 +6,4 @@ Por motivos de tamaño, no se incluyen en este repositorio.
 Los archivos disponibles en `data/modified/` fueron generados a partir de la estructura de los datos originales, incorporando registros adicionales, valores faltantes e inconsistencias realistas para prácticas de limpieza, análisis y experimentación con datos.
 
 ## Fuente
-- [**💳 Financial Transactions Dataset: Analytics (Kaggle)**](https://www.kaggle.com/datasets/computingvictor/transactions-fraud-datasets?select=train_fraud_labels.json)
+- [**💳 Financial Transactions Dataset: Analytics (Kaggle)**](https://www.kaggle.com/datasets/computingvictor/transactions-fraud-datasets)
