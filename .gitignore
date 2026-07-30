@@ -1,0 +1,3 @@
+# Original Datasets
+data/raw/*
+!data/raw/README.md
