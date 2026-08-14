@@ -3,7 +3,21 @@ data/raw/*
 !data/raw/README.md
 
 #Carpeta de Jetbrains
-.idea
+.idea/
 
 #carpetas de Anaconda
-anaconda_projects
+anaconda_projects/
+
+#Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Archivos temporales
+*.tmp
+*.log
+
+# Airflow
+airflow.db
+airflow.cfg
+logs/
