@@ -21,3 +21,11 @@ __pycache__/
 airflow.db
 airflow.cfg
 logs/
+
+# Datos procesados (Parquet)
+data/processed/
+
+# Archivos temporales de Spark
+*.crc
+_SUCCESS
+*.parquet/
