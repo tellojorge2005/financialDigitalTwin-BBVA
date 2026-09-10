@@ -9,4 +9,6 @@ RUN curl -fL \
     https://repo1.maven.org/maven2/software/amazon/awssdk/bundle/2.24.6/bundle-2.24.6.jar \
     -o /opt/spark/jars/bundle-2.24.6.jar
 
+RUN pip install --no-cache-dir numpy
+
 USER spark

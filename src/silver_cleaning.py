@@ -1,11 +1,12 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count, when, trim, lower, regexp_replace, to_timestamp, coalesce, try_to_timestamp, lit
-import os
 
 
-# Rutas
-INPUT_PATH = "/opt/project/data/processed/bronze"
-OUTPUT_PATH = "/opt/project/data/processed/silver"
+# Rutas S3
+BUCKET = "financial-digital-twin-bbva-022950218031-us-east-2-an"
+
+INPUT_PATH = f"s3a://{BUCKET}/bronze"
+OUTPUT_PATH = f"s3a://{BUCKET}/silver"
 
 
 # Crear sesión de Spark
@@ -19,8 +20,6 @@ print("Spark inicializado")
 
 
 # Cargar datasets
-
-os.makedirs(OUTPUT_PATH, exist_ok=True)
 
 users_spark = (
     spark.read
@@ -178,7 +177,7 @@ print("Valores faltantes en transactions:")
 transactions_nulls.show()
 
 
-# Guardar SILVER
+# Guardar SILVER en S3
 
 users_silver.write.mode("overwrite").parquet(
     f"{OUTPUT_PATH}/users.parquet"

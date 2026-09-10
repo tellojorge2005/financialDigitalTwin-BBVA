@@ -9,12 +9,13 @@ from pyspark.sql.functions import (
     round,
     countDistinct
 )
-import os
 
 
-# Rutas
-INPUT_PATH = "/opt/project/data/processed/silver"
-OUTPUT_PATH = "/opt/project/data/processed/gold"
+# Rutas S3
+BUCKET = "financial-digital-twin-bbva-022950218031-us-east-2-an"
+
+INPUT_PATH = f"s3a://{BUCKET}/silver"
+OUTPUT_PATH = f"s3a://{BUCKET}/gold"
 
 
 # Crear sesión de Spark
@@ -28,8 +29,6 @@ print("Spark inicializado")
 
 
 # Cargar datasets
-
-os.makedirs(OUTPUT_PATH, exist_ok=True)
 
 users_spark = (
     spark.read

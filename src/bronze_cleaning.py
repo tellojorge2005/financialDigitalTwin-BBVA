@@ -1,12 +1,13 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, trim, lower, regexp_replace, when
 from pyspark.ml.feature import Imputer
-import os
 
 
-# Rutas
-INPUT_PATH = "/opt/project/data/modified"
-OUTPUT_PATH = "/opt/project/data/processed/bronze"
+# Rutas S3
+BUCKET = "financial-digital-twin-bbva-022950218031-us-east-2-an"
+
+INPUT_PATH = f"s3a://{BUCKET}/incoming"
+OUTPUT_PATH = f"s3a://{BUCKET}/bronze"
 
 
 # Crear sesión de Spark
@@ -52,6 +53,7 @@ def impute_mode(df, column):
 
 
 # Cargar datasets
+
 users_spark = (
     spark.read
     .option("header", True)
@@ -166,7 +168,6 @@ transactions_spark = impute_mode(
 
 
 # Guardar BRONZE
-os.makedirs(OUTPUT_PATH, exist_ok=True)
 
 users_spark.write.mode("overwrite").parquet(
     f"{OUTPUT_PATH}/users.parquet"
