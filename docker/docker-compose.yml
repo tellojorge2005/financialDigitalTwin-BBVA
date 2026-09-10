@@ -35,6 +35,10 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
 
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+
     volumes:
       - ../dags:/opt/airflow/dags
       - ../src:/opt/project/src
@@ -50,12 +54,19 @@ services:
 
 
   spark-master:
-    image: apache/spark:4.0.4-scala2.13-java21-python3-r-ubuntu
+    build:
+      context: ./spark
+      dockerfile: Dockerfile
+
     container_name: spark-master
     restart: unless-stopped
 
     environment:
       SPARK_NO_DAEMONIZE: "true"
+
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
 
     volumes:
       - ../src:/opt/project/src
@@ -80,7 +91,10 @@ services:
 
 
   spark-worker:
-    image: apache/spark:4.0.4-scala2.13-java21-python3-r-ubuntu
+    build:
+      context: ./spark
+      dockerfile: Dockerfile
+      
     container_name: spark-worker
     restart: unless-stopped
 
@@ -89,6 +103,10 @@ services:
 
     environment:
       SPARK_NO_DAEMONIZE: "true"
+
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
 
     volumes:
       - ../src:/opt/project/src
