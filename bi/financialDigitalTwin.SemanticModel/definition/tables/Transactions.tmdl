@@ -1,0 +1,82 @@
+table Transactions
+	lineageTag: d6e9f6e2-2c06-435e-bb1e-4dd32a897ad3
+
+	column client_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 4572fbc0-669b-4ee0-b24e-c07f6f91a63c
+		summarizeBy: none
+		sourceColumn: client_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_transactions
+		dataType: int64
+		formatString: 0
+		lineageTag: 065e9b76-75af-4902-9d41-959c19648855
+		summarizeBy: sum
+		sourceColumn: total_transactions
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_spent
+		dataType: double
+		lineageTag: 61465974-787f-4891-8cea-cd09ee87a82a
+		summarizeBy: sum
+		sourceColumn: total_spent
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column average_transaction
+		dataType: double
+		lineageTag: 9a63d0cd-7dab-4fa6-b308-1db0a5a196fb
+		summarizeBy: sum
+		sourceColumn: average_transaction
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column minimum_transaction
+		dataType: double
+		lineageTag: 795d7e20-4c18-4d70-a05e-7af05a99d38f
+		summarizeBy: sum
+		sourceColumn: minimum_transaction
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column maximum_transaction
+		dataType: double
+		lineageTag: 9a29817e-6a82-46be-b567-1c3556539a82
+		summarizeBy: sum
+		sourceColumn: maximum_transaction
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_merchant_cities
+		dataType: int64
+		formatString: 0
+		lineageTag: 061e768e-6c9a-40da-9d8f-813c9d4936d2
+		summarizeBy: sum
+		sourceColumn: total_merchant_cities
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Transactions = m
+		mode: import
+		source =
+				let
+				  Origen = Parquet.Document(Web.Contents("https://financial-digital-twin-bbva-022950218031-us-east-2-an.s3.us-east-2.amazonaws.com/gold/transactions_summary.parquet/part-00000-0730015b-712a-4c53-8be0-22ee5468157e-c000.snappy.parquet"))
+				in
+				  Origen
+
+	annotation PBI_NavigationStepName = Navegación
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,12 @@
+relationship 1e067f1f-67de-e723-51dc-8f957871749a
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: Transactions.client_id
+	toColumn: Users.id
+
+relationship 3d4be074-6ff3-c1be-53ae-44618126efec
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: Users.id
+	toColumn: Cards.client_id
+

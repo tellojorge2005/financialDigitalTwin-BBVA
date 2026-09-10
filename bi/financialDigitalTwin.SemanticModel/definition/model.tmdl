@@ -1,0 +1,21 @@
+model Model
+	culture: es-MX
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: es-MX
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["Cards","Users","Transactions"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Cards
+ref table Users
+ref table Transactions
+
+ref cultureInfo es-MX
+
