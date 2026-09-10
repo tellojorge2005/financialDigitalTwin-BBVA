@@ -2,7 +2,7 @@ import pytest
 
 from pyspark.sql import SparkSession
 
-from src.data_cleaning import clean_users_data
+from archive.src.data_cleaning import clean_users_data
 
 
 @pytest.fixture(scope="session")
