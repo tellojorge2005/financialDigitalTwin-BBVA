@@ -1,0 +1,13 @@
+name: financialDigitalTwin-BBVA
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pandas[version='<3']
+  - pandas-stubs
+  - pyspark
+  - ipykernel
+  - pytest
+  - matplotlib
+  - ipympl
+  - mpld3
