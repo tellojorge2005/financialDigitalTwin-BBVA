@@ -16,3 +16,14 @@ RUN pip install --no-cache-dir \
     apache-airflow-providers-apache-spark \
     apache-airflow-providers-postgres \
     pyspark==4.0.4
+
+USER root
+
+RUN curl -fL \
+    https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.4.1/hadoop-aws-3.4.1.jar \
+    -o /home/airflow/.local/lib/python3.11/site-packages/pyspark/jars/hadoop-aws-3.4.1.jar \
+    && curl -fL \
+    https://repo1.maven.org/maven2/software/amazon/awssdk/bundle/2.24.6/bundle-2.24.6.jar \
+    -o /home/airflow/.local/lib/python3.11/site-packages/pyspark/jars/bundle-2.24.6.jar
+
+USER airflow
