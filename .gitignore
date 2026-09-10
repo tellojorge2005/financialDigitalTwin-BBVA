@@ -1,0 +1,38 @@
+# Original Datasets
+data/raw/*
+!data/raw/README.md
+
+#Carpeta de Jetbrains
+.idea/
+
+#carpetas de Anaconda
+anaconda_projects/
+
+#Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Archivos temporales
+*.tmp
+*.log
+
+# Airflow
+airflow.db
+airflow.cfg
+logs/
+
+# Datos procesados (Parquet)
+data/processed/
+
+# Archivos temporales de Spark
+*.crc
+_SUCCESS
+*.parquet/
+
+#Credenciales
+.env
+
+#Business Intelligence
+**/.pbi/localSettings.json
+**/.pbi/cache.abf

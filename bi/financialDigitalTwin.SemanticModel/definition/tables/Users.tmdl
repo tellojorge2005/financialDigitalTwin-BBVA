@@ -1,0 +1,239 @@
+table Users
+	lineageTag: 2dac5478-9fc3-470a-b27c-05fbaada1a80
+
+	column id
+		dataType: int64
+		formatString: 0
+		lineageTag: 52275f84-1001-4621-89c1-c2e73fde47f5
+		summarizeBy: none
+		sourceColumn: id
+
+		annotation SummarizationSetBy = Automatic
+
+	column current_age
+		dataType: int64
+		formatString: 0
+		lineageTag: a8ff546a-6e55-495a-90d8-c42891866566
+		summarizeBy: sum
+		sourceColumn: current_age
+
+		annotation SummarizationSetBy = Automatic
+
+	column retirement_age
+		dataType: int64
+		formatString: 0
+		lineageTag: f81b4700-4fd2-415a-a01c-708052a2279b
+		summarizeBy: sum
+		sourceColumn: retirement_age
+
+		annotation SummarizationSetBy = Automatic
+
+	column gender
+		dataType: string
+		lineageTag: 700d0bc4-57c8-46b4-bbbf-9c8bbd844c19
+		summarizeBy: none
+		sourceColumn: gender
+
+		annotation SummarizationSetBy = Automatic
+
+	column yearly_income
+		dataType: double
+		lineageTag: 63078766-be8c-4c10-8ddb-670f60460941
+		summarizeBy: sum
+		sourceColumn: yearly_income
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column per_capita_income
+		dataType: double
+		lineageTag: e6041706-eaec-467e-ad00-96bfc9176613
+		summarizeBy: sum
+		sourceColumn: per_capita_income
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_debt
+		dataType: double
+		lineageTag: caf69491-446b-4d60-bc37-f0cfe6a8ee98
+		summarizeBy: sum
+		sourceColumn: total_debt
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column credit_score
+		dataType: int64
+		formatString: 0
+		lineageTag: f30886f9-49c6-423e-b78e-b8fbfb2ba464
+		summarizeBy: sum
+		sourceColumn: credit_score
+
+		annotation SummarizationSetBy = Automatic
+
+	column num_credit_cards
+		dataType: int64
+		formatString: 0
+		lineageTag: b194107a-fc61-4229-8edb-beaacb55c621
+		summarizeBy: sum
+		sourceColumn: num_credit_cards
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_cards
+		dataType: int64
+		formatString: 0
+		lineageTag: 1a0808e0-6592-4f7a-8a96-5d07ea97dfdc
+		summarizeBy: sum
+		sourceColumn: total_cards
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_card_brands
+		dataType: int64
+		formatString: 0
+		lineageTag: 2903d6a8-9cee-44eb-aa08-d903c88aa4da
+		summarizeBy: sum
+		sourceColumn: total_card_brands
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_card_types
+		dataType: int64
+		formatString: 0
+		lineageTag: b21fbd23-2b61-4361-8d17-d7440381a5fb
+		summarizeBy: sum
+		sourceColumn: total_card_types
+
+		annotation SummarizationSetBy = Automatic
+
+	column average_credit_limit
+		dataType: double
+		lineageTag: e68fa253-f843-441e-8935-c13cdc518100
+		summarizeBy: sum
+		sourceColumn: average_credit_limit
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_credit_limit
+		dataType: double
+		lineageTag: 2e5de08a-3c66-4a35-9227-131419346765
+		summarizeBy: sum
+		sourceColumn: total_credit_limit
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_transactions
+		dataType: int64
+		formatString: 0
+		lineageTag: a9b759f2-47ea-4404-b8af-6340aed0a6ff
+		summarizeBy: sum
+		sourceColumn: total_transactions
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_spent
+		dataType: double
+		lineageTag: 4b12fcdb-6256-44b6-b9d7-65674933304e
+		summarizeBy: sum
+		sourceColumn: total_spent
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column average_transaction
+		dataType: double
+		lineageTag: 1963e525-5571-4c6a-83c0-403317adca1d
+		summarizeBy: sum
+		sourceColumn: average_transaction
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column minimum_transaction
+		dataType: double
+		lineageTag: fa21ffd4-3746-46d7-b5ee-83ab97e8100c
+		summarizeBy: sum
+		sourceColumn: minimum_transaction
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column maximum_transaction
+		dataType: double
+		lineageTag: 8e4dd977-d586-4865-82e3-3693c2708cb3
+		summarizeBy: sum
+		sourceColumn: maximum_transaction
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_merchant_cities
+		dataType: int64
+		formatString: 0
+		lineageTag: bbd58773-197f-485b-b1df-f0d64f89c456
+		summarizeBy: sum
+		sourceColumn: total_merchant_cities
+
+		annotation SummarizationSetBy = Automatic
+
+	column spending_to_income_ratio
+		dataType: double
+		lineageTag: a8b722b1-e57b-4296-8e0e-393ed858a727
+		summarizeBy: sum
+		sourceColumn: spending_to_income_ratio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column debt_to_income_ratio
+		dataType: double
+		lineageTag: fb116d7d-f7ba-4c0e-9eab-31a541486d9d
+		summarizeBy: sum
+		sourceColumn: debt_to_income_ratio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column RangoEdad =
+			
+			SWITCH(
+			    TRUE(),
+			    Users[current_age] <= 25, "18-25",
+			    Users[current_age] <= 35, "26-35",
+			    Users[current_age] <= 45, "36-45",
+			    Users[current_age] <= 55, "46-55",
+			    Users[current_age] <= 65, "56-65",
+			    "66+"
+			)
+		lineageTag: 2e64c3ab-ad80-4060-a746-76b93f2abd2d
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Users = m
+		mode: import
+		source =
+				let
+				  Origen = Parquet.Document(Web.Contents("https://financial-digital-twin-bbva-022950218031-us-east-2-an.s3.us-east-2.amazonaws.com/gold/customer_financial_summary.parquet/part-00000-c980ebe1-7cca-4bf3-a433-677bfaabd035-c000.snappy.parquet"))
+				in
+				  Origen
+
+	annotation PBI_NavigationStepName = Navegación
+
+	annotation PBI_ResultType = Table
+
