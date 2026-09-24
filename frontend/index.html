@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#001391">
+
+    <title>Financial Digital Twin</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/app.js" defer></script>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a class="brand" href="index.html">
+                <span class="brand-symbol" aria-hidden="true">↗</span>
+                <span>Financial Digital Twin</span>
+            </a>
+
+            <span class="demo-badge">
+                <span aria-hidden="true"></span>
+                Demostración
+            </span>
+        </div>
+    </header>
+
+    <main class="layout">
+        <aside class="sidebar" aria-labelledby="summary-title">
+            <div class="sidebar-heading">
+                <p class="eyebrow">TU PANORAMA FINANCIERO</p>
+                <h1 id="summary-title">Todo comienza con tus datos.</h1>
+                <p class="description">
+                    Explora un perfil y consulta su información.
+                </p>
+            </div>
+
+            <div class="profile-selector">
+                <label for="profile">Perfil de ejemplo</label>
+
+                <select id="profile">
+                    <option value="demo-001">Perfil 001</option>
+                    <option value="demo-002">Perfil 002</option>
+                    <option value="demo-003">Perfil 003</option>
+                </select>
+
+                <p class="hint">Todos los datos son ficticios.</p>
+            </div>
+
+            <section class="summary" aria-label="Resumen del perfil">
+                <article class="metric metric-primary">
+                    <span>Límite de crédito total</span>
+                    <strong id="credit-limit">—</strong>
+                    <small id="credit-note">—</small>
+                </article>
+
+                <div class="metric-grid">
+                    <article class="metric">
+                        <span>Transacciones</span>
+                        <strong id="transaction-count">—</strong>
+                        <small>Registros disponibles</small>
+                    </article>
+
+                    <article class="metric">
+                        <span>Tarjetas</span>
+                        <strong id="card-count">—</strong>
+                        <small>Registros asociados</small>
+                    </article>
+                </div>
+
+                <dl class="financial-details">
+                    <div>
+                        <dt>Importe de transacciones</dt>
+                        <dd id="transaction-amount">—</dd>
+                    </div>
+
+                    <div>
+                        <dt>Deuda registrada</dt>
+                        <dd id="total-debt">—</dd>
+                    </div>
+
+                    <div>
+                        <dt>Ingreso anual</dt>
+                        <dd id="yearly-income">—</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <div class="data-note">
+                <span class="note-icon" aria-hidden="true">i</span>
+
+                <p>
+                    La moneda y el periodo de las transacciones no están
+                    especificados. El límite de crédito no es saldo disponible.
+                </p>
+            </div>
+        </aside>
+
+        <section class="chat-panel" aria-labelledby="chat-title">
+            <header class="chat-header">
+                <div class="assistant-heading">
+                    <span class="assistant-avatar" aria-hidden="true">✦</span>
+
+                    <div>
+                        <h2 id="chat-title">Tu asistente financiero</h2>
+                        <p id="active-profile">Perfil 001 · Datos de ejemplo</p>
+                    </div>
+                </div>
+
+                <button
+                    id="clear-chat"
+                    class="secondary-button"
+                    type="button"
+                >
+                    Limpiar chat
+                </button>
+            </header>
+
+            <div class="demo-notice">
+                <span aria-hidden="true">◌</span>
+                Respuestas simuladas. Este prototipo no utiliza IA.
+            </div>
+
+            <div
+                id="messages"
+                class="messages"
+                role="log"
+                aria-label="Conversación"
+                aria-live="polite"
+                aria-relevant="additions"
+                tabindex="0"
+            ></div>
+
+            <div class="suggestions-section">
+                <p>También puedes empezar por aquí</p>
+
+                <div class="suggestions" aria-label="Preguntas sugeridas">
+                    <button
+                        type="button"
+                        class="suggestion"
+                        data-question="¿Cuál es mi límite de crédito total?"
+                    >
+                        Mi límite de crédito ↗
+                    </button>
+
+                    <button
+                        type="button"
+                        class="suggestion"
+                        data-question="¿Cuál es el importe de mis transacciones?"
+                    >
+                        Mis transacciones ↗
+                    </button>
+
+                    <button
+                        type="button"
+                        class="suggestion"
+                        data-question="¿Qué información contiene estimaciones?"
+                    >
+                        Valores estimados ↗
+                    </button>
+                </div>
+            </div>
+
+            <form id="chat-form" class="composer">
+                <label for="question">Escribe tu pregunta</label>
+
+                <div class="input-container">
+                    <textarea
+                        id="question"
+                        name="question"
+                        rows="2"
+                        maxlength="2000"
+                        placeholder="Por ejemplo: ¿cuántas tarjetas están registradas?"
+                        aria-describedby="input-help input-error"
+                        required
+                    ></textarea>
+
+                    <button
+                        id="send-button"
+                        class="send-button"
+                        type="submit"
+                    >
+                        Enviar <span aria-hidden="true">↑</span>
+                    </button>
+                </div>
+
+                <div class="composer-footer">
+                    <p id="input-help">
+                        Cada pregunta se interpreta por separado.
+                    </p>
+
+                    <span id="character-count">0 / 2000</span>
+                </div>
+
+                <p id="input-error" class="input-error" role="alert"></p>
+            </form>
+        </section>
+    </main>
+
+    <footer class="page-footer">
+        Proyecto académico · Datos ficticios · Sin conexión al banco
+    </footer>
+</body>
+</html>
