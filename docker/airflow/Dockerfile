@@ -5,6 +5,8 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         openjdk-17-jre-headless \
+        curl \
+        ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -12,10 +14,20 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 USER airflow
 
-RUN pip install --no-cache-dir \
-    apache-airflow-providers-apache-spark \
+RUN python -m pip install --no-cache-dir \
+    "apache-airflow==3.3.1" \
+    "apache-airflow-providers-apache-spark==6.3.2" \
     apache-airflow-providers-postgres \
-    pyspark==4.0.4
+    apache-airflow-providers-standard \
+    "pyspark-client==4.0.4" \
+    "pyspark==4.0.4" \
+    "numpy<3" \
+    "pandas>=2.2,<3" \
+    "scikit-learn>=1.3,<2" \
+    && python -m pip install --no-cache-dir \
+        --force-reinstall \
+        --no-deps \
+        "pyspark==4.0.4"
 
 USER root
 
@@ -27,3 +39,7 @@ RUN curl -fL \
     -o /home/airflow/.local/lib/python3.11/site-packages/pyspark/jars/bundle-2.24.6.jar
 
 USER airflow
+
+RUN python -m pip check \
+    && python -c \
+    "import sys, numpy, pandas, sklearn, pyspark; assert sys.version_info[:2] == (3, 11)"

@@ -1,8 +1,12 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+from airflow.providers.standard.operators.trigger_dagrun import (
+    TriggerDagRunOperator
+)
+from airflow.providers.apache.spark.operators.spark_submit import (
+    SparkSubmitOperator
+)
 
 
 DEFAULT_ARGS = {
@@ -23,6 +27,7 @@ with DAG(
     description="Pipeline de limpieza para capa BRONZE en S3",
     schedule="@daily",
     catchup=False,
+    max_active_runs=1,
     tags=["etl", "spark", "bronze"],
 ) as dag:
 
@@ -31,6 +36,7 @@ with DAG(
         application="/opt/project/src/bronze_cleaning.py",
         name="Bronze_Cleaning",
         conn_id="spark_default",
+        deploy_mode="client",
         conf={
             "spark.master": SPARK_MASTER,
             "spark.executor.memory": "2g",
@@ -41,7 +47,10 @@ with DAG(
     trigger_silver = TriggerDagRunOperator(
         task_id="trigger_silver_pipeline",
         trigger_dag_id="silver_cleaning_pipeline",
-        wait_for_completion=False,
+        wait_for_completion=True,
+        deferrable=True,
+        poke_interval=60,
+        retries=0,
     )
 
     clean_task >> trigger_silver

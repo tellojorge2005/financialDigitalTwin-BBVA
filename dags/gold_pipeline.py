@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+from airflow.providers.apache.spark.operators.spark_submit import (
+    SparkSubmitOperator
+)
 
 
 DEFAULT_ARGS = {
@@ -20,8 +22,9 @@ with DAG(
     dag_id="gold_analysis_pipeline",
     default_args=DEFAULT_ARGS,
     description="Pipeline de análisis para capa GOLD en S3",
-    schedule="@daily",
+    schedule=None,
     catchup=False,
+    max_active_runs=1,
     tags=["etl", "spark", "gold"],
 ) as dag:
 
@@ -30,6 +33,7 @@ with DAG(
         application="/opt/project/src/gold_analysis.py",
         name="Gold_Analysis",
         conn_id="spark_default",
+        deploy_mode="client",
         conf={
             "spark.master": SPARK_MASTER,
             "spark.executor.memory": "2g",

@@ -39,6 +39,9 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
 
+      PYSPARK_DRIVER_PYTHON: /usr/local/bin/python
+      PYSPARK_PYTHON: /opt/venv/bin/python
+
     volumes:
       - ../dags:/opt/airflow/dags
       - ../src:/opt/project/src
@@ -67,6 +70,7 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+      PYSPARK_PYTHON: /opt/venv/bin/python
 
     volumes:
       - ../src:/opt/project/src
@@ -107,6 +111,7 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+      PYSPARK_PYTHON: /opt/venv/bin/python
 
     volumes:
       - ../src:/opt/project/src

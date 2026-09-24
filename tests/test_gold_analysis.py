@@ -1,164 +1,141 @@
 import pytest
 
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import (
-    col,
-    count,
-    sum,
-    avg,
-    min,
-    max,
-    round,
-    countDistinct
+from src.gold_analysis import (
+    create_cards_summary,
+    create_transactions_summary,
+    create_users_summary,
+    create_customer_summary,
+    run_pipeline
 )
-
-
-@pytest.fixture(scope="session")
-def spark():
-    spark = (
-        SparkSession.builder
-        .master("local[2]")
-        .appName("TestGoldAnalysis")
-        .getOrCreate()
-    )
-
-    yield spark
-
-    spark.stop()
 
 
 @pytest.fixture
 def users_data(spark):
-    data = [
-        (1, 30, 65, "male", 60000.0, 30000.0, 10000.0, 750, 3),
-        (2, 40, 67, "female", 80000.0, 40000.0, 20000.0, 720, 4),
-        (3, 50, 68, "male", 50000.0, 25000.0, 15000.0, 700, 2),
-    ]
-
-    columns = [
-        "id",
-        "current_age",
-        "retirement_age",
-        "gender",
-        "yearly_income",
-        "per_capita_income",
-        "total_debt",
-        "credit_score",
-        "num_credit_cards",
-    ]
-
-    return spark.createDataFrame(data, columns)
+    return spark.createDataFrame(
+        [
+            (1, 30, 65, "male", 60000.0, 30000.0, 10000.0, 750, 3),
+            (2, 40, 67, "female", 0.0, 40000.0, 20000.0, 720, 4),
+            (3, 50, 68, "male", 50000.0, 25000.0, 15000.0, 700, 2),
+            (4, 35, 65, "female", None, 20000.0, 5000.0, 710, 1)
+        ],
+        """
+        id long,
+        current_age long,
+        retirement_age long,
+        gender string,
+        yearly_income double,
+        per_capita_income double,
+        total_debt double,
+        credit_score long,
+        num_credit_cards long
+        """
+    )
 
 
 @pytest.fixture
 def cards_data(spark):
-    data = [
-        (1, 1, "visa", "credit", 10000.0),
-        (2, 1, "mastercard", "debit", 20000.0),
-        (3, 2, "visa", "credit", 15000.0),
-        (4, 2, "visa", "debit", 5000.0),
-        (5, 3, "amex", "credit", 12000.0),
-    ]
-
-    columns = [
-        "id",
-        "client_id",
-        "card_brand",
-        "card_type",
-        "credit_limit",
-    ]
-
-    return spark.createDataFrame(data, columns)
+    return spark.createDataFrame(
+        [
+            (1, 1, "visa", "credit", 10000.0, False),
+            (None, 1, "mastercard", "debit", 20000.0, True),
+            (3, 2, "visa", "credit", None, False)
+        ],
+        """
+        id long,
+        client_id long,
+        card_brand string,
+        card_type string,
+        credit_limit double,
+        credit_limit_imputed boolean
+        """
+    )
 
 
 @pytest.fixture
 def transactions_data(spark):
-    data = [
-        (1, 1, 50.0, "new york"),
-        (2, 1, 100.0, "chicago"),
-        (3, 1, 150.0, "new york"),
-        (4, 2, 200.0, "miami"),
-        (5, 2, 100.0, "miami"),
-        (6, 3, 75.0, "boston"),
-    ]
-
-    columns = [
-        "id",
-        "client_id",
-        "amount",
-        "merchant_city",
-    ]
-
-    return spark.createDataFrame(data, columns)
-
-
-def test_cards_summary(spark, cards_data):
-    cards_gold = (
-        cards_data
-        .groupBy("client_id")
-        .agg(
-            count("id").alias("total_cards"),
-            countDistinct("card_brand").alias("total_card_brands"),
-            countDistinct("card_type").alias("total_card_types"),
-            round(avg("credit_limit"), 2).alias("average_credit_limit"),
-            round(sum("credit_limit"), 2).alias("total_credit_limit")
-        )
+    return spark.createDataFrame(
+        [
+            (1, 1, 50.0, "new york"),
+            (2, 1, 100.0, "chicago"),
+            (3, 1, 150.0, "new york"),
+            (4, 2, -20.0, "miami"),
+            (5, 2, 100.0, "miami")
+        ],
+        """
+        id long,
+        client_id long,
+        amount double,
+        merchant_city string
+        """
     )
 
-    client = cards_gold.filter(
-        col("client_id") == 1
-    ).first()
 
-    assert client["total_cards"] == 2
-    assert client["total_card_brands"] == 2
-    assert client["total_card_types"] == 2
-    assert client["average_credit_limit"] == 15000.0
-    assert client["total_credit_limit"] == 30000.0
+def test_cards_summary(cards_data):
+    rows = {
+        row.client_id: row
+        for row in create_cards_summary(cards_data).collect()
+    }
+
+    assert rows[1].total_cards == 2
+    assert rows[1].total_cards_with_id == 1
+    assert rows[1].total_cards_without_id == 1
+    assert rows[1].total_card_brands == 2
+    assert rows[1].total_card_types == 2
+    assert rows[1].average_credit_limit == 15000.0
+    assert rows[1].total_credit_limit == 30000.0
+    assert rows[1].total_credit_limits_imputed == 1
+    assert rows[1].has_imputed_credit_limit is True
+
+    assert rows[2].total_cards == 1
+    assert rows[2].total_credit_limit is None
+    assert rows[2].average_credit_limit is None
+    assert rows[2].total_credit_limits_imputed == 0
+    assert rows[2].has_imputed_credit_limit is False
 
 
-def test_transactions_summary(spark, transactions_data):
-    transactions_gold = (
-        transactions_data
-        .groupBy("client_id")
-        .agg(
-            count("id").alias("total_transactions"),
-            round(sum("amount"), 2).alias("total_spent"),
-            round(avg("amount"), 2).alias("average_transaction"),
-            round(min("amount"), 2).alias("minimum_transaction"),
-            round(max("amount"), 2).alias("maximum_transaction"),
-            countDistinct("merchant_city").alias("total_merchant_cities")
-        )
+def test_cards_summary_without_imputation_information(spark):
+    df = spark.createDataFrame(
+        [(1, 1, "visa", "credit", 1000.0, None)],
+        """
+        id long,
+        client_id long,
+        card_brand string,
+        card_type string,
+        credit_limit double,
+        credit_limit_imputed boolean
+        """
     )
 
-    client = transactions_gold.filter(
-        col("client_id") == 1
-    ).first()
+    row = create_cards_summary(df).first()
 
-    assert client["total_transactions"] == 3
-    assert client["total_spent"] == 300.0
-    assert client["average_transaction"] == 100.0
-    assert client["minimum_transaction"] == 50.0
-    assert client["maximum_transaction"] == 150.0
-    assert client["total_merchant_cities"] == 2
+    assert row.total_credit_limits_imputed is None
+    assert row.has_imputed_credit_limit is None
 
 
-def test_users_gold(spark, users_data):
-    users_gold = (
-        users_data
-        .select(
-            "id",
-            "current_age",
-            "retirement_age",
-            "gender",
-            "yearly_income",
-            "per_capita_income",
-            "total_debt",
-            "credit_score",
-            "num_credit_cards"
-        )
-    )
+def test_transactions_summary(transactions_data):
+    rows = {
+        row.client_id: row
+        for row in create_transactions_summary(
+            transactions_data
+        ).collect()
+    }
 
-    assert users_gold.count() == 3
+    assert rows[1].total_transactions == 3
+    assert rows[1].total_spent == 300.0
+    assert rows[1].average_transaction == 100.0
+    assert rows[1].minimum_transaction == 50.0
+    assert rows[1].maximum_transaction == 150.0
+    assert rows[1].total_merchant_cities == 2
+
+    assert rows[2].total_spent == 80.0
+    assert rows[2].minimum_transaction == -20.0
+    assert rows[2].average_transaction == 40.0
+
+
+def test_users_summary(users_data):
+    users_gold = create_users_summary(users_data)
+
+    assert users_gold.count() == 4
 
     assert users_gold.columns == [
         "id",
@@ -169,156 +146,95 @@ def test_users_gold(spark, users_data):
         "per_capita_income",
         "total_debt",
         "credit_score",
-        "num_credit_cards",
+        "num_credit_cards"
     ]
 
 
-def test_join_customer_information(spark, users_data, cards_data, transactions_data):
-    cards_gold = (
-        cards_data
-        .groupBy("client_id")
-        .agg(
-            count("id").alias("total_cards"),
-            countDistinct("card_brand").alias("total_card_brands"),
-            countDistinct("card_type").alias("total_card_types"),
-            round(avg("credit_limit"), 2).alias("average_credit_limit"),
-            round(sum("credit_limit"), 2).alias("total_credit_limit")
-        )
+def test_customer_summary(users_data, cards_data, transactions_data):
+    customer_gold = create_customer_summary(
+        create_users_summary(users_data),
+        create_cards_summary(cards_data),
+        create_transactions_summary(transactions_data)
     )
 
-    transactions_gold = (
-        transactions_data
-        .groupBy("client_id")
-        .agg(
-            count("id").alias("total_transactions"),
-            round(sum("amount"), 2).alias("total_spent"),
-            round(avg("amount"), 2).alias("average_transaction"),
-            round(min("amount"), 2).alias("minimum_transaction"),
-            round(max("amount"), 2).alias("maximum_transaction"),
-            countDistinct("merchant_city").alias("total_merchant_cities")
-        )
+    rows = {
+        row.id: row
+        for row in customer_gold.collect()
+    }
+
+    assert len(rows) == 4
+    assert "client_id" not in customer_gold.columns
+
+    assert rows[1].total_cards == 2
+    assert rows[1].num_credit_cards == 3
+    assert rows[1].total_transactions == 3
+    assert rows[1].has_card_records is True
+    assert rows[1].has_transaction_records is True
+    assert rows[1].has_imputed_credit_limit is True
+    assert rows[1].spending_to_income_ratio == pytest.approx(0.005)
+    assert rows[1].debt_to_income_ratio == pytest.approx(0.1667)
+
+    assert rows[2].spending_to_income_ratio is None
+    assert rows[2].debt_to_income_ratio is None
+
+    assert rows[3].has_card_records is False
+    assert rows[3].has_transaction_records is False
+    assert rows[3].total_cards is None
+    assert rows[3].total_spent is None
+    assert rows[3].has_imputed_credit_limit is None
+    assert rows[3].spending_to_income_ratio is None
+    assert rows[3].debt_to_income_ratio == pytest.approx(0.3)
+
+    assert rows[4].spending_to_income_ratio is None
+    assert rows[4].debt_to_income_ratio is None
+
+
+def test_run_pipeline(
+    spark,
+    tmp_path,
+    users_data,
+    cards_data,
+    transactions_data
+):
+    input_path = (tmp_path / "silver").as_posix()
+    output_path = (tmp_path / "gold").as_posix()
+
+    users_data.write.parquet(
+        f"{input_path}/users.parquet"
     )
 
-    users_gold = (
-        users_data
-        .select(
-            "id",
-            "current_age",
-            "retirement_age",
-            "gender",
-            "yearly_income",
-            "per_capita_income",
-            "total_debt",
-            "credit_score",
-            "num_credit_cards"
-        )
+    cards_data.write.parquet(
+        f"{input_path}/cards.parquet"
     )
 
-    customer_gold = (
-        users_gold
-        .join(
-            cards_gold,
-            users_gold.id == cards_gold.client_id,
-            "left"
-        )
-        .drop(cards_gold.client_id)
-        .join(
-            transactions_gold,
-            users_gold.id == transactions_gold.client_id,
-            "left"
-        )
-        .drop(transactions_gold.client_id)
+    transactions_data.write.parquet(
+        f"{input_path}/transactions.parquet"
     )
 
-    assert customer_gold.count() == 3
-
-    client = customer_gold.filter(
-        col("id") == 1
-    ).first()
-
-    assert client["total_cards"] == 2
-    assert client["total_transactions"] == 3
-    assert client["total_spent"] == 300.0
-
-
-def test_financial_metrics(spark, users_data, cards_data, transactions_data):
-    cards_gold = (
-        cards_data
-        .groupBy("client_id")
-        .agg(
-            count("id").alias("total_cards"),
-            countDistinct("card_brand").alias("total_card_brands"),
-            countDistinct("card_type").alias("total_card_types"),
-            round(avg("credit_limit"), 2).alias("average_credit_limit"),
-            round(sum("credit_limit"), 2).alias("total_credit_limit")
-        )
+    run_pipeline(
+        spark,
+        input_path=input_path,
+        output_path=output_path
     )
 
-    transactions_gold = (
-        transactions_data
-        .groupBy("client_id")
-        .agg(
-            count("id").alias("total_transactions"),
-            round(sum("amount"), 2).alias("total_spent"),
-            round(avg("amount"), 2).alias("average_transaction"),
-            round(min("amount"), 2).alias("minimum_transaction"),
-            round(max("amount"), 2).alias("maximum_transaction"),
-            countDistinct("merchant_city").alias("total_merchant_cities")
-        )
+    customer_gold = spark.read.parquet(
+        f"{output_path}/customer_financial_summary.parquet"
     )
 
-    users_gold = (
-        users_data
-        .select(
-            "id",
-            "current_age",
-            "retirement_age",
-            "gender",
-            "yearly_income",
-            "per_capita_income",
-            "total_debt",
-            "credit_score",
-            "num_credit_cards"
-        )
+    cards_gold = spark.read.parquet(
+        f"{output_path}/cards_summary.parquet"
     )
 
-    customer_gold = (
-        users_gold
-        .join(
-            cards_gold,
-            users_gold.id == cards_gold.client_id,
-            "left"
-        )
-        .drop(cards_gold.client_id)
-        .join(
-            transactions_gold,
-            users_gold.id == transactions_gold.client_id,
-            "left"
-        )
-        .drop(transactions_gold.client_id)
+    transactions_gold = spark.read.parquet(
+        f"{output_path}/transactions_summary.parquet"
     )
 
-    customer_gold = (
-        customer_gold
-        .withColumn(
-            "spending_to_income_ratio",
-            round(
-                col("total_spent") / col("yearly_income"),
-                4
-            )
-        )
-        .withColumn(
-            "debt_to_income_ratio",
-            round(
-                col("total_debt") / col("yearly_income"),
-                4
-            )
-        )
-    )
+    assert customer_gold.count() == 4
+    assert cards_gold.count() == 2
+    assert transactions_gold.count() == 2
 
-    client = customer_gold.filter(
-        col("id") == 1
-    ).first()
-
-    assert client["spending_to_income_ratio"] == 0.005
-    assert client["debt_to_income_ratio"] == 0.1667
+    assert "total_cards_without_id" in customer_gold.columns
+    assert "total_credit_limits_imputed" in customer_gold.columns
+    assert "has_imputed_credit_limit" in customer_gold.columns
+    assert "has_card_records" in customer_gold.columns
+    assert "has_transaction_records" in customer_gold.columns
