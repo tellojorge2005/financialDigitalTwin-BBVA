@@ -563,7 +563,7 @@ textarea::placeholder {
 /* Adaptar a pantallas pequeñas */
 @media (max-width: 960px) {
     .layout {
-        grid-template-columns: 270px minmax(0, 1fr));
+        grid-template-columns: 270px minmax(0, 1fr);
         gap: 20px;
     }
 
@@ -661,5 +661,102 @@ textarea::placeholder {
 @media (prefers-reduced-motion: reduce) {
     button {
         transition: none;
+    }
+}
+
+/* Ocultar vistas */
+[hidden] {
+    display: none !important;
+}
+
+/* Crear inicio de sesión */
+.login-view {
+    display: grid;
+    place-items: center;
+    min-height: calc(100vh - 160px);
+    padding: 36px 20px;
+}
+
+.login-card {
+    width: min(100%, 480px);
+    padding: 40px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 16px 50px rgb(24 36 61 / 5%);
+}
+
+.login-card h1 {
+    margin-bottom: 18px;
+    font-size: clamp(28px, 5vw, 38px);
+}
+
+.login-card input {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+
+.login-button {
+    width: 100%;
+    margin-top: 16px;
+}
+
+.login-card > .hint {
+    margin-top: 20px;
+    line-height: 1.7;
+}
+
+/* Mostrar sesión */
+.session-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 22px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+.session-card strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.session-card > div {
+    min-width: 0;
+}
+
+/* Mostrar estado de consulta */
+.chat-status {
+    min-height: 20px;
+    margin: 0;
+    padding: 0 26px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+textarea:disabled,
+input:disabled {
+    opacity: 0.65;
+}
+
+/* Adaptar a pantallas pequeñas */
+@media (max-width: 480px) {
+    .login-card {
+        padding: 26px;
+    }
+
+    .session-card {
+        flex-wrap: wrap;
     }
 }

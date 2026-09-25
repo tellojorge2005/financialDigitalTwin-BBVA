@@ -7,48 +7,102 @@
 
     <title>Financial Digital Twin</title>
 
-    <link rel="stylesheet" href="css/styles.css">
-    <script src="js/app.js" defer></script>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/app.js" defer></script>
 </head>
 
 <body>
     <header class="header">
         <div class="header-content">
-            <a class="brand" href="index.html">
+            <a class="brand" href="/">
                 <span class="brand-symbol" aria-hidden="true">↗</span>
                 <span>Financial Digital Twin</span>
             </a>
 
             <span class="demo-badge">
                 <span aria-hidden="true"></span>
-                Demostración
+                Acceso de demostración
             </span>
         </div>
     </header>
 
-    <main class="layout">
+    <section
+        id="login-view"
+        class="login-view"
+        aria-labelledby="login-title"
+    >
+        <div class="login-card">
+            <p class="eyebrow">TU PANORAMA FINANCIERO</p>
+
+            <h1 id="login-title">Conoce tus datos. Resuelve tus dudas.</h1>
+
+            <p class="description">
+                Ingresa el ID de un cliente para consultar su resumen
+                financiero y conversar con el asistente.
+            </p>
+
+            <form id="login-form">
+                <label for="client-id">ID del cliente</label>
+
+                <input
+                    id="client-id"
+                    name="cliente_id"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]+"
+                    maxlength="16"
+                    placeholder="Ingresa un ID existente"
+                    autocomplete="off"
+                    aria-describedby="login-help login-error"
+                    required
+                >
+
+                <button
+                    id="login-button"
+                    class="send-button login-button"
+                    type="submit"
+                    disabled
+                >
+                    Iniciar sesión
+                </button>
+
+                <p id="login-error" class="input-error" role="alert"></p>
+            </form>
+
+            <p id="login-help" class="hint">
+                Simulación de acceso por ID. No valida tu identidad.
+            </p>
+        </div>
+    </section>
+
+    <main id="app-view" class="layout" hidden>
         <aside class="sidebar" aria-labelledby="summary-title">
             <div class="sidebar-heading">
                 <p class="eyebrow">TU PANORAMA FINANCIERO</p>
                 <h1 id="summary-title">Todo comienza con tus datos.</h1>
                 <p class="description">
-                    Explora un perfil y consulta su información.
+                    Consulta y comprende tu información financiera.
                 </p>
             </div>
 
-            <div class="profile-selector">
-                <label for="profile">Perfil de ejemplo</label>
+            <div class="session-card">
+                <div>
+                    <span class="hint">Sesión actual</span>
+                    <strong id="session-client">—</strong>
+                </div>
 
-                <select id="profile">
-                    <option value="demo-001">Perfil 001</option>
-                    <option value="demo-002">Perfil 002</option>
-                    <option value="demo-003">Perfil 003</option>
-                </select>
-
-                <p class="hint">Todos los datos son ficticios.</p>
+                <button
+                    id="logout-button"
+                    class="secondary-button"
+                    type="button"
+                >
+                    Cerrar sesión
+                </button>
             </div>
 
-            <section class="summary" aria-label="Resumen del perfil">
+            <p id="session-error" class="input-error" role="alert"></p>
+
+            <section class="summary" aria-label="Resumen financiero">
                 <article class="metric metric-primary">
                     <span>Límite de crédito total</span>
                     <strong id="credit-limit">—</strong>
@@ -104,7 +158,7 @@
 
                     <div>
                         <h2 id="chat-title">Tu asistente financiero</h2>
-                        <p id="active-profile">Perfil 001 · Datos de ejemplo</p>
+                        <p id="active-profile">—</p>
                     </div>
                 </div>
 
@@ -118,8 +172,7 @@
             </header>
 
             <div class="demo-notice">
-                <span aria-hidden="true">◌</span>
-                Respuestas simuladas. Este prototipo no utiliza IA.
+                Respuestas generadas con IA a partir del resumen disponible.
             </div>
 
             <div
@@ -131,6 +184,8 @@
                 aria-relevant="additions"
                 tabindex="0"
             ></div>
+
+            <p id="chat-status" class="chat-status" role="status"></p>
 
             <div class="suggestions-section">
                 <p>También puedes empezar por aquí</p>
@@ -168,10 +223,10 @@
                 <div class="input-container">
                     <textarea
                         id="question"
-                        name="question"
+                        name="pregunta"
                         rows="2"
                         maxlength="2000"
-                        placeholder="Por ejemplo: ¿cuántas tarjetas están registradas?"
+                        placeholder="¿Qué deseas saber sobre tu resumen?"
                         aria-describedby="input-help input-error"
                         required
                     ></textarea>
@@ -180,6 +235,7 @@
                         id="send-button"
                         class="send-button"
                         type="submit"
+                        disabled
                     >
                         Enviar <span aria-hidden="true">↑</span>
                     </button>
@@ -199,7 +255,7 @@
     </main>
 
     <footer class="page-footer">
-        Proyecto académico · Datos ficticios · Sin conexión al banco
+        Proyecto académico · Acceso de demostración
     </footer>
 </body>
 </html>
