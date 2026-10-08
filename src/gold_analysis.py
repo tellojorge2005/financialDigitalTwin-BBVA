@@ -1,3 +1,7 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -12,8 +16,17 @@ from pyspark.sql.functions import (
 )
 
 
+# Cargar variables de entorno
+PROJECT_PATH = Path(__file__).resolve().parent.parent
+
+load_dotenv(PROJECT_PATH / ".env", override=False)
+
+
 # Rutas S3
-BUCKET = "financial-digital-twin-bbva-022950218031-us-east-2-an"
+BUCKET = os.getenv("S3_BUCKET", "").strip()
+
+if not BUCKET:
+    raise RuntimeError("Configura S3_BUCKET en .env.")
 
 INPUT_PATH = f"s3a://{BUCKET}/silver"
 OUTPUT_PATH = f"s3a://{BUCKET}/gold"

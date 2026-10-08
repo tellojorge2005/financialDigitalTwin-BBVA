@@ -1,6 +1,10 @@
+import os
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
+from dotenv import load_dotenv
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error
@@ -28,8 +32,17 @@ from pyspark.sql.types import (
 )
 
 
+# Cargar variables de entorno
+PROJECT_PATH = Path(__file__).resolve().parent.parent
+
+load_dotenv(PROJECT_PATH / ".env", override=False)
+
+
 # Rutas S3
-BUCKET = "financial-digital-twin-bbva-022950218031-us-east-2-an"
+BUCKET = os.getenv("S3_BUCKET", "").strip()
+
+if not BUCKET:
+    raise RuntimeError("Configura S3_BUCKET en .env.")
 
 INPUT_PATH = f"s3a://{BUCKET}/bronze"
 OUTPUT_PATH = f"s3a://{BUCKET}/silver"

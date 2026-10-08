@@ -17,10 +17,7 @@ AWS_REGION = os.getenv(
     "us-east-2"
 ).strip()
 
-S3_BUCKET = os.getenv(
-    "S3_BUCKET",
-    "financial-digital-twin-bbva-022950218031-us-east-2-an"
-).strip()
+S3_BUCKET = os.getenv("S3_BUCKET", "").strip()
 
 S3_CUSTOMER_PATH = os.getenv(
     "S3_CUSTOMER_PATH",
