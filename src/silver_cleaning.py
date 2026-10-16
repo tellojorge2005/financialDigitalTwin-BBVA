@@ -473,10 +473,94 @@ def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
 
     print("Datos cargados")
 
+    # Limpiar usuarios
     users_silver = clean_users(users_spark)
-    cards_silver = clean_cards(cards_spark)
-    transactions_silver = clean_transactions(transactions_spark)
 
+    clientes = (
+        users_silver
+        .filter(col("id").isNotNull() & (col("id") >= 0))
+        .select(col("id").alias("client_id"))
+        .distinct()
+    )
+
+    # Separar tarjetas con ID inválido
+    cards_invalid_id = (
+        cards_spark
+        .filter(
+            col("id").isNull()
+            | (col("id") < 0)
+        )
+        .withColumn(
+            "rejection_reason",
+            lit("ID de tarjeta nulo o negativo")
+        )
+    )
+
+    cards_valid_id = cards_spark.filter(
+        col("id").isNotNull()
+        & (col("id") >= 0)
+    )
+
+    # Separar tarjetas sin cliente existente
+    cards_without_client = (
+        cards_valid_id
+        .join(clientes, "client_id", "left_anti")
+        .withColumn(
+            "rejection_reason",
+            lit("Cliente inexistente")
+        )
+    )
+
+    cards_rejected = cards_invalid_id.unionByName(
+        cards_without_client
+    )
+
+    cards_valid = cards_valid_id.join(
+        clientes,
+        "client_id",
+        "left_semi"
+    )
+
+    # Separar transacciones sin cliente existente
+    transactions_rejected = (
+        transactions_spark
+        .join(clientes, "client_id", "left_anti")
+        .withColumn(
+            "rejection_reason",
+            lit("Cliente inexistente")
+        )
+    )
+
+    transactions_valid = transactions_spark.join(
+        clientes,
+        "client_id",
+        "left_semi"
+    )
+
+    # Mostrar cantidad de rechazados
+    print("Tarjetas rechazadas:", cards_rejected.count())
+    print(
+        "Transacciones rechazadas:",
+        transactions_rejected.count()
+    )
+
+    # Guardar rechazados de la ejecución actual
+    cards_rejected.write.mode("overwrite").parquet(
+        f"{output_path}/rejected/cards.parquet"
+    )
+
+    transactions_rejected.write.mode("overwrite").parquet(
+        f"{output_path}/rejected/transactions.parquet"
+    )
+
+    # Transformar registros aceptados
+    cards_silver = clean_cards(cards_valid)
+
+    transactions_silver = clean_transactions(
+        transactions_valid
+    )
+
+    # Completar límites de crédito
     cards_silver = impute_credit_limits(
         cards_silver,
         users_silver
