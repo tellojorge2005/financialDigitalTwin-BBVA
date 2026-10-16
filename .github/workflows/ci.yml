@@ -5,9 +5,18 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      S3_BUCKET: financial-twin-tests
+      SPARK_LOCAL_IP: 127.0.0.1
 
     steps:
       - name: Checkout repository
@@ -32,6 +41,7 @@ jobs:
             "numpy<3" \
             "pandas>=2.2,<3" \
             "scikit-learn>=1.3,<2" \
+            python-dotenv \
             pytest
 
       - name: Run tests

@@ -1,16 +1,16 @@
-from datetime import datetime
-from pyspark.sql.functions import date_format
-
 import numpy as np
 import pandas as pd
 import pytest
+
+from pyspark.sql.functions import date_format
 
 from src.silver_cleaning import (
     clean_users,
     clean_cards,
     clean_transactions,
     estimate_credit_limits,
-    impute_credit_limits
+    impute_credit_limits,
+    run_pipeline
 )
 
 
@@ -18,9 +18,18 @@ from src.silver_cleaning import (
 def users_data(spark):
     return spark.createDataFrame(
         [
-            (1, 30.0, " Male ", " New York ", 30000.0, 60000.0, 10000.0, 750),
-            (2, 40.0, " Female ", " Boston ", 40000.0, 80000.0, 20000.0, 720),
-            (3, 50.0, " Male ", " Miami ", 25000.0, 50000.0, 15000.0, 700)
+            (
+                1, 30.0, " Male ", " New York ",
+                30000.0, 60000.0, 10000.0, 750
+            ),
+            (
+                2, 40.0, " Female ", " Boston ",
+                40000.0, 80000.0, 20000.0, 720
+            ),
+            (
+                3, 50.0, " Male ", " Miami ",
+                25000.0, 50000.0, 15000.0, 700
+            )
         ],
         """
         id long,
@@ -49,6 +58,7 @@ def cards_schema():
     """
 
 
+# Validar limpieza de usuarios
 def test_clean_users(users_data):
     duplicated = users_data.unionByName(users_data)
     cleaned = clean_users(duplicated)
@@ -67,14 +77,24 @@ def test_clean_users(users_data):
         "per_capita_income",
         "total_debt"
     ]:
-        assert cleaned.schema[column].dataType.simpleString() == "double"
+        assert (
+            cleaned.schema[column].dataType.simpleString()
+            == "double"
+        )
 
 
+# Validar limpieza de tarjetas
 def test_clean_cards(spark, cards_schema):
     df = spark.createDataFrame(
         [
-            (1, 1, " VISA ", " Credit ", " YES ", " NO ", 1.0, 10000.0),
-            (1, 1, " VISA ", " Credit ", " YES ", " NO ", 1.0, 10000.0)
+            (
+                1, 1, " VISA ", " Credit ",
+                " YES ", " NO ", 1.0, 10000.0
+            ),
+            (
+                1, 1, " VISA ", " Credit ",
+                " YES ", " NO ", 1.0, 10000.0
+            )
         ],
         cards_schema
     )
@@ -87,17 +107,36 @@ def test_clean_cards(spark, cards_schema):
     assert rows[0].card_type == "credit"
     assert rows[0].has_chip == "yes"
     assert rows[0].card_on_dark_web == "no"
-    assert cleaned.schema["credit_limit"].dataType.simpleString() == "double"
+    assert (
+        cleaned.schema["credit_limit"].dataType.simpleString()
+        == "double"
+    )
 
 
+# Validar limpieza de transacciones
 def test_clean_transactions(spark):
     df = spark.createDataFrame(
         [
-            (1, "15/01/2010 08:13", 50.0, " Swipe ", " New York ", " NY "),
-            (2, "01/20/2010 10:00", 75.0, " Chip ", " Boston ", " MA "),
-            (3, "02/03/2010 12:00", -10.0, " Swipe ", " Miami ", " FL "),
-            (4, "fecha incorrecta", 25.0, " Chip ", " Boston ", " MA "),
-            (1, "15/01/2010 08:13", 50.0, " Swipe ", " New York ", " NY ")
+            (
+                1, "15/01/2010 08:13", 50.0,
+                " Swipe ", " New York ", " NY "
+            ),
+            (
+                2, "01/20/2010 10:00", 75.0,
+                " Chip ", " Boston ", " MA "
+            ),
+            (
+                3, "02/03/2010 12:00", -10.0,
+                " Swipe ", " Miami ", " FL "
+            ),
+            (
+                4, "fecha incorrecta", 25.0,
+                " Chip ", " Boston ", " MA "
+            ),
+            (
+                1, "15/01/2010 08:13", 50.0,
+                " Swipe ", " New York ", " NY "
+            )
         ],
         """
         id long,
@@ -111,7 +150,10 @@ def test_clean_transactions(spark):
 
     cleaned = clean_transactions(df)
 
-    assert cleaned.schema["date"].dataType.simpleString() == "timestamp"
+    assert (
+        cleaned.schema["date"].dataType.simpleString()
+        == "timestamp"
+    )
 
     rows = {
         row.id: row
@@ -132,6 +174,7 @@ def test_clean_transactions(spark):
     assert rows[3].amount == -10.0
 
 
+# Validar imputación de límites
 def test_impute_credit_limits(spark, users_data, cards_schema):
     df = spark.createDataFrame(
         [
@@ -155,22 +198,32 @@ def test_impute_credit_limits(spark, users_data, cards_schema):
     }
 
     assert len(rows) == 5
+
     assert rows[1].credit_limit == 1000.0
     assert rows[2].credit_limit == 3000.0
     assert rows[1].credit_limit_imputed is False
     assert rows[1].credit_limit_imputation_method is None
+
     assert rows[3].credit_limit == 2000.0
     assert rows[3].credit_limit_imputed is True
     assert rows[3].credit_limit_imputation_method == "mediana"
+
     assert rows[4].credit_limit is None
     assert rows[4].credit_limit_imputed is False
+
     assert rows[None].credit_limit is None
     assert rows[None].credit_limit_imputed is False
 
 
-def test_imputation_without_missing_limits(spark, users_data, cards_schema):
+def test_imputation_without_missing_limits(
+    spark,
+    users_data,
+    cards_schema
+):
     df = spark.createDataFrame(
-        [(1, 1, "visa", "credit", "yes", "no", 1.0, 1000.0)],
+        [
+            (1, 1, "visa", "credit", "yes", "no", 1.0, 1000.0)
+        ],
         cards_schema
     )
 
@@ -184,9 +237,15 @@ def test_imputation_without_missing_limits(spark, users_data, cards_schema):
     assert row.credit_limit_imputation_method is None
 
 
-def test_imputation_without_known_limits(spark, users_data, cards_schema):
+def test_imputation_without_known_limits(
+    spark,
+    users_data,
+    cards_schema
+):
     df = spark.createDataFrame(
-        [(1, 1, "visa", "credit", "yes", "no", 1.0, None)],
+        [
+            (1, 1, "visa", "credit", "yes", "no", 1.0, None)
+        ],
         cards_schema
     )
 
@@ -200,14 +259,19 @@ def test_imputation_without_known_limits(spark, users_data, cards_schema):
     assert row.credit_limit_imputation_method is None
 
 
+# Validar selección del modelo
 def test_estimate_credit_limits_knn():
     known_cards = pd.DataFrame([
         {
             "client_id": index,
             "num_cards_issued": 1.0,
             "current_age": 30.0 if index % 2 == 0 else 60.0,
-            "yearly_income": 20000.0 if index % 2 == 0 else 100000.0,
-            "total_debt": 1000.0 if index % 2 == 0 else 10000.0,
+            "yearly_income": (
+                20000.0 if index % 2 == 0 else 100000.0
+            ),
+            "total_debt": (
+                1000.0 if index % 2 == 0 else 10000.0
+            ),
             "credit_score": 600.0 if index % 2 == 0 else 800.0,
             "card_brand": "visa",
             "card_type": "credit",
@@ -226,7 +290,10 @@ def test_estimate_credit_limits_knn():
     )
 
     assert method == "knn"
-    np.testing.assert_allclose(predictions, [1000.0, 9000.0])
+    np.testing.assert_allclose(
+        predictions,
+        [1000.0, 9000.0]
+    )
 
 
 def test_estimate_credit_limits_median():
@@ -282,3 +349,116 @@ def test_estimate_credit_limits_single_client():
 
     assert method == "mediana"
     np.testing.assert_allclose(predictions, [2000.0])
+
+
+# Validar separación de rechazados en el pipeline
+def test_pipeline_separa_rechazados(
+    spark,
+    tmp_path,
+    users_data,
+    cards_schema
+):
+    cards = spark.createDataFrame(
+        [
+            (1, 1, "visa", "credit", "yes", "no", 1.0, 1000.0),
+            (2, 2, "visa", "credit", "yes", "no", 1.0, 2000.0),
+            (None, 1, "visa", "credit", "yes", "no", 1.0, 500.0),
+            (-1, 1, "visa", "credit", "yes", "no", 1.0, 500.0),
+            (3, 999, "visa", "credit", "yes", "no", 1.0, 500.0),
+            (4, None, "visa", "credit", "yes", "no", 1.0, 500.0)
+        ],
+        cards_schema
+    )
+
+    transactions = spark.createDataFrame(
+        [
+            (
+                1, 1, "15/01/2010 08:13",
+                50.0, "chip", "miami", "fl"
+            ),
+            (
+                2, 999, "15/01/2010 08:13",
+                75.0, "chip", "miami", "fl"
+            ),
+            (
+                3, None, "15/01/2010 08:13",
+                25.0, "chip", "miami", "fl"
+            )
+        ],
+        """
+        id long,
+        client_id long,
+        date string,
+        amount double,
+        use_chip string,
+        merchant_city string,
+        merchant_state string
+        """
+    )
+
+    input_path = (tmp_path / "bronze").as_posix()
+    output_path = (tmp_path / "silver").as_posix()
+
+    for name, df in [
+        ("users", users_data),
+        ("cards", cards),
+        ("transactions", transactions)
+    ]:
+        df.write.parquet(
+            f"{input_path}/{name}.parquet"
+        )
+
+    run_pipeline(
+        spark,
+        input_path=input_path,
+        output_path=output_path
+    )
+
+    cards_valid = spark.read.parquet(
+        f"{output_path}/cards.parquet"
+    ).collect()
+
+    transactions_valid = spark.read.parquet(
+        f"{output_path}/transactions.parquet"
+    ).collect()
+
+    cards_rejected = spark.read.parquet(
+        f"{output_path}/rejected/cards.parquet"
+    ).collect()
+
+    transactions_rejected = spark.read.parquet(
+        f"{output_path}/rejected/transactions.parquet"
+    ).collect()
+
+    assert {row.id for row in cards_valid} == {1, 2}
+    assert {row.id for row in transactions_valid} == {1}
+
+    assert {row.id for row in cards_rejected} == {
+        None, -1, 3, 4
+    }
+
+    assert {row.id for row in transactions_rejected} == {
+        2, 3
+    }
+
+    assert len(cards_valid) + len(cards_rejected) == 6
+    assert (
+        len(transactions_valid)
+        + len(transactions_rejected)
+        == 3
+    )
+
+    assert {
+        row.rejection_reason
+        for row in cards_rejected
+    } == {
+        "ID de tarjeta nulo o negativo",
+        "Cliente inexistente"
+    }
+
+    assert {
+        row.rejection_reason
+        for row in transactions_rejected
+    } == {
+        "Cliente inexistente"
+    }

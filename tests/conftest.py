@@ -6,6 +6,10 @@ import pytest
 from pyspark.sql import SparkSession
 
 
+# Configurar variable para las pruebas
+os.environ.setdefault("S3_BUCKET", "financial-twin-tests")
+
+
 # Configurar variables de entorno para Hadoop en Windows
 if os.name == "nt":
     HADOOP_HOME = os.environ.get("HADOOP_HOME", r"C:\hadoop")
