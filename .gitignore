@@ -36,3 +36,8 @@ _SUCCESS
 #Business Intelligence
 **/.pbi/localSettings.json
 **/.pbi/cache.abf
+
+# Bases de datos SQLite
+*.sqlite
+*.sqlite3
+*.db
