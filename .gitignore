@@ -2,6 +2,9 @@
 data/raw/*
 !data/raw/README.md
 
+# Modified Datasets
+data/modified
+
 #Carpeta de Jetbrains
 .idea/
 
