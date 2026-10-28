@@ -3,6 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 from pyspark.sql.functions import col, trim, lower, regexp_replace, when, isnan
 from pyspark.ml.feature import Imputer
 
@@ -153,94 +154,207 @@ def clean_cards(cards_spark):
 
 
 # Limpiar transactions
+def preparar_textos(df):
+    for campo in df.schema.fields:
+        if campo.dataType.simpleString() == "string":
+            valor = F.trim(F.col(campo.name))
+
+            df = df.withColumn(
+                campo.name,
+                F.when(valor != "", valor)
+            )
+
+    return df
+
+def convertir_importes(df, columnas):
+    for columna in columnas:
+        df = df.withColumn(
+            columna,
+            F.regexp_replace(
+                F.col(columna).cast("string"),
+                r"[$,]",
+                ""
+            )
+        )
+
+        df = df.withColumn(
+            columna,
+            F.expr(
+                f"try_cast(`{columna}` as decimal(18, 2))"
+            )
+        )
+
+    return df
+
+def clean_accounts(accounts_spark):
+    accounts_spark = preparar_textos(accounts_spark)
+
+    accounts_spark = convertir_importes(
+        accounts_spark,
+        ["opening_balance", "closing_balance"]
+    )
+
+    accounts_spark = (
+        accounts_spark
+        .withColumn(
+            "client_id",
+            F.expr("try_cast(client_id as bigint)")
+        )
+        .withColumn(
+            "overdraft_allowed",
+            F.expr("try_cast(overdraft_allowed as boolean)")
+        )
+        .withColumn(
+            "currency",
+            F.upper("currency")
+        )
+    )
+
+
+
+    return accounts_spark
+
+
+def clean_obligations(obligations_spark):
+    obligations_spark = preparar_textos(obligations_spark)
+
+    obligations_spark = convertir_importes(
+        obligations_spark,
+        [
+            "contract_principal",
+            "amount_due",
+            "amount_paid",
+            "outstanding_amount"
+        ]
+    )
+
+    for columna in [
+        "client_id",
+        "installment_number",
+        "payment_transaction_id",
+        "days_past_due_as_of",
+        "days_to_full_payment"
+    ]:
+        obligations_spark = obligations_spark.withColumn(
+            columna,
+            F.expr(f"try_cast(`{columna}` as bigint)")
+        )
+
+    obligations_spark = (
+        obligations_spark
+        .withColumn(
+            "annual_interest_rate",
+            F.expr(
+                "try_cast(annual_interest_rate as decimal(12, 6))"
+            )
+        )
+        .withColumn(
+            "currency",
+            F.upper("currency")
+        )
+    )
+
+
+    return obligations_spark
+
+
 def clean_transactions(transactions_spark):
-    # Limpiar strings
+    # Limpiar transactions_spark
+
+    transactions_spark = preparar_textos(
+        transactions_spark
+    )
+
+
+    # Normalizar categorías
+
     string_columns = [
         "use_chip",
         "merchant_city",
         "merchant_state",
-        "zip",
-        "errors"
+        "errors",
+        "movement_type",
+        "category",
+        "direction",
+        "income_source",
+        "amount_convention"
     ]
 
     for column in string_columns:
-        if column in transactions_spark.columns:
-            transactions_spark = clean_string(
-                transactions_spark,
-                column
-            )
-
-    # Limpiar amount
-    if "amount" in transactions_spark.columns:
-        transactions_spark = clean_currency(
-            transactions_spark,
-            "amount"
+        transactions_spark = transactions_spark.withColumn(
+            column,
+            F.lower(F.col(column))
         )
 
-    # Imputar amount con mediana
-    transactions_spark = impute_median(
+
+    # Convertir importes sin imputar ni recortar
+
+    transactions_spark = convertir_importes(
         transactions_spark,
-        "amount"
+        [
+            "amount",
+            "balance_before",
+            "balance_after"
+        ]
     )
 
-    # Imputar merchant_city con moda
-    transactions_spark = impute_mode(
-        transactions_spark,
-        "merchant_city"
+
+    # Convertir identificadores numéricos
+
+    for column in ["id", "client_id", "card_id", "merchant_id", "mcc"]:
+        transactions_spark = transactions_spark.withColumn(
+            column,
+            F.expr(f"try_cast(`{column}` as bigint)")
+        )
+
+
+    # Preparar moneda y recurrencia
+
+    transactions_spark = (
+        transactions_spark
+        .withColumn(
+            "currency",
+            F.upper("currency")
+        )
+        .withColumn(
+            "is_recurring",
+            F.expr("try_cast(is_recurring as boolean)")
+        )
     )
 
-    # Validar amount
-    transactions_spark = transactions_spark.withColumn(
-        "amount",
-        when(col("amount") < -10000, -10000)
-        .when(col("amount") > 10000, 10000)
-        .otherwise(col("amount"))
-    )
 
     return transactions_spark
 
 
 def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
     # Cargar datasets
-    users_spark = (
-        spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(f"{input_path}/users_data.csv")
-    )
+    def cargar(nombre, inferir=False):
+        return (
+            spark.read
+            .option("header", True)
+            .option("inferSchema", inferir)
+            .csv(f"{input_path}/{nombre}_data.csv")
+        )
 
-    cards_spark = (
-        spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(f"{input_path}/cards_data.csv")
-    )
-
-    transactions_spark = (
-        spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(f"{input_path}/transactions_data.csv")
-    )
-
-    print("Datos cargados")
-
-    users_spark = clean_users(users_spark)
-    cards_spark = clean_cards(cards_spark)
-    transactions_spark = clean_transactions(transactions_spark)
+    users_spark = clean_users(cargar("users", True))
+    cards_spark = clean_cards(cargar("cards", True))
+    transactions_spark = clean_transactions(cargar("transactions"))
+    accounts_spark = clean_accounts(cargar("accounts"))
+    obligations_spark = clean_obligations(cargar("obligations_payments"))
 
     # Guardar BRONZE
-    users_spark.write.mode("overwrite").parquet(
-        f"{output_path}/users.parquet"
-    )
+    datasets = {
+        "users": users_spark,
+        "cards": cards_spark,
+        "transactions": transactions_spark,
+        "accounts": accounts_spark,
+        "obligations_payments": obligations_spark
+    }
 
-    cards_spark.write.mode("overwrite").parquet(
-        f"{output_path}/cards.parquet"
-    )
-
-    transactions_spark.write.mode("overwrite").parquet(
-        f"{output_path}/transactions.parquet"
-    )
+    for nombre, datos in datasets.items():
+        datos.write.mode("overwrite").parquet(
+            f"{output_path}/{nombre}.parquet"
+        )
 
     print("Pipeline BRONZE completado")
 

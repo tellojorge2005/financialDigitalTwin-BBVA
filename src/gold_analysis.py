@@ -3,6 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
 from pyspark.sql.functions import (
     col,
     count,
@@ -687,60 +688,488 @@ def validar_salida_gold(customer_gold, total_users):
         )
 
 
+def create_monthly_summaries(accounts_spark, obligations_spark, movements_spark):
+    # El historial actual contiene cuentas abiertas al inicio del mes
+    if accounts_spark.filter(F.dayofmonth("opened_at") != 1).limit(1).count():
+        raise ValueError(
+            "Hay cuentas abiertas a mitad de mes. "
+            "Se requiere incorporar el saldo del primer mes parcial."
+        )
+
+    # Definir meses completos disponibles
+
+    accounts_calendar = (
+        accounts_spark
+        .withColumn(
+            "first_month",
+            F.when(
+                F.dayofmonth("opened_at") == 1,
+                F.trunc(F.to_date("opened_at"), "month")
+            ).otherwise(
+                F.add_months(
+                    F.trunc(F.to_date("opened_at"), "month"),
+                    1
+                )
+            )
+        )
+        .withColumn(
+            "last_month",
+            F.when(
+                F.to_date("balance_as_of")
+                == F.last_day("balance_as_of"),
+                F.trunc(F.to_date("balance_as_of"), "month")
+            ).otherwise(
+                F.add_months(
+                    F.trunc(F.to_date("balance_as_of"), "month"),
+                    -1
+                )
+            )
+        )
+        .filter(F.col("first_month") <= F.col("last_month"))
+        .withColumn(
+            "month",
+            F.explode(
+                F.sequence(
+                    "first_month",
+                    "last_month",
+                    F.expr("interval 1 month")
+                )
+            )
+        )
+        .select(
+            "account_id",
+            "client_id",
+            "currency",
+            "opening_balance",
+            "month"
+        )
+    )
+
+
+    # Preparar movimientos mensuales
+
+    movements_monthly = movements_spark.withColumn(
+        "month",
+        F.trunc(F.to_date("date"), "month")
+    )
+
+
+    # Agregar flujos por cuenta
+
+    def sumar_movimiento(tipo, nombre, signo=1):
+        return F.sum(
+            F.when(
+                F.col("movement_type") == tipo,
+                F.col("amount") * signo
+            ).otherwise(0)
+        ).alias(nombre)
+
+
+    account_flows = (
+        movements_monthly
+        .groupBy("account_id", "month")
+        .agg(
+            F.count("*").alias("monthly_transactions"),
+            sumar_movimiento("income", "monthly_income"),
+            sumar_movimiento("expense", "monthly_expenses", -1),
+            sumar_movimiento(
+                "debt_payment",
+                "monthly_debt_payments",
+                -1
+            ),
+            sumar_movimiento("transfer_in", "transfers_in"),
+            sumar_movimiento("transfer_out", "transfers_out", -1),
+            F.sum("amount").alias("monthly_net_flow"),
+            F.max(
+                F.struct("date", "id", "balance_after")
+            ).alias("last_movement")
+        )
+        .withColumn(
+            "observed_balance",
+            F.col("last_movement.balance_after")
+        )
+        .drop("last_movement")
+    )
+
+
+    # Completar meses cubiertos
+
+    columnas_flujo = [
+        "monthly_transactions",
+        "monthly_income",
+        "monthly_expenses",
+        "monthly_debt_payments",
+        "transfers_in",
+        "transfers_out",
+        "monthly_net_flow"
+    ]
+
+    account_monthly = (
+        accounts_calendar
+        .join(
+            account_flows,
+            ["account_id", "month"],
+            "left"
+        )
+        .fillna(0, subset=columnas_flujo)
+    )
+
+
+    # Recuperar saldo al cierre de cada mes
+
+    ventana_cuenta = (
+        Window.partitionBy("account_id")
+        .orderBy("month")
+        .rowsBetween(Window.unboundedPreceding, Window.currentRow)
+    )
+
+    account_monthly = account_monthly.withColumn(
+        "closing_balance",
+        F.coalesce(
+            F.last(
+                "observed_balance",
+                ignorenulls=True
+            ).over(ventana_cuenta),
+            F.col("opening_balance")
+        )
+    )
+
+
+    # Crear resumen mensual por cliente y moneda
+
+    monthly_gold = (
+        account_monthly
+        .groupBy("client_id", "currency", "month")
+        .agg(
+            *[
+                F.sum(columna).alias(columna)
+                for columna in columnas_flujo
+            ],
+            F.sum("closing_balance").alias("closing_balance"),
+            F.countDistinct("account_id").alias("total_accounts")
+        )
+        .withColumn(
+            "monthly_savings",
+            F.col("monthly_income")
+            - F.col("monthly_expenses")
+            - F.col("monthly_debt_payments")
+        )
+        .withColumn(
+            "savings_rate",
+            F.when(
+                F.col("monthly_income") > 0,
+                F.round(
+                    F.col("monthly_savings")
+                    / F.col("monthly_income"),
+                    4
+                )
+            )
+        )
+    )
+
+    # Preparar cortes mensuales
+
+    cortes = (
+        monthly_gold
+        .select("client_id", "currency", "month")
+        .withColumn(
+            "cutoff_date",
+            F.last_day("month")
+        )
+    )
+
+
+    # Relacionar obligaciones con cada corte
+
+    obligaciones_historicas = (
+        cortes
+        .join(
+            obligations_spark.select(
+                "client_id",
+                "currency",
+                "obligation_id",
+                "due_date",
+                "payment_date",
+                "amount_due",
+                "amount_paid"
+            ),
+            ["client_id", "currency"],
+            "left"
+        )
+        .withColumn(
+            "due_at_cutoff",
+            F.when(
+                F.col("due_date") <= F.col("cutoff_date"),
+                F.col("amount_due")
+            ).otherwise(0)
+        )
+        .withColumn(
+            "paid_at_cutoff",
+            F.when(
+                (F.col("due_date") <= F.col("cutoff_date"))
+                & (F.col("payment_date") <= F.col("cutoff_date")),
+                F.col("amount_paid")
+            ).otherwise(0)
+        )
+        .withColumn(
+            "outstanding_at_cutoff",
+            F.col("due_at_cutoff") - F.col("paid_at_cutoff")
+        )
+        .withColumn(
+            "days_past_due",
+            F.when(
+                F.col("outstanding_at_cutoff") > 0,
+                F.greatest(
+                    F.datediff("cutoff_date", "due_date"),
+                    F.lit(0)
+                )
+            ).otherwise(0)
+        )
+    )
+
+
+    # Agregar obligaciones pendientes
+
+    obligations_monthly = (
+        obligaciones_historicas
+        .groupBy("client_id", "currency", "month")
+        .agg(
+            F.sum(
+                "outstanding_at_cutoff"
+            ).alias("outstanding_due"),
+            F.max(
+                "days_past_due"
+            ).alias("max_days_past_due"),
+            F.sum(
+                F.when(
+                    (F.col("outstanding_at_cutoff") > 0)
+                    & (F.col("days_past_due") >= 30),
+                    1
+                ).otherwise(0)
+            ).alias("installments_30_days_past_due")
+        )
+    )
+
+    monthly_gold = monthly_gold.join(
+        obligations_monthly,
+        ["client_id", "currency", "month"],
+        "left"
+    )
+
+    # Definir ventanas temporales
+
+    ventana_cliente = Window.partitionBy(
+        "client_id",
+        "currency"
+    ).orderBy("month")
+
+    ventana_tres_meses = ventana_cliente.rowsBetween(-2, 0)
+
+    ventana_historial = ventana_cliente.rowsBetween(
+        Window.unboundedPreceding,
+        Window.currentRow
+    )
+
+
+    # Crear variables mensuales
+
+    monthly_gold = (
+        monthly_gold
+        .withColumn(
+            "history_months",
+            F.count("*").over(ventana_historial)
+        )
+        .withColumn(
+            "income_lag_1",
+            F.lag("monthly_income", 1).over(ventana_cliente)
+        )
+        .withColumn(
+            "income_lag_3",
+            F.lag("monthly_income", 3).over(ventana_cliente)
+        )
+        .withColumn(
+            "income_mean_3",
+            F.avg("monthly_income").over(ventana_tres_meses)
+        )
+        .withColumn(
+            "income_std_3",
+            F.stddev_samp("monthly_income").over(
+                ventana_tres_meses
+            )
+        )
+        .withColumn(
+            "expenses_mean_3",
+            F.avg("monthly_expenses").over(ventana_tres_meses)
+        )
+        .withColumn(
+            "negative_balance_months_3",
+            F.sum(
+                F.when(
+                    F.col("closing_balance") < 0,
+                    1
+                ).otherwise(0)
+            ).over(ventana_tres_meses)
+        )
+    )
+
+
+    # Verificar continuidad mensual
+
+    revision_meses = monthly_gold.withColumn(
+        "previous_month",
+        F.lag("month").over(ventana_cliente)
+    )
+
+    if (
+        revision_meses
+        .filter(
+            F.col("previous_month").isNotNull()
+            & (
+                F.col("month")
+                != F.add_months("previous_month", 1)
+            )
+        )
+        .limit(1)
+        .count()
+    ):
+        raise ValueError(
+            "El historial mensual contiene períodos discontinuos."
+        )
+
+
+    # Seleccionar último mes de cada cliente
+
+    ventana_ultimo = Window.partitionBy(
+        "client_id",
+        "currency"
+    ).orderBy(F.col("month").desc())
+
+    latest_monthly = (
+        monthly_gold
+        .withColumn(
+            "position",
+            F.row_number().over(ventana_ultimo)
+        )
+        .filter(F.col("position") == 1)
+        .drop("position")
+    )
+
+
+    # Evitar mezclar monedas en el perfil
+
+    if (
+        latest_monthly.groupBy("client_id")
+        .count()
+        .filter(F.col("count") > 1)
+        .limit(1)
+        .count()
+    ):
+        raise ValueError(
+            "Hay clientes con varias monedas. "
+            "El perfil debe conservar un resumen por moneda."
+        )
+
+
+    # Preparar último resumen
+
+    latest_summary = latest_monthly.select(
+        F.col("client_id").alias("id"),
+        "currency",
+        F.last_day("month").alias("financial_cutoff_date"),
+        F.col("closing_balance").alias("account_balance"),
+        "monthly_income",
+        "monthly_expenses",
+        "monthly_debt_payments",
+        "monthly_savings",
+        "monthly_transactions",
+        "transfers_in",
+        "transfers_out",
+        "outstanding_due",
+        "max_days_past_due",
+        "installments_30_days_past_due",
+        "income_mean_3",
+        "income_std_3",
+        "expenses_mean_3",
+        "history_months"
+    )
+
+
+    return account_monthly, monthly_gold, latest_summary
+
+
 def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
     # Cargar datasets
-    users_spark = spark.read.parquet(
-        f"{input_path}/users.parquet"
-    )
-
-    cards_spark = spark.read.parquet(
-        f"{input_path}/cards.parquet"
-    )
-
-    transactions_spark = spark.read.parquet(
-        f"{input_path}/transactions.parquet"
-    )
-
-    print("Datos cargados")
+    users_spark = spark.read.parquet(f"{input_path}/users.parquet")
+    cards_spark = spark.read.parquet(f"{input_path}/cards.parquet")
+    transactions_spark = spark.read.parquet(f"{input_path}/transactions.parquet")
+    accounts_spark = spark.read.parquet(f"{input_path}/accounts.parquet")
+    obligations_spark = spark.read.parquet(f"{input_path}/obligations_payments.parquet")
 
     # Validar información antes de agrupar
-    total_users = validar_entrada_gold(
-        users_spark,
-        cards_spark,
-        transactions_spark
+    total_users = validar_entrada_gold(users_spark, cards_spark, transactions_spark)
+
+    # Separar convenciones
+    legacy_transactions = transactions_spark.filter(
+        F.col("amount_convention") == "legacy_unchanged"
     )
 
-    # Crear resúmenes
+    movements_spark = transactions_spark.filter(
+        F.col("amount_convention") == "signed_cashflow"
+    )
+
+    # Crear resúmenes anteriores
     cards_gold = create_cards_summary(cards_spark)
-    transactions_gold = create_transactions_summary(transactions_spark)
+    transactions_gold = create_transactions_summary(legacy_transactions)
     users_gold = create_users_summary(users_spark)
+    customer_gold = create_customer_summary(users_gold, cards_gold, transactions_gold)
 
-    customer_gold = create_customer_summary(
-        users_gold,
-        cards_gold,
-        transactions_gold
+    # Crear historial mensual
+    account_monthly, monthly_gold, latest_summary = create_monthly_summaries(
+        accounts_spark,
+        obligations_spark,
+        movements_spark
     )
 
-    # Validar información antes de guardar
-    validar_salida_gold(
-        customer_gold,
-        total_users
+    customer_gold = customer_gold.join(latest_summary, "id", "left")
+
+    # Validar antes de guardar
+    validar_salida_gold(customer_gold, total_users)
+
+    if (
+        monthly_gold.groupBy("client_id", "currency", "month")
+        .count().filter(F.col("count") > 1).limit(1).count()
+    ):
+        raise ErrorCalidadDatos("Existen resúmenes mensuales duplicados.")
+
+    flujo_esperado = (
+        F.col("monthly_income")
+        - F.col("monthly_expenses")
+        - F.col("monthly_debt_payments")
+        + F.col("transfers_in")
+        - F.col("transfers_out")
     )
 
-    print("Validaciones aprobadas")
+    if monthly_gold.filter(
+        ~F.col("monthly_net_flow").eqNullSafe(flujo_esperado)
+    ).limit(1).count():
+        raise ErrorCalidadDatos("Los flujos mensuales no coinciden.")
 
     # Guardar GOLD
-    customer_gold.write.mode("overwrite").parquet(
-        f"{output_path}/customer_financial_summary.parquet"
-    )
+    datasets = {
+        "customer_financial_summary": customer_gold,
+        "transactions_summary": transactions_gold,
+        "cards_summary": cards_gold,
+        "customer_monthly_summary": monthly_gold,
+        "account_monthly_summary": account_monthly,
+        "accounts": accounts_spark,
+        "obligations_payments": obligations_spark,
+        "movements": movements_spark
+    }
 
-    transactions_gold.write.mode("overwrite").parquet(
-        f"{output_path}/transactions_summary.parquet"
-    )
-
-    cards_gold.write.mode("overwrite").parquet(
-        f"{output_path}/cards_summary.parquet"
-    )
+    for nombre, datos in datasets.items():
+        datos.write.mode("overwrite").parquet(
+            f"{output_path}/{nombre}.parquet"
+        )
 
     print("Pipeline GOLD completado")
 

@@ -1,3 +1,8 @@
+from decimal import Decimal
+
+from pyspark.sql import functions as F
+from src.bronze_cleaning import clean_accounts, clean_obligations, run_pipeline
+
 import pytest
 
 from src.bronze_cleaning import (
@@ -163,35 +168,79 @@ def test_clean_cards(spark):
     assert rows[1].card_on_dark_web == "no"
 
 
-def test_clean_transactions(spark):
-    df = spark.createDataFrame(
-        [
-            (1, "$-20,000", " Swipe ", " Miami ", " FL ", " 33101 ", " ERROR "),
-            (2, "$20,000", " Chip ", "miami", " FL ", "33101", None),
-            (3, "$50", " Swipe ", " Boston ", " MA ", "02108", None),
-            (4, None, " Chip ", None, " FL ", None, None)
-        ],
-        """
-        id long,
-        amount string,
-        use_chip string,
-        merchant_city string,
-        merchant_state string,
-        zip string,
-        errors string
-        """
+
+
+# Validar que los movimientos no se recorten ni se imputen
+def test_clean_transactions(raw_bundle):
+    df = raw_bundle["transactions"].withColumn(
+        "amount",
+        F.when(F.col("id") == "10", "$20,000.25")
+        .when(F.col("id") == "11", "-$20,000.25")
+        .otherwise(F.col("amount"))
     )
 
-    rows = {
-        row.id: row
-        for row in clean_transactions(df).collect()
-    }
+    cleaned = clean_transactions(df)
+    rows = {r.id: r for r in cleaned.collect()}
 
-    assert rows[1].amount == -10000.0
-    assert rows[2].amount == 10000.0
-    assert rows[4].amount == 50.0
-    assert rows[4].merchant_city == "miami"
-    assert rows[1].use_chip == "swipe"
-    assert rows[1].merchant_state == "fl"
-    assert rows[1].zip == "33101"
-    assert rows[1].errors == "error"
+    assert rows[10].amount == Decimal("20000.25")
+    assert rows[11].amount == Decimal("-20000.25")
+    assert rows[3].amount is None
+    assert rows[10].merchant_city is None
+    assert rows[10].card_id is None
+    assert rows[10].account_id == "A-1"
+    assert rows[10].currency == "USD"
+    assert rows[10].balance_after == Decimal("1100.00")
+    assert rows[1].merchant_city == "city"
+    assert rows[1].use_chip == "chip"
+    assert cleaned.schema["amount"].dataType.simpleString() == "decimal(18,2)"
+
+
+def test_invalid_amount_remains_missing(raw_bundle):
+    df = raw_bundle["transactions"].withColumn("amount", F.lit("incorrecto"))
+    assert clean_transactions(df).filter(F.col("amount").isNotNull()).count() == 0
+
+
+def test_clean_accounts(raw_bundle):
+    rows = {r.account_id: r for r in clean_accounts(raw_bundle["accounts"]).collect()}
+    assert rows["A-1"].client_id == 1
+    assert rows["A-1"].opening_balance == Decimal("100.00")
+    assert rows["A-1"].closing_balance == Decimal("2100.00")
+    assert rows["A-1"].overdraft_allowed is True
+    assert rows["A-1"].currency == "USD"
+
+
+def test_clean_obligations(raw_bundle):
+    rows = {
+        r.obligation_id: r
+        for r in clean_obligations(raw_bundle["obligations_payments"]).collect()
+    }
+    assert rows["O-2"].amount_due == Decimal("150.00")
+    assert rows["O-2"].amount_paid == Decimal("50.00")
+    assert rows["O-2"].outstanding_amount == Decimal("100.00")
+    assert rows["O-2"].payment_transaction_id == 17
+    assert rows["O-2"].days_to_full_payment is None
+    assert rows["O-3"].payment_date is None
+    assert rows["O-3"].payment_transaction_id is None
+
+
+# Validar las cinco entradas CSV y sus salidas locales
+def test_run_pipeline(spark, tmp_path, raw_bundle):
+    entrada = tmp_path / "incoming"
+    salida = tmp_path / "bronze"
+
+    for nombre, df in raw_bundle.items():
+        df.coalesce(1).write.option("header", True).csv(
+            (entrada / f"{nombre}_data.csv").as_uri()
+        )
+
+    run_pipeline(spark, input_path=entrada.as_uri(), output_path=salida.as_uri())
+
+    expected = {"users": 3, "cards": 4, "transactions": 14,
+                "accounts": 2, "obligations_payments": 3}
+    for nombre, cantidad in expected.items():
+        datos = spark.read.parquet((salida / f"{nombre}.parquet").as_uri())
+        assert datos.count() == cantidad
+
+    tx = spark.read.parquet((salida / "transactions.parquet").as_uri())
+    assert tx.filter(F.col("id") == 3).first().amount is None
+    assert tx.filter(F.col("id") == 10).first().balance_after == Decimal("1100.00")

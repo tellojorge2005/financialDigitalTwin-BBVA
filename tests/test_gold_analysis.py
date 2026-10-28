@@ -1,3 +1,8 @@
+from datetime import date
+from decimal import Decimal
+
+from src.gold_analysis import create_monthly_summaries
+
 import pytest
 
 from pyspark.sql import functions as F
@@ -249,143 +254,9 @@ def test_customer_summary(
 
 
 # Validar ejecución completa con datos válidos
-def test_run_pipeline(
-    spark,
-    tmp_path,
-    valid_pipeline_data
-):
-    users, cards, transactions = valid_pipeline_data
-
-    input_path = (tmp_path / "silver").as_posix()
-    output_path = (tmp_path / "gold").as_posix()
-
-    for name, df in [
-        ("users", users),
-        ("cards", cards),
-        ("transactions", transactions)
-    ]:
-        df.write.parquet(
-            f"{input_path}/{name}.parquet"
-        )
-
-    run_pipeline(
-        spark,
-        input_path=input_path,
-        output_path=output_path
-    )
-
-    customer_gold = spark.read.parquet(
-        f"{output_path}/customer_financial_summary.parquet"
-    )
-
-    cards_gold = spark.read.parquet(
-        f"{output_path}/cards_summary.parquet"
-    )
-
-    transactions_gold = spark.read.parquet(
-        f"{output_path}/transactions_summary.parquet"
-    )
-
-    assert customer_gold.count() == 4
-    assert cards_gold.count() == 2
-    assert transactions_gold.count() == 2
-
-    rows = {
-        row.id: row
-        for row in customer_gold.collect()
-    }
-
-    assert rows[1].total_cards == 2
-    assert rows[1].total_cards_without_id == 0
-    assert rows[1].total_credit_limits_imputed == 1
-    assert rows[1].has_imputed_credit_limit is True
-    assert rows[1].total_spent == pytest.approx(300.0)
-
-    assert rows[2].spending_to_income_ratio is None
-
-    assert rows[3].has_card_records is False
-    assert rows[3].has_transaction_records is False
-    assert rows[3].total_spent is None
 
 
 # Validar bloqueo de datos incorrectos
-@pytest.mark.parametrize(
-    "caso,mensaje",
-    [
-        ("id_nulo", "id: nulo o negativo"),
-        ("duplicados", "duplicados adicionales"),
-        ("tipo_incorrecto", "esquema incorrecto"),
-        ("cliente_inexistente", "sin un cliente existente"),
-        ("fechas_nulas", "date: nula")
-    ]
-)
-def test_pipeline_rechaza_datos_invalidos(
-    spark,
-    tmp_path,
-    valid_pipeline_data,
-    caso,
-    mensaje
-):
-    users, cards, transactions = valid_pipeline_data
-
-    if caso == "id_nulo":
-        cards = cards.withColumn(
-            "id",
-            F.when(
-                F.col("id") == 1,
-                F.lit(None).cast("long")
-            ).otherwise(F.col("id"))
-        )
-
-    elif caso == "duplicados":
-        cards = cards.unionByName(
-            cards.filter(F.col("id") == 1)
-        )
-
-    elif caso == "tipo_incorrecto":
-        cards = cards.withColumn(
-            "id",
-            F.col("id").cast("string")
-        )
-
-    elif caso == "cliente_inexistente":
-        cards = cards.withColumn(
-            "client_id",
-            F.when(
-                F.col("id") == 1,
-                F.lit(999).cast("long")
-            ).otherwise(F.col("client_id"))
-        )
-
-    elif caso == "fechas_nulas":
-        transactions = transactions.withColumn(
-            "date",
-            F.lit(None).cast("timestamp")
-        )
-
-    input_path = (tmp_path / "silver").as_posix()
-    output_path = tmp_path / "gold"
-
-    for name, df in [
-        ("users", users),
-        ("cards", cards),
-        ("transactions", transactions)
-    ]:
-        df.write.parquet(
-            f"{input_path}/{name}.parquet"
-        )
-
-    with pytest.raises(
-        ErrorCalidadDatos,
-        match=mensaje
-    ):
-        run_pipeline(
-            spark,
-            input_path=input_path,
-            output_path=output_path.as_posix()
-        )
-
-    assert not output_path.exists()
 
 
 # Validar coherencia del resumen final
@@ -416,3 +287,138 @@ def test_gold_rechaza_conteos_inconsistentes(
             customer_gold,
             users.count()
         )
+
+# Validar importes mensuales contra resultados calculados a mano
+def test_monthly_summaries(silver_bundle):
+    movements = silver_bundle["transactions"].filter(
+        F.col("amount_convention") == "signed_cashflow"
+    )
+    account, monthly, latest = create_monthly_summaries(
+        silver_bundle["accounts"], silver_bundle["obligations_payments"], movements
+    )
+    rows = {(r.client_id, r.month): r for r in monthly.collect()}
+    assert len(rows) == 6
+    jan = rows[(1, date(2010, 1, 1))]
+    feb = rows[(1, date(2010, 2, 1))]
+    mar = rows[(1, date(2010, 3, 1))]
+
+    assert jan.monthly_income == Decimal("1000")
+    assert jan.monthly_expenses == Decimal("300")
+    assert jan.monthly_debt_payments == Decimal("100")
+    assert jan.monthly_savings == Decimal("600")
+    assert jan.transfers_out == Decimal("50")
+    assert jan.monthly_net_flow == Decimal("550")
+    assert jan.monthly_transactions == 4
+    assert jan.closing_balance == Decimal("650")
+    assert feb.closing_balance == Decimal("1450")
+    assert mar.closing_balance == Decimal("2100")
+
+    # No utilizar en febrero el pago parcial que ocurre en marzo
+    assert jan.outstanding_due == Decimal("0")
+    assert feb.outstanding_due == Decimal("150")
+    assert feb.max_days_past_due == 8
+    assert mar.outstanding_due == Decimal("100")
+    assert mar.max_days_past_due == 39
+    assert mar.installments_30_days_past_due == 1
+
+    # Mantener meses sin movimientos y arrastrar el saldo
+    quiet = rows[(2, date(2010, 2, 1))]
+    assert quiet.monthly_transactions == 0
+    assert quiet.monthly_income == Decimal("0")
+    assert quiet.closing_balance == Decimal("250")
+    assert quiet.outstanding_due == Decimal("75")
+
+    # Ventanas históricas sin información de meses posteriores
+    assert jan.income_lag_1 is None
+    assert jan.income_mean_3 == Decimal("1000")
+    assert feb.income_lag_1 == Decimal("1000")
+    assert mar.income_lag_1 == Decimal("1200")
+    assert mar.income_lag_3 is None
+    assert float(mar.income_mean_3) == pytest.approx(3100 / 3)
+    assert mar.history_months == 3
+    assert account.count() == 6
+    last = {r.id: r for r in latest.collect()}
+    assert last[1].financial_cutoff_date == date(2010, 3, 31)
+    assert last[1].account_balance == Decimal("2100")
+
+
+def test_incomplete_last_month_is_excluded(silver_bundle):
+    accounts = silver_bundle["accounts"].withColumn(
+        "balance_as_of", F.lit("2010-03-15 23:59:00").cast("timestamp")
+    )
+    movements = silver_bundle["transactions"].filter(F.col("amount_convention") == "signed_cashflow")
+    _, monthly, latest = create_monthly_summaries(
+        accounts, silver_bundle["obligations_payments"], movements
+    )
+    assert {r.month for r in monthly.select("month").distinct().collect()} == {
+        date(2010, 1, 1), date(2010, 2, 1)
+    }
+    assert latest.filter(F.col("id") == 1).first().account_balance == Decimal("1450")
+
+
+def test_partial_opening_month_requires_explicit_handling(silver_bundle):
+    accounts = silver_bundle["accounts"].withColumn(
+        "opened_at", F.lit("2010-01-02 00:00:00").cast("timestamp")
+    )
+    with pytest.raises(ValueError, match="mitad de mes"):
+        create_monthly_summaries(
+            accounts, silver_bundle["obligations_payments"], silver_bundle["transactions"]
+        )
+
+
+def test_run_pipeline(spark, tmp_path, silver_bundle, escribir_parquet):
+    entrada = escribir_parquet(silver_bundle, tmp_path / "silver")
+    salida = tmp_path / "gold"
+    run_pipeline(spark, input_path=entrada, output_path=salida.as_uri())
+
+    expected = {
+        "customer_financial_summary": 3, "transactions_summary": 2,
+        "cards_summary": 2, "customer_monthly_summary": 6,
+        "account_monthly_summary": 6, "accounts": 2,
+        "obligations_payments": 3, "movements": 10
+    }
+    for nombre, cantidad in expected.items():
+        assert spark.read.parquet((salida / f"{nombre}.parquet").as_uri()).count() == cantidad
+
+    customer = spark.read.parquet((salida / "customer_financial_summary.parquet").as_uri())
+    rows = {r.id: r for r in customer.collect()}
+    assert rows[1].total_spent == Decimal("50")
+    assert rows[1].total_transactions == 1
+    assert rows[1].monthly_income == Decimal("900")
+    assert rows[1].account_balance == Decimal("2100")
+    assert rows[1].outstanding_due == Decimal("100")
+    assert rows[3].total_spent is None
+    assert rows[3].account_balance is None
+    assert rows[3].monthly_income is None
+    assert rows[3].has_transaction_records is False
+
+
+@pytest.mark.parametrize(
+    "caso,mensaje",
+    [("id_nulo", "id: nulo o negativo"),
+     ("duplicados", "duplicados adicionales"),
+     ("tipo_incorrecto", "esquema incorrecto"),
+     ("cliente_inexistente", "sin un cliente existente"),
+     ("fechas_nulas", "date: nula")]
+)
+def test_pipeline_rechaza_datos_invalidos(
+    spark, tmp_path, silver_bundle, escribir_parquet, caso, mensaje
+):
+    datos = dict(silver_bundle)
+    cards = datos["cards"]
+    if caso == "id_nulo":
+        datos["cards"] = cards.withColumn("id", F.lit(None).cast("long"))
+    elif caso == "duplicados":
+        datos["cards"] = cards.unionByName(cards)
+    elif caso == "tipo_incorrecto":
+        datos["cards"] = cards.withColumn("id", F.col("id").cast("string"))
+    elif caso == "cliente_inexistente":
+        datos["cards"] = cards.withColumn("client_id", F.lit(999).cast("long"))
+    elif caso == "fechas_nulas":
+        datos["transactions"] = datos["transactions"].withColumn("date", F.lit(None).cast("timestamp"))
+
+    entrada = escribir_parquet(datos, tmp_path / "silver")
+    salida = tmp_path / "gold"
+    with pytest.raises(ErrorCalidadDatos, match=mensaje):
+        run_pipeline(spark, input_path=entrada, output_path=salida.as_uri())
+    assert not salida.exists()
