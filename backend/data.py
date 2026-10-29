@@ -214,3 +214,48 @@ def consultar_historial(cliente_id):
         logger.exception("Error al recuperar historial.")
         raise ErrorDatos("No se pudo recuperar el historial.") from exc
 
+
+# Cache breve por cliente. No compartir valores entre identificadores.
+# Limitar memoria y permitir que los datos nuevos se vean tras 30 segundos.
+from collections import OrderedDict
+from copy import deepcopy
+from functools import wraps
+from threading import RLock
+from time import monotonic
+
+_cache = OrderedDict()
+_cache_lock = RLock()
+
+
+def cache_cliente(nombre):
+    def decorar(funcion):
+        @wraps(funcion)
+        def consultar(cliente_id):
+            if type(cliente_id) is not int or cliente_id < 0:
+                raise ErrorDatos("Identificador inválido.")
+            clave = (nombre, cliente_id)
+            ahora = monotonic()
+            with _cache_lock:
+                entrada = _cache.get(clave)
+                if entrada and entrada[0] > ahora:
+                    _cache.move_to_end(clave)
+                    return deepcopy(entrada[1])
+                _cache.pop(clave, None)
+
+            # No mantener el bloqueo mientras se consulta el almacenamiento.
+            resultado = funcion(cliente_id)
+            with _cache_lock:
+                _cache[clave] = (monotonic() + 30, deepcopy(resultado))
+                _cache.move_to_end(clave)
+                while len(_cache) > 64:
+                    _cache.popitem(last=False)
+            return resultado
+        return consultar
+    return decorar
+
+
+consultar_cliente = cache_cliente("perfil")(consultar_cliente)
+consultar_historial = cache_cliente("historial")(consultar_historial)
+
+
+

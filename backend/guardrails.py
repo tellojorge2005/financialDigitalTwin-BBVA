@@ -49,13 +49,18 @@ def contiene_informacion_interna(texto):
     compactado = re.sub(r"[^a-z0-9]", "", normal.lower())
     if any(t in compactado for t in ("xgboost", "langchain", "langgraph")):
         return True
-    valores = [
-        OPENAI_API_KEY, OPENAI_MODEL, SESSION_SECRET, S3_BUCKET,
-        S3_CUSTOMER_PATH, S3_MONTHLY_PATH, AWS_REGION, *CUSTOMER_COLUMNS
+    # Secretos por coincidencia literal; nombres de campos como palabras completas.
+    secretos = [OPENAI_API_KEY, SESSION_SECRET]
+    if any(v and len(v) >= 8 and v.lower() in normal.lower() for v in secretos):
+        return True
+    nombres = [
+        OPENAI_MODEL, S3_BUCKET, S3_CUSTOMER_PATH, S3_MONTHLY_PATH,
+        AWS_REGION, *CUSTOMER_COLUMNS
     ]
     return any(
-        len(v) >= 4 and v.lower() in normal.lower()
-        for v in valores if isinstance(v, str)
+        len(v) >= 4
+        and re.search(r"(?<!\w)" + re.escape(v) + r"(?!\w)", normal, re.IGNORECASE)
+        for v in nombres if isinstance(v, str)
     )
 
 
@@ -69,4 +74,5 @@ def proteger_respuesta(texto):
     if contiene_informacion_interna(texto):
         return RECHAZO
     return texto.strip()[:5000]
+
 
