@@ -5,6 +5,7 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         openjdk-17-jre-headless \
+        libgomp1 \
         curl \
         ca-certificates \
     && apt-get clean \
@@ -24,6 +25,7 @@ RUN python -m pip install --no-cache-dir \
     "numpy<3" \
     "pandas>=2.2,<3" \
     "scikit-learn>=1.3,<2" \
+    "xgboost==3.2.0" \
     && python -m pip install --no-cache-dir \
         --force-reinstall \
         --no-deps \
@@ -42,4 +44,4 @@ USER airflow
 
 RUN python -m pip check \
     && python -c \
-    "import sys, numpy, pandas, sklearn, pyspark; assert sys.version_info[:2] == (3, 11)"
+    "import sys, numpy, pandas, sklearn, pyspark, xgboost; assert sys.version_info[:2] == (3, 11)"

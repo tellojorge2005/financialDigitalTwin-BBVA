@@ -1,3 +1,4 @@
+import argparse
 import os
 from pathlib import Path
 
@@ -976,6 +977,10 @@ def create_monthly_summaries(accounts_spark, obligations_spark, movements_spark)
     monthly_gold = (
         monthly_gold
         .withColumn(
+            "month_number",
+            F.month("month")
+        )
+        .withColumn(
             "history_months",
             F.count("*").over(ventana_historial)
         )
@@ -1090,11 +1095,172 @@ def create_monthly_summaries(accounts_spark, obligations_spark, movements_spark)
         "income_mean_3",
         "income_std_3",
         "expenses_mean_3",
-        "history_months"
+        "history_months",
+        "income_lag_1",
+        "income_lag_3",
+        "negative_balance_months_3",
+        "month_number"
     )
 
 
     return account_monthly, monthly_gold, latest_summary
+
+
+def create_customer_model_summary(customer_gold, predictions_spark=None):
+    # Conservar el perfil base separado de sus predicciones
+    columnas_prediccion = [
+        "feature_month",
+        "prediction_month",
+        "predicted_income",
+        "income_prediction_method",
+        "has_income_prediction"
+    ]
+    customer = customer_gold.drop(*columnas_prediccion)
+
+    # Al reconstruir GOLD, invalidar las predicciones del corte anterior
+    if predictions_spark is None:
+        return (
+            customer
+            .withColumn("feature_month", F.lit(None).cast("date"))
+            .withColumn("prediction_month", F.lit(None).cast("date"))
+            .withColumn("predicted_income", F.lit(None).cast("double"))
+            .withColumn("income_prediction_method", F.lit(None).cast("string"))
+            .withColumn("has_income_prediction", F.lit(False))
+        )
+
+    # Validar columnas y tipos antes de interpretar las predicciones
+    tipos = {
+        "client_id": TIPOS_ENTEROS,
+        "currency": TIPOS_TEXTO,
+        "feature_month": TIPOS_FECHA,
+        "prediction_month": TIPOS_FECHA,
+        "predicted_income": TIPOS_NUMERICOS,
+        "method": TIPOS_TEXTO
+    }
+    esquema = {
+        campo.name: campo.dataType
+        for campo in predictions_spark.schema.fields
+    }
+    for columna, permitidos in tipos.items():
+        if columna not in esquema or not isinstance(esquema[columna], permitidos):
+            raise ErrorCalidadDatos(
+                f"Predicciones: falta la columna {columna} o su tipo es incorrecto."
+            )
+
+    # El perfil debe conservar una fila por cliente
+    if customer.filter(
+        F.col("id").isNull() | (F.col("id") < 0)
+    ).limit(1).count():
+        raise ErrorCalidadDatos("Perfil: identificador inválido.")
+
+    if customer.groupBy("id").count().filter(
+        F.col("count") > 1
+    ).limit(1).count():
+        raise ErrorCalidadDatos("Perfil: clientes duplicados.")
+
+    if customer.filter(
+        F.col("financial_cutoff_date").isNotNull()
+        & (
+            F.col("currency").isNull()
+            | (F.length(F.trim("currency")) == 0)
+            | (
+                F.col("financial_cutoff_date")
+                != F.last_day("financial_cutoff_date")
+            )
+        )
+    ).limit(1).count():
+        raise ErrorCalidadDatos("Perfil: moneda o corte inválido.")
+
+    predicciones = predictions_spark.select(
+        F.col("client_id").alias("id"),
+        "currency",
+        F.to_date("feature_month").alias("feature_month"),
+        F.to_date("prediction_month").alias("prediction_month"),
+        F.col("predicted_income").cast("double").alias("predicted_income"),
+        F.col("method").alias("income_prediction_method")
+    )
+
+    errores = (
+        F.col("id").isNull()
+        | (F.col("id") < 0)
+        | F.col("currency").isNull()
+        | (F.length(F.trim("currency")) == 0)
+        | F.col("feature_month").isNull()
+        | F.col("prediction_month").isNull()
+        | (F.dayofmonth("feature_month") != 1)
+        | (
+            F.col("prediction_month")
+            != F.add_months("feature_month", 1)
+        )
+        | F.col("predicted_income").isNull()
+        | F.isnan("predicted_income")
+        | (F.abs(F.col("predicted_income")) == F.lit(float("inf")))
+        | (F.col("predicted_income") < 0)
+        | F.col("income_prediction_method").isNull()
+        | ~F.col("income_prediction_method").isin("xgboost", "last_month")
+    )
+    if predicciones.filter(errores).limit(1).count():
+        raise ErrorCalidadDatos("Las predicciones contienen valores inválidos.")
+
+    if predicciones.groupBy("id", "currency").count().filter(
+        F.col("count") > 1
+    ).limit(1).count():
+        raise ErrorCalidadDatos(
+            "Existe más de una predicción por cliente y moneda."
+        )
+
+    claves = ["id", "currency", "financial_cutoff_date"]
+    predicciones = predicciones.withColumn(
+        "financial_cutoff_date",
+        F.last_day("feature_month")
+    )
+    clientes_con_historial = customer.filter(
+        F.col("financial_cutoff_date").isNotNull()
+    ).select(*claves)
+
+    if predicciones.join(
+        clientes_con_historial, claves, "left_anti"
+    ).limit(1).count():
+        raise ErrorCalidadDatos(
+            "Hay predicciones sin un cliente, moneda y corte coincidentes en GOLD."
+        )
+
+    if clientes_con_historial.join(
+        predicciones.select(*claves), claves, "left_anti"
+    ).limit(1).count():
+        raise ErrorCalidadDatos(
+            "Faltan predicciones para clientes con historial."
+        )
+
+    return (
+        customer.join(predicciones, claves, "left")
+        .withColumn(
+            "has_income_prediction",
+            F.col("predicted_income").isNotNull()
+        )
+    )
+
+
+def run_prediction_pipeline(
+    spark,
+    gold_path=OUTPUT_PATH,
+    predictions_path=None
+):
+    # El notebook 06 debe generar y publicar primero este Parquet
+    if predictions_path is None:
+        predictions_path = f"{gold_path}/income_predictions.parquet"
+
+    customer = spark.read.parquet(
+        f"{gold_path}/customer_financial_summary.parquet"
+    )
+    predictions = spark.read.parquet(predictions_path)
+
+    # Validar antes de reemplazar el resumen enriquecido
+    enriched = create_customer_model_summary(customer, predictions)
+    enriched.write.mode("overwrite").parquet(
+        f"{gold_path}/customer_model_summary.parquet"
+    )
+    print("Resumen GOLD con predicciones guardado")
 
 
 def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
@@ -1156,6 +1322,7 @@ def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
 
     # Guardar GOLD
     datasets = {
+        "customer_model_summary": create_customer_model_summary(customer_gold),
         "customer_financial_summary": customer_gold,
         "transactions_summary": transactions_gold,
         "cards_summary": cards_gold,
@@ -1175,6 +1342,16 @@ def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
 
 
 def main():
+    # Separar la construcción de features de la incorporación del modelo
+    parser = argparse.ArgumentParser(description="Procesamiento de GOLD")
+    parser.add_argument(
+        "--stage", choices=["base", "predictions"], default="base"
+    )
+    parser.add_argument("--input-path", default=INPUT_PATH)
+    parser.add_argument("--output-path", default=OUTPUT_PATH)
+    parser.add_argument("--predictions-path", default=None)
+    args = parser.parse_args()
+
     # Crear sesión de Spark
     spark = (
         SparkSession.builder
@@ -1185,7 +1362,14 @@ def main():
     print("Spark inicializado")
 
     try:
-        run_pipeline(spark)
+        if args.stage == "base":
+            run_pipeline(spark, args.input_path, args.output_path)
+        else:
+            run_prediction_pipeline(
+                spark,
+                gold_path=args.output_path,
+                predictions_path=args.predictions_path
+            )
     finally:
         # Finalizar Spark
         spark.stop()
@@ -1193,3 +1377,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

@@ -14,6 +14,8 @@ from src.gold_analysis import (
     create_users_summary,
     create_customer_summary,
     validar_salida_gold,
+    create_customer_model_summary,
+    run_prediction_pipeline,
     run_pipeline
 )
 
@@ -336,10 +338,16 @@ def test_monthly_summaries(silver_bundle):
     assert mar.income_lag_3 is None
     assert float(mar.income_mean_3) == pytest.approx(3100 / 3)
     assert mar.history_months == 3
+    assert [jan.month_number, feb.month_number, mar.month_number] == [1, 2, 3]
+    assert mar.negative_balance_months_3 == 0
     assert account.count() == 6
     last = {r.id: r for r in latest.collect()}
     assert last[1].financial_cutoff_date == date(2010, 3, 31)
     assert last[1].account_balance == Decimal("2100")
+    assert last[1].month_number == 3
+    assert last[1].income_lag_1 == Decimal("1200")
+    assert last[1].income_lag_3 is None
+    assert last[1].negative_balance_months_3 == 0
 
 
 def test_incomplete_last_month_is_excluded(silver_bundle):
@@ -377,6 +385,7 @@ def test_run_pipeline(spark, tmp_path, silver_bundle, escribir_parquet):
         "account_monthly_summary": 6, "accounts": 2,
         "obligations_payments": 3, "movements": 10
     }
+    expected["customer_model_summary"] = 3
     for nombre, cantidad in expected.items():
         assert spark.read.parquet((salida / f"{nombre}.parquet").as_uri()).count() == cantidad
 
@@ -391,6 +400,16 @@ def test_run_pipeline(spark, tmp_path, silver_bundle, escribir_parquet):
     assert rows[3].account_balance is None
     assert rows[3].monthly_income is None
     assert rows[3].has_transaction_records is False
+    assert rows[1].month_number == 3
+    assert rows[1].income_lag_1 == Decimal("1200")
+    assert rows[1].income_lag_3 is None
+    assert rows[3].month_number is None
+
+    model = spark.read.parquet(
+        (salida / "customer_model_summary.parquet").as_uri()
+    )
+    assert model.filter(F.col("has_income_prediction")).count() == 0
+    assert model.filter(F.col("predicted_income").isNotNull()).count() == 0
 
 
 @pytest.mark.parametrize(
@@ -422,3 +441,181 @@ def test_pipeline_rechaza_datos_invalidos(
     with pytest.raises(ErrorCalidadDatos, match=mensaje):
         run_pipeline(spark, input_path=entrada, output_path=salida.as_uri())
     assert not salida.exists()
+
+
+# Preparar un perfil mínimo para probar la integración del modelo
+@pytest.fixture
+def model_customer_data(spark):
+    return spark.createDataFrame(
+        [
+            (1, "USD", date(2010, 3, 31), 900.0),
+            (2, "USD", date(2010, 3, 31), 0.0),
+            (3, None, None, None)
+        ],
+        """
+        id long, currency string, financial_cutoff_date date,
+        monthly_income double
+        """
+    )
+
+
+@pytest.fixture
+def income_predictions_data(spark):
+    return spark.createDataFrame(
+        [
+            (1, "USD", date(2010, 3, 1), date(2010, 4, 1), 950.0, "xgboost"),
+            (2, "USD", date(2010, 3, 1), date(2010, 4, 1), 0.0, "last_month")
+        ],
+        """
+        client_id long, currency string, feature_month date,
+        prediction_month date, predicted_income double, method string
+        """
+    )
+
+
+# Conservar el ingreso observado, la moneda y el método de cada estimación
+def test_customer_model_summary(model_customer_data, income_predictions_data):
+    result = create_customer_model_summary(
+        model_customer_data, income_predictions_data
+    )
+    rows = {row.id: row for row in result.collect()}
+
+    assert len(rows) == 3
+    assert rows[1].monthly_income == 900.0
+    assert rows[1].predicted_income == 950.0
+    assert rows[1].feature_month == date(2010, 3, 1)
+    assert rows[1].prediction_month == date(2010, 4, 1)
+    assert rows[1].income_prediction_method == "xgboost"
+    assert rows[1].has_income_prediction is True
+    assert rows[2].predicted_income == 0.0
+    assert rows[2].has_income_prediction is True
+    assert rows[2].income_prediction_method == "last_month"
+    assert rows[3].predicted_income is None
+    assert rows[3].prediction_month is None
+    assert rows[3].has_income_prediction is False
+
+
+# Reconstruir GOLD no debe conservar pronósticos anteriores
+def test_base_invalidates_predictions(model_customer_data):
+    previous = (
+        model_customer_data
+        .withColumn("predicted_income", F.lit(9999.0))
+        .withColumn("income_prediction_method", F.lit("xgboost"))
+        .withColumn("has_income_prediction", F.lit(True))
+    )
+    result = create_customer_model_summary(previous)
+    rows = result.collect()
+    assert len(rows) == 3
+    assert all(row.predicted_income is None for row in rows)
+    assert all(row.income_prediction_method is None for row in rows)
+    assert all(row.has_income_prediction is False for row in rows)
+
+
+@pytest.mark.parametrize(
+    "caso,mensaje",
+    [
+        ("duplicados", "más de una predicción"),
+        ("faltante", "Faltan predicciones"),
+        ("cliente", "coincidentes"),
+        ("moneda", "coincidentes"),
+        ("corte", "coincidentes"),
+        ("horizonte", "valores inválidos"),
+        ("negativo", "valores inválidos"),
+        ("nulo", "valores inválidos"),
+        ("infinito", "valores inválidos"),
+        ("nan", "valores inválidos"),
+        ("metodo", "valores inválidos"),
+        ("columna", "falta la columna")
+    ]
+)
+def test_rejects_invalid_predictions(
+    model_customer_data, income_predictions_data, caso, mensaje
+):
+    predictions = income_predictions_data
+    if caso == "duplicados":
+        predictions = predictions.unionByName(predictions)
+    elif caso == "faltante":
+        predictions = predictions.filter(F.col("client_id") == 1)
+    elif caso == "cliente":
+        predictions = predictions.withColumn(
+            "client_id", F.col("client_id") + 100
+        )
+    elif caso == "moneda":
+        predictions = predictions.withColumn("currency", F.lit("MXN"))
+    elif caso == "corte":
+        predictions = (
+            predictions
+            .withColumn("feature_month", F.lit(date(2010, 2, 1)))
+            .withColumn("prediction_month", F.lit(date(2010, 3, 1)))
+        )
+    elif caso == "horizonte":
+        predictions = predictions.withColumn(
+            "prediction_month", F.lit(date(2010, 5, 1))
+        )
+    elif caso in {"negativo", "nulo", "infinito", "nan"}:
+        valor = {
+            "negativo": -1.0,
+            "nulo": None,
+            "infinito": float("inf"),
+            "nan": float("nan")
+        }[caso]
+        predictions = predictions.withColumn(
+            "predicted_income", F.lit(valor).cast("double")
+        )
+    elif caso == "metodo":
+        predictions = predictions.withColumn("method", F.lit("desconocido"))
+    elif caso == "columna":
+        predictions = predictions.drop("method")
+
+    with pytest.raises(ErrorCalidadDatos, match=mensaje):
+        create_customer_model_summary(model_customer_data, predictions)
+
+
+# Probar escritura local sin conectarse a S3 ni entrenar XGBoost
+def test_run_prediction_pipeline(
+    spark, tmp_path, model_customer_data, income_predictions_data
+):
+    root = tmp_path / "gold"
+    model_customer_data.write.parquet(
+        (root / "customer_financial_summary.parquet").as_uri()
+    )
+    income_predictions_data.write.parquet(
+        (root / "income_predictions.parquet").as_uri()
+    )
+
+    run_prediction_pipeline(spark, gold_path=root.as_uri())
+
+    result = spark.read.parquet(
+        (root / "customer_model_summary.parquet").as_uri()
+    )
+    rows = {row.id: row for row in result.collect()}
+    assert len(rows) == 3
+    assert rows[1].predicted_income == 950.0
+    assert rows[2].predicted_income == 0.0
+    assert rows[3].has_income_prediction is False
+
+    # La integración no reemplaza los datos que usa el entrenamiento
+    original = spark.read.parquet(
+        (root / "customer_financial_summary.parquet").as_uri()
+    )
+    assert "predicted_income" not in original.columns
+    assert original.filter(F.col("id") == 1).first().monthly_income == 900.0
+
+
+def test_invalid_predictions_do_not_write(
+    spark, tmp_path, model_customer_data, income_predictions_data
+):
+    root = tmp_path / "gold"
+    model_customer_data.write.parquet(
+        (root / "customer_financial_summary.parquet").as_uri()
+    )
+    income_predictions_data.filter(F.col("client_id") == 1).write.parquet(
+        (root / "income_predictions.parquet").as_uri()
+    )
+
+    with pytest.raises(ErrorCalidadDatos, match="Faltan predicciones"):
+        run_prediction_pipeline(spark, gold_path=root.as_uri())
+
+    assert not (root / "customer_model_summary.parquet").exists()
+
+
