@@ -21,7 +21,7 @@ S3_BUCKET = os.getenv("S3_BUCKET", "").strip()
 
 S3_CUSTOMER_PATH = os.getenv(
     "S3_CUSTOMER_PATH",
-    "gold/customer_financial_summary.parquet"
+    "gold/customer_model_summary.parquet"
 ).strip("/")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
@@ -62,3 +62,17 @@ def validar_configuracion():
 
     if not (FRONTEND_PATH / "index.html").is_file():
         raise RuntimeError("No se encontró frontend/index.html.")
+
+# Historial del prototipo, fuera del repositorio y de las cookies
+CHAT_DB_PATH = Path(os.getenv(
+    "CHAT_DB_PATH",
+    str(Path.home() / ".financial_digital_twin" / "chat.sqlite3")
+)).expanduser()
+
+S3_MONTHLY_PATH = os.getenv(
+    "S3_MONTHLY_PATH", "gold/customer_monthly_summary.parquet"
+).strip("/")
+
+SESSION_SECONDS = 3600
+MAX_CHAT_MESSAGES = 30
+

@@ -3,239 +3,218 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from openai import APIError, APITimeoutError, RateLimitError
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from starlette.middleware.sessions import SessionMiddleware
 
 from backend.assistant import crear_asistente
 from backend.config import (
-    COOKIE_SECURE,
-    FRONTEND_PATH,
-    SESSION_SECRET,
+    COOKIE_SECURE, FRONTEND_PATH, SESSION_SECRET, SESSION_SECONDS,
     validar_configuracion
 )
-from backend.data import (
-    ClienteDuplicado,
-    ErrorDatos,
-    consultar_cliente
+from backend.data import ClienteDuplicado, ErrorDatos, consultar_cliente, resumen_publico
+from backend.history import (
+    inicializar_historial, crear_conversacion, borrar_conversacion,
+    leer_conversacion, reservar_conversacion, guardar_turno, liberar_conversacion,
+    SesionExpirada, ConversacionOcupada
 )
 
 
 logger = logging.getLogger(__name__)
-
 validar_configuracion()
 
 
-# Definir solicitudes
 class SolicitudLogin(BaseModel):
-    cliente_id: int = Field(
-        strict=True,
-        ge=0,
-        le=9007199254740991
-    )
+    model_config = ConfigDict(extra="forbid")
+    cliente_id: int = Field(strict=True, ge=0, le=9007199254740991)
 
 
 class SolicitudConsulta(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     pregunta: Annotated[
-        str,
-        StringConstraints(
-            strip_whitespace=True,
-            min_length=1,
-            max_length=2000
-        )
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
     ]
 
 
-# Inicializar asistente
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app):
+    inicializar_historial()
     app.state.assistant = crear_asistente()
     yield
 
 
 app = FastAPI(
-    title="Financial Digital Twin",
-    lifespan=lifespan
+    title="Asistente financiero",
+    lifespan=lifespan,
+    docs_url=None, redoc_url=None, openapi_url=None,
+    debug=False
 )
-
-
-# Configurar sesión
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
     session_cookie="financial_twin_session",
-    max_age=3600,
+    max_age=SESSION_SECONDS,
     same_site="strict",
     https_only=COOKIE_SECURE
 )
 
 
-# Configurar respuestas
 @app.middleware("http")
-async def configurar_respuesta(request: Request, call_next):
+async def configurar_respuesta(request, call_next):
     response = await call_next(request)
-
     if request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
-
+    response.headers["X-Content-Type-Options"] = "nosniff"
     return response
 
 
-# Manejar errores de datos
+# No enviar excepciones, esquemas, ubicaciones ni configuración al navegador
 @app.exception_handler(ErrorDatos)
-async def manejar_error_datos(request: Request, exc: ErrorDatos):
+@app.exception_handler(ClienteDuplicado)
+async def manejar_error_datos(request, exc):
     return JSONResponse(
         status_code=503,
-        content={
-            "detail": (
-                "No se pudo leer el resumen GOLD. "
-                "Revisa la configuración y los permisos de S3."
-            )
-        }
+        content={"detail": "Tu información no está disponible temporalmente. Intenta más tarde."}
     )
 
 
-@app.exception_handler(ClienteDuplicado)
-async def manejar_cliente_duplicado(
-    request: Request,
-    exc: ClienteDuplicado
-):
+@app.exception_handler(RequestValidationError)
+async def manejar_solicitud_invalida(request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Revisa los datos enviados e intenta nuevamente."}
+    )
+
+
+@app.exception_handler(SesionExpirada)
+async def manejar_sesion_expirada(request, exc):
+    request.session.clear()
+    return JSONResponse(
+        status_code=401,
+        content={"detail": "Tu sesión terminó. Inicia sesión nuevamente."}
+    )
+
+
+@app.exception_handler(ConversacionOcupada)
+async def manejar_conversacion_ocupada(request, exc):
     return JSONResponse(
         status_code=409,
-        content={
-            "detail": "Existe más de un resumen para el mismo cliente."
-        }
+        content={"detail": "Espera a que termine la respuesta anterior."}
     )
 
 
-# Consultar sesión
-def obtener_cliente_id(request: Request) -> int:
-    cliente_id = request.session.get("cliente_id")
-
-    if type(cliente_id) is not int:
-        raise HTTPException(
-            status_code=401,
-            detail="Inicia sesión para continuar."
-        )
-
-    return cliente_id
+@app.exception_handler(Exception)
+async def manejar_error_general(request, exc):
+    logger.error("Error no controlado: %s", type(exc).__name__)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "No se pudo completar la solicitud. Intenta más tarde."}
+    )
 
 
-# Iniciar sesión
+def obtener_sesion(request):
+    cliente = request.session.get("cliente_id")
+    sid = request.session.get("sid")
+    if type(cliente) is not int or cliente < 0 or not isinstance(sid, str):
+        raise SesionExpirada()
+    return cliente, sid
+
+
+# Mantener el acceso de demostración por ID.
+# No equivale a autenticar la identidad del titular.
 @app.post("/api/login")
 def iniciar_sesion(body: SolicitudLogin, request: Request):
+    borrar_conversacion(request.session.get("sid"))
     request.session.clear()
-
     datos = consultar_cliente(body.cliente_id)
-
     if not datos:
-        raise HTTPException(
-            status_code=404,
-            detail="No se encontró información para ese ID."
-        )
-
-    request.session["cliente_id"] = body.cliente_id
-
+        raise HTTPException(404, "No se encontró información para ese ID.")
+    sid = crear_conversacion(body.cliente_id)
+    request.session.update({"cliente_id": body.cliente_id, "sid": sid})
     return {
         "cliente_id": body.cliente_id,
-        "datos_cliente": datos
+        "datos_cliente": resumen_publico(datos),
+        "historial": []
     }
 
 
-# Recuperar sesión
 @app.get("/api/me")
 def recuperar_sesion(request: Request):
-    cliente_id = obtener_cliente_id(request)
-    datos = consultar_cliente(cliente_id)
-
+    cliente, sid = obtener_sesion(request)
+    conversacion = leer_conversacion(sid, cliente)
+    datos = consultar_cliente(cliente)
     if not datos:
-        request.session.clear()
-
-        raise HTTPException(
-            status_code=401,
-            detail="El cliente ya no está disponible. Inicia sesión nuevamente."
-        )
-
+        borrar_conversacion(sid)
+        raise SesionExpirada()
     return {
-        "cliente_id": cliente_id,
-        "datos_cliente": datos
+        "cliente_id": cliente,
+        "datos_cliente": resumen_publico(datos),
+        "historial": conversacion["mensajes"]
     }
 
 
-# Cerrar sesión
 @app.post("/api/logout", status_code=204)
 def cerrar_sesion(request: Request):
+    borrar_conversacion(request.session.get("sid"))
     request.session.clear()
     return Response(status_code=204)
 
 
-# Consultar asistente
+# Rotar la conversación impide que una respuesta en curso restaure el chat borrado
+@app.post("/api/chat/clear", status_code=204)
+def limpiar_conversacion(request: Request):
+    cliente, sid = obtener_sesion(request)
+    leer_conversacion(sid, cliente)
+    borrar_conversacion(sid)
+    request.session["sid"] = crear_conversacion(cliente)
+    return Response(status_code=204)
+
+
 @app.post("/api/chat")
 def consultar_asistente(body: SolicitudConsulta, request: Request):
-    cliente_id = obtener_cliente_id(request)
-
+    cliente, sid = obtener_sesion(request)
+    token, conversacion = reservar_conversacion(sid, cliente)
     try:
         resultado = request.app.state.assistant.invoke({
-            "cliente_id": cliente_id,
-            "pregunta": body.pregunta
+            "cliente_id": cliente,
+            "pregunta": body.pregunta,
+            "mensajes": conversacion["mensajes"],
+            "meta": conversacion["meta"]
         })
+        if not resultado["encontrado"]:
+            borrar_conversacion(sid)
+            raise SesionExpirada()
 
-    except (ErrorDatos, ClienteDuplicado):
-        raise
+        mensajes = conversacion["mensajes"] + [
+            {"autor": "user", "texto": resultado.get("texto_usuario", body.pregunta)},
+            {"autor": "assistant", "texto": resultado["respuesta"]}
+        ]
+        guardar_turno(
+            sid, cliente, token, mensajes,
+            resultado.get("meta", conversacion["meta"])
+        )
+        return {
+            "cliente_id": cliente,
+            "estado": "encontrado",
+            "respuesta": resultado["respuesta"],
+            "datos_cliente": resumen_publico(resultado["datos_cliente"])
+        }
 
     except APITimeoutError as exc:
-        raise HTTPException(
-            status_code=504,
-            detail="El modelo tardó demasiado. Intenta nuevamente."
-        ) from exc
-
+        raise HTTPException(504, "La respuesta tardó demasiado. Intenta nuevamente.") from exc
     except RateLimitError as exc:
-        raise HTTPException(
-            status_code=429,
-            detail=(
-                "El servicio del modelo alcanzó un límite. "
-                "Revisa su disponibilidad o intenta más tarde."
-            )
-        ) from exc
-
+        raise HTTPException(429, "El servicio está ocupado. Intenta más tarde.") from exc
     except APIError as exc:
-        logger.error("Error del servicio del modelo: %s", type(exc).__name__)
-
-        raise HTTPException(
-            status_code=502,
-            detail="No se pudo obtener una respuesta del modelo."
-        ) from exc
-
-    except Exception as exc:
-        logger.exception("No se pudo completar la consulta.")
-
-        raise HTTPException(
-            status_code=500,
-            detail="No se pudo procesar la consulta."
-        ) from exc
-
-    if not resultado["encontrado"]:
-        request.session.clear()
-
-        raise HTTPException(
-            status_code=401,
-            detail="El cliente ya no está disponible. Inicia sesión nuevamente."
-        )
-
-    return {
-        "cliente_id": cliente_id,
-        "pregunta": body.pregunta,
-        "estado": "encontrado",
-        "respuesta": resultado["respuesta"],
-        "datos_cliente": resultado["datos_cliente"]
-    }
+        logger.error("Error del servicio de respuesta: %s", type(exc).__name__)
+        raise HTTPException(502, "No se pudo preparar una respuesta. Intenta más tarde.") from exc
+    finally:
+        liberar_conversacion(sid, token)
 
 
-# Servir frontend
 app.mount(
-    "/",
-    StaticFiles(directory=str(FRONTEND_PATH), html=True),
-    name="frontend"
+    "/", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend"
 )
+

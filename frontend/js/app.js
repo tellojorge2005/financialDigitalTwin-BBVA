@@ -204,7 +204,8 @@ function iniciarConversacion() {
         "assistant",
         `Estás consultando el cliente ${clienteId}.\n\n` +
         "Puedes preguntar por los límites de crédito, las transacciones, " +
-        "la deuda, los ingresos y los valores estimados de su resumen."
+        "la deuda, los ingresos y tus metas de ahorro. Por ejemplo: " +
+        "\"Quiero ahorrar para una computadora\"."
     );
 
     actualizarControles();
@@ -230,6 +231,17 @@ function mostrarSesion(datos) {
     clientIdInput.value = "";
 
     iniciarConversacion();
+    if (Array.isArray(datos.historial) && datos.historial.length) {
+        mensajes.replaceChildren();
+        for (const item of datos.historial) {
+            if (
+                (item.autor === "user" || item.autor === "assistant") &&
+                typeof item.texto === "string"
+            ) {
+                agregarMensaje(item.autor, item.texto);
+            }
+        }
+    }
 }
 
 
@@ -420,9 +432,22 @@ sugerencias.forEach((boton) => {
 
 
 // Limpiar conversación
-botonLimpiar.addEventListener("click", () => {
-    iniciarConversacion();
-    pregunta.focus();
+botonLimpiar.addEventListener("click", async () => {
+    if (ocupado || clienteId === null) return;
+    if (!window.confirm("¿Borrar la conversación y la meta que contiene?")) return;
+
+    cambiarEstado(true);
+    errorEntrada.textContent = "";
+    try {
+        await consultarApi("/api/chat/clear", { method: "POST" });
+        iniciarConversacion();
+    } catch (error) {
+        if (error.status === 401) mostrarLogin(error.message);
+        else errorEntrada.textContent = error.message;
+    } finally {
+        cambiarEstado(false);
+        if (clienteId !== null) pregunta.focus();
+    }
 });
 
 

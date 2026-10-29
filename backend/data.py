@@ -1,5 +1,6 @@
 import logging
 import math
+from datetime import date, datetime
 from decimal import Decimal
 
 import boto3
@@ -9,7 +10,8 @@ import pyarrow.fs as fs
 from backend.config import (
     AWS_REGION,
     S3_BUCKET,
-    S3_CUSTOMER_PATH
+    S3_CUSTOMER_PATH,
+    S3_MONTHLY_PATH
 )
 
 
@@ -41,7 +43,19 @@ CUSTOMER_COLUMNS = [
     "has_card_records",
     "has_transaction_records",
     "spending_to_income_ratio",
-    "debt_to_income_ratio"
+    "debt_to_income_ratio",
+    "currency",
+    "financial_cutoff_date",
+    "account_balance",
+    "monthly_income",
+    "monthly_expenses",
+    "monthly_debt_payments",
+    "monthly_savings",
+    "outstanding_due",
+    "max_days_past_due",
+    "prediction_month",
+    "predicted_income",
+    "has_income_prediction"
 ]
 
 
@@ -75,6 +89,9 @@ def crear_filesystem():
 
 # Preparar valores para JSON
 def preparar_valor(valor):
+    if isinstance(valor, (date, datetime)):
+        return valor.isoformat()
+
     if isinstance(valor, Decimal):
         valor = float(valor)
 
@@ -139,3 +156,61 @@ def consultar_cliente(cliente_id: int) -> dict:
         campo: preparar_valor(valor)
         for campo, valor in registros[0].items()
     }
+
+# Entregar al navegador solo los indicadores que muestra la interfaz
+PUBLIC_COLUMNS = [
+    "total_credit_limit", "total_transactions", "total_cards",
+    "total_spent", "total_debt", "yearly_income", "has_card_records",
+    "has_imputed_credit_limit", "total_credit_limits_imputed"
+]
+
+
+def resumen_publico(datos):
+    return {campo: datos.get(campo) for campo in PUBLIC_COLUMNS}
+
+
+# Aplicar el filtro de cliente antes de recuperar su historial
+def consultar_historial(cliente_id):
+    columnas = [
+        "month", "currency", "monthly_income", "monthly_expenses",
+        "monthly_debt_payments", "monthly_transactions",
+        "closing_balance", "outstanding_due"
+    ]
+    try:
+        dataset = ds.dataset(
+            f"{S3_BUCKET}/{S3_MONTHLY_PATH}",
+            filesystem=crear_filesystem(),
+            format="parquet",
+            exclude_invalid_files=True,
+            ignore_prefixes=[".", "_"]
+        )
+        if not set(columnas + ["client_id"]).issubset(dataset.schema.names):
+            raise ErrorDatos("Historial con esquema incompatible.")
+
+        # El modelo no proporciona identificadores ni filtros.
+        tabla = dataset.scanner(
+            columns=columnas,
+            filter=ds.field("client_id") == cliente_id
+        ).head(2401)
+
+        if tabla.num_rows > 2400:
+            raise ErrorDatos("Historial superior al límite del prototipo.")
+
+        registros = tabla.to_pylist()
+        claves = [(str(r["month"]), r["currency"]) for r in registros]
+        if len(claves) != len(set(claves)):
+            raise ErrorDatos("Historial duplicado.")
+
+        return sorted(
+            [
+                {campo: preparar_valor(valor) for campo, valor in fila.items()}
+                for fila in registros
+            ],
+            key=lambda fila: (fila["month"] or "", fila["currency"] or "")
+        )
+    except ErrorDatos:
+        raise
+    except Exception as exc:
+        logger.exception("Error al recuperar historial.")
+        raise ErrorDatos("No se pudo recuperar el historial.") from exc
+
