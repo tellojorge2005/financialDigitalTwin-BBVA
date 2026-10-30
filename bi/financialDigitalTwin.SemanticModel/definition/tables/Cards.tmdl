@@ -1,10 +1,10 @@
 table Cards
-	lineageTag: 72c0c001-3b7f-4a9c-82c3-929accd8fd68
+	lineageTag: 962c7e65-dbe5-49ec-8b9f-6724d3cb96fe
 
 	column client_id
 		dataType: int64
 		formatString: 0
-		lineageTag: 88c61103-168e-4678-bf6c-1ad49de06d29
+		lineageTag: 81d30ff7-c4e3-4d55-a4eb-5de76b605214
 		summarizeBy: none
 		sourceColumn: client_id
 
@@ -13,16 +13,25 @@ table Cards
 	column total_cards
 		dataType: int64
 		formatString: 0
-		lineageTag: 386a890a-6e09-430e-a68c-e71435f4e8b7
+		lineageTag: b11fdc2d-80cd-499b-bcd5-cc0eaf1558ad
 		summarizeBy: sum
 		sourceColumn: total_cards
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_cards_with_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 242c2c6e-c432-4f64-a473-0863d894d78c
+		summarizeBy: sum
+		sourceColumn: total_cards_with_id
 
 		annotation SummarizationSetBy = Automatic
 
 	column total_card_brands
 		dataType: int64
 		formatString: 0
-		lineageTag: 4e4ed93a-5589-482f-8f63-fda9b5b4edc2
+		lineageTag: 676cf4c3-bab3-4dd4-b0fd-462450eb19d1
 		summarizeBy: sum
 		sourceColumn: total_card_brands
 
@@ -31,7 +40,7 @@ table Cards
 	column total_card_types
 		dataType: int64
 		formatString: 0
-		lineageTag: 3558ef92-11a2-47ff-b10c-6b0ba43d79d4
+		lineageTag: e8b3edf8-59f5-46b4-b213-f841734687f5
 		summarizeBy: sum
 		sourceColumn: total_card_types
 
@@ -39,7 +48,7 @@ table Cards
 
 	column average_credit_limit
 		dataType: double
-		lineageTag: 9dbec9d5-7243-42ce-adf5-16141627bc2e
+		lineageTag: 1bf621d3-9181-4a14-9b91-c5b82d7f3ef6
 		summarizeBy: sum
 		sourceColumn: average_credit_limit
 
@@ -49,7 +58,7 @@ table Cards
 
 	column total_credit_limit
 		dataType: double
-		lineageTag: ab2b98f9-dab6-4b81-821c-a547ad6b72b7
+		lineageTag: e639ffc3-df31-4c76-83ff-4b8cd44141ef
 		summarizeBy: sum
 		sourceColumn: total_credit_limit
 
@@ -57,11 +66,38 @@ table Cards
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	column total_credit_limits_imputed
+		dataType: int64
+		formatString: 0
+		lineageTag: fc129dc0-3483-4ef5-a868-c386d0a7cac4
+		summarizeBy: sum
+		sourceColumn: total_credit_limits_imputed
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_cards_without_id
+		dataType: int64
+		formatString: 0
+		lineageTag: e0eb1797-7784-4751-8637-522a7c0acaed
+		summarizeBy: sum
+		sourceColumn: total_cards_without_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column has_imputed_credit_limit
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: c3b450d5-7a53-49bf-9b0d-d61ae48cc91b
+		summarizeBy: none
+		sourceColumn: has_imputed_credit_limit
+
+		annotation SummarizationSetBy = Automatic
+
 	partition Cards = m
 		mode: import
 		source =
 				let
-				  Origen = Parquet.Document(Web.Contents("https://financial-digital-twin-bbva-022950218031-us-east-2-an.s3.us-east-2.amazonaws.com/gold/cards_summary.parquet/part-00000-738686db-ef7a-4de1-9269-d3e94f187550-c000.snappy.parquet"))
+				  Origen = Parquet.Document(Web.Contents("https://financial-digital-twin-bbva-022950218031-us-east-2-an.s3.us-east-2.amazonaws.com/gold/cards_summary.parquet/part-00000-a70347a8-9e5c-42f7-8259-34ffc8324fd6-c000.snappy.parquet"))
 				in
 				  Origen
 

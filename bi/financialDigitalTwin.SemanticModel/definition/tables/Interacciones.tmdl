@@ -1,0 +1,459 @@
+table Interacciones
+	lineageTag: 1e5d7594-ef60-4639-ae73-87be3a23836a
+
+	measure 'Total interacciones' =
+			
+			COUNTROWS(Interacciones)
+		formatString: 0
+		lineageTag: 19b78120-2da6-4aae-8624-d7c61b41743d
+
+	measure Conversaciones =
+			
+			COUNTROWS(
+			    FILTER(
+			        VALUES(Interacciones[conversacion_id]),
+			        NOT ISBLANK(Interacciones[conversacion_id])
+			    )
+			)
+		formatString: 0
+		lineageTag: b3347fb5-93d1-4c63-bf76-8ddad0a6e746
+
+	measure 'Tiempo promedio (s)' =
+			
+			CALCULATE(
+			    AVERAGE(Interacciones[duracion_segundos]),
+			    Interacciones[registro_completo] = 1
+			)
+		lineageTag: a79c5b16-d25f-49b9-accb-f11f7e88dead
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Errores HTTP' =
+			
+			COALESCE(
+			    CALCULATE(
+			        COUNTROWS(Interacciones),
+			        Interacciones[http_status] >= 400
+			    ),
+			    0
+			)
+		formatString: 0
+		lineageTag: 62a0a9f6-11c3-4361-98a4-7312a9f31bad
+
+	measure 'Porcentaje errores' =
+			
+			DIVIDE(
+			    [Errores HTTP],
+			    COUNT(Interacciones[http_status]),
+			    0
+			)
+		lineageTag: e603bfef-5315-4a02-94d4-69abf9dfb8bf
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column interaccion_id
+		dataType: string
+		lineageTag: 5f594b18-5b19-4614-ac4e-49271331e8e2
+		summarizeBy: none
+		sourceColumn: interaccion_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column conversacion_id
+		dataType: string
+		lineageTag: d232ea36-b93e-4939-ae3a-701e5018825d
+		summarizeBy: none
+		sourceColumn: conversacion_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column fecha_hora_utc
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 9a67a9dc-c710-4178-99d8-44870befbc1c
+		summarizeBy: none
+		sourceColumn: fecha_hora_utc
+
+		variation Variation
+			isDefault
+			relationship: 49f89f9f-705d-4a71-b10d-7f0082feebd5
+			defaultHierarchy: LocalDateTable_c9316a39-1e80-4aa1-bd68-00e3d933e09d.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+	column fecha_utc
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: cf974498-f830-47a7-a92c-7264c71546e6
+		summarizeBy: none
+		sourceColumn: fecha_utc
+
+		variation Variation
+			isDefault
+			relationship: 80c950e7-c459-427a-8def-6d8538ec49c0
+			defaultHierarchy: LocalDateTable_5866195a-5bbf-4998-b7f9-c473756198c6.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column hora_utc
+		dataType: int64
+		formatString: 0
+		lineageTag: 679b577b-8a1c-4271-943e-a092a81d680e
+		summarizeBy: sum
+		sourceColumn: hora_utc
+
+		annotation SummarizationSetBy = Automatic
+
+	column duracion_segundos
+		dataType: double
+		lineageTag: b381bcb4-cce2-4b60-b0b9-1a6d5f020e36
+		summarizeBy: sum
+		sourceColumn: duracion_segundos
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column http_status
+		dataType: int64
+		formatString: 0
+		lineageTag: 3adcbbba-5148-4359-95b3-b2b04f2d0207
+		summarizeBy: sum
+		sourceColumn: http_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column resultado
+		dataType: string
+		lineageTag: 66c990f4-1bfa-418e-9199-067f3490801a
+		summarizeBy: none
+		sourceColumn: resultado
+
+		annotation SummarizationSetBy = Automatic
+
+	column registro_completo
+		dataType: int64
+		formatString: 0
+		lineageTag: c393e88b-0d1e-409f-9470-3f235b9013f2
+		summarizeBy: sum
+		sourceColumn: registro_completo
+
+		annotation SummarizationSetBy = Automatic
+
+	column llamadas_modelo
+		dataType: int64
+		formatString: 0
+		lineageTag: 7fcbf418-d749-4fa7-b313-d48a0937c120
+		summarizeBy: sum
+		sourceColumn: llamadas_modelo
+
+		annotation SummarizationSetBy = Automatic
+
+	column errores_modelo
+		dataType: int64
+		formatString: 0
+		lineageTag: 9b2faa90-399d-4d1e-b01b-c33c8041b6de
+		summarizeBy: sum
+		sourceColumn: errores_modelo
+
+		annotation SummarizationSetBy = Automatic
+
+	column llamadas_herramientas
+		dataType: int64
+		formatString: 0
+		lineageTag: 922c91ba-d0af-441b-9f74-4e4455e3a17f
+		summarizeBy: sum
+		sourceColumn: llamadas_herramientas
+
+		annotation SummarizationSetBy = Automatic
+
+	column errores_herramientas
+		dataType: int64
+		formatString: 0
+		lineageTag: a0d39fe8-65b4-4958-aa9f-0c147293282d
+		summarizeBy: sum
+		sourceColumn: errores_herramientas
+
+		annotation SummarizationSetBy = Automatic
+
+	column usos_meta
+		dataType: int64
+		formatString: 0
+		lineageTag: 75b37c21-d7ad-462d-aa63-a6f41aed566c
+		summarizeBy: sum
+		sourceColumn: usos_meta
+
+		annotation SummarizationSetBy = Automatic
+
+	column usos_escenario
+		dataType: int64
+		formatString: 0
+		lineageTag: 0d09b6f4-57e4-4f86-ae24-6fa0276f9ec8
+		summarizeBy: sum
+		sourceColumn: usos_escenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column usos_historial
+		dataType: int64
+		formatString: 0
+		lineageTag: 9ad432a8-9352-437a-b6d9-c2befaefb261
+		summarizeBy: sum
+		sourceColumn: usos_historial
+
+		annotation SummarizationSetBy = Automatic
+
+	column usos_cancelacion
+		dataType: int64
+		formatString: 0
+		lineageTag: 678c23fc-ee7c-4b97-bbd7-cd28fdb61318
+		summarizeBy: sum
+		sourceColumn: usos_cancelacion
+
+		annotation SummarizationSetBy = Automatic
+
+	column fecha_hora_local
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 5552ccf4-056d-4dee-b9c4-e5e69a023716
+		summarizeBy: none
+		sourceColumn: fecha_hora_local
+
+		variation Variation
+			isDefault
+			relationship: e1999d76-7eba-4fa9-9216-7e20c5a34a65
+			defaultHierarchy: LocalDateTable_43cad610-b48f-48f6-a72a-0d5f739886cb.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+	column fecha_local
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 1fefbcc4-91a8-4dfc-a73e-0546736a6bd0
+		summarizeBy: none
+		sourceColumn: fecha_local
+
+		variation Variation
+			isDefault
+			relationship: 3dfd5cbf-e6e0-498d-a3e6-6e5f25866fb6
+			defaultHierarchy: LocalDateTable_ceff3122-fc2b-437e-aae3-d18b9569b5c6.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column hora_local
+		dataType: int64
+		formatString: 0
+		lineageTag: 5fac0103-2a92-4fef-8f71-f5fed595ea49
+		summarizeBy: sum
+		sourceColumn: hora_local
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Interacciones = m
+		mode: import
+		source =
+				let
+				    BaseUrl = "https://financial-digital-twin-bbva-022950218031-us-east-2-an.s3.us-east-2.amazonaws.com/",
+				    Prefijo = "history/assistant_interactions/",
+				
+				    // Obtener una página del listado de S3.
+				    ObtenerPagina = (Token as nullable text) as record =>
+				        let
+				            Parametros =
+				                if Token = null then
+				                    [
+				                        #"list-type" = "2",
+				                        prefix = Prefijo
+				                    ]
+				                else
+				                    [
+				                        #"list-type" = "2",
+				                        prefix = Prefijo,
+				                        #"continuation-token" = Token
+				                    ],
+				
+				            Documento = Xml.Tables(
+				                Web.Contents(BaseUrl, [Query = Parametros])
+				            ),
+				
+				            Raiz = Documento{0},
+				
+				            Archivos = Record.FieldOrDefault(
+				                Raiz,
+				                "Contents",
+				                #table({"Key"}, {})
+				            ),
+				
+				            HayMas = Text.Lower(
+				                Text.From(
+				                    Record.FieldOrDefault(Raiz, "IsTruncated", "false")
+				                )
+				            ) = "true",
+				
+				            Siguiente =
+				                if HayMas then
+				                    Text.From(Raiz[NextContinuationToken])
+				                else
+				                    null
+				        in
+				            [
+				                Archivos = Archivos,
+				                Siguiente = Siguiente
+				            ],
+				
+				    // Recorrer también las páginas futuras si el listado supera 1,000 objetos.
+				    Paginas = List.Generate(
+				        () => [Pagina = ObtenerPagina(null)],
+				        each [Pagina] <> null,
+				        each [
+				            Pagina =
+				                if [Pagina][Siguiente] = null then
+				                    null
+				                else
+				                    ObtenerPagina([Pagina][Siguiente])
+				        ],
+				        each [Pagina][Archivos]
+				    ),
+				
+				    Listado = Table.Combine(Paginas),
+				
+				    // Ignorar el objeto vacío de la carpeta y conservar solo CSV.
+				    SoloCSV = Table.SelectRows(
+				        Listado,
+				        each
+				            [Key] <> null
+				            and Text.EndsWith(
+				                Text.Lower(Text.From([Key])),
+				                ".csv"
+				            )
+				    ),
+				
+				    LeerCSV = (Clave as text) as table =>
+				        let
+				            Archivo = Web.Contents(
+				                BaseUrl,
+				                [RelativePath = Clave]
+				            ),
+				
+				            Datos = Csv.Document(
+				                Archivo,
+				                [
+				                    Delimiter = ",",
+				                    Encoding = 65001,
+				                    QuoteStyle = QuoteStyle.Csv
+				                ]
+				            ),
+				
+				            Encabezados = Table.PromoteHeaders(
+				                Datos,
+				                [PromoteAllScalars = true]
+				            )
+				        in
+				            Encabezados,
+				
+				    Tablas = List.Transform(
+				        SoloCSV[Key],
+				        each LeerCSV(Text.From(_))
+				    ),
+				
+				    Campos = {
+				        "interaccion_id",
+				        "conversacion_id",
+				        "fecha_hora_utc",
+				        "fecha_utc",
+				        "hora_utc",
+				        "duracion_segundos",
+				        "http_status",
+				        "resultado",
+				        "registro_completo",
+				        "llamadas_modelo",
+				        "errores_modelo",
+				        "llamadas_herramientas",
+				        "errores_herramientas",
+				        "usos_meta",
+				        "usos_escenario",
+				        "usos_historial",
+				        "usos_cancelacion"
+				    },
+				
+				    Combinados =
+				        if List.IsEmpty(Tablas) then
+				            #table(Campos, {})
+				        else
+				            Table.Combine(Tablas),
+				
+				    Columnas = Table.SelectColumns(
+				        Combinados,
+				        Campos,
+				        MissingField.UseNull
+				    ),
+				
+				    VaciosANull = Table.ReplaceValue(
+				        Columnas,
+				        "",
+				        null,
+				        Replacer.ReplaceValue,
+				        Campos
+				    ),
+				
+				    Tipos = Table.TransformColumnTypes(
+				        VaciosANull,
+				        {
+				            {"interaccion_id", type text},
+				            {"conversacion_id", type text},
+				            {"fecha_hora_utc", type datetimezone},
+				            {"fecha_utc", type date},
+				            {"hora_utc", Int64.Type},
+				            {"duracion_segundos", type number},
+				            {"http_status", Int64.Type},
+				            {"resultado", type text},
+				            {"registro_completo", Int64.Type},
+				            {"llamadas_modelo", Int64.Type},
+				            {"errores_modelo", Int64.Type},
+				            {"llamadas_herramientas", Int64.Type},
+				            {"errores_herramientas", Int64.Type},
+				            {"usos_meta", Int64.Type},
+				            {"usos_escenario", Int64.Type},
+				            {"usos_historial", Int64.Type},
+				            {"usos_cancelacion", Int64.Type}
+				        },
+				        "en-US"
+				    ),
+				
+				    SinDuplicados = Table.Distinct(
+				        Tipos,
+				        {"interaccion_id"}
+				    ),
+				
+				    // Mostrar el horario de Ciudad de México: UTC-6.
+				    FechaHoraLocal = Table.AddColumn(
+				        SinDuplicados,
+				        "fecha_hora_local",
+				        each DateTimeZone.RemoveZone(
+				            DateTimeZone.SwitchZone([fecha_hora_utc], -6)
+				        ),
+				        type datetime
+				    ),
+				
+				    FechaLocal = Table.AddColumn(
+				        FechaHoraLocal,
+				        "fecha_local",
+				        each Date.From([fecha_hora_local]),
+				        type date
+				    ),
+				
+				    HoraLocal = Table.AddColumn(
+				        FechaLocal,
+				        "hora_local",
+				        each Time.Hour(Time.From([fecha_hora_local])),
+				        Int64.Type
+				    )
+				in
+				    HoraLocal
+
+	annotation PBI_ResultType = Table
+

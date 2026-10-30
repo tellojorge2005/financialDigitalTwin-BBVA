@@ -1,12 +1,31 @@
-relationship 1e067f1f-67de-e723-51dc-8f957871749a
+relationship 49f89f9f-705d-4a71-b10d-7f0082feebd5
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Interacciones.fecha_hora_utc
+	toColumn: LocalDateTable_c9316a39-1e80-4aa1-bd68-00e3d933e09d.Date
+
+relationship 80c950e7-c459-427a-8def-6d8538ec49c0
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Interacciones.fecha_utc
+	toColumn: LocalDateTable_5866195a-5bbf-4998-b7f9-c473756198c6.Date
+
+relationship e1999d76-7eba-4fa9-9216-7e20c5a34a65
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Interacciones.fecha_hora_local
+	toColumn: LocalDateTable_43cad610-b48f-48f6-a72a-0d5f739886cb.Date
+
+relationship 3dfd5cbf-e6e0-498d-a3e6-6e5f25866fb6
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Interacciones.fecha_local
+	toColumn: LocalDateTable_ceff3122-fc2b-437e-aae3-d18b9569b5c6.Date
+
+relationship d0fc3fb5-b984-49f0-93f7-0bc1f4c0f779
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Users.financial_cutoff_date
+	toColumn: LocalDateTable_384f9512-750b-4301-99e3-8ab7f6cd4ffa.Date
+
+relationship AutoDetected_5c8875b3-f939-423f-a682-74cb1450d768
 	crossFilteringBehavior: bothDirections
 	fromCardinality: one
 	fromColumn: Transactions.client_id
-	toColumn: Users.id
-
-relationship 3d4be074-6ff3-c1be-53ae-44618126efec
-	crossFilteringBehavior: bothDirections
-	fromCardinality: one
-	fromColumn: Users.id
 	toColumn: Cards.client_id
 
