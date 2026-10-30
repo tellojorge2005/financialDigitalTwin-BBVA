@@ -1,0 +1,28 @@
+model Model
+	culture: es-MX
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: es-MX
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["Cards","Users","Transactions","Interacciones"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Interacciones
+ref table DateTableTemplate_c9b49be1-d3ff-49db-9d6b-d9c6a14decda
+ref table LocalDateTable_c9316a39-1e80-4aa1-bd68-00e3d933e09d
+ref table LocalDateTable_5866195a-5bbf-4998-b7f9-c473756198c6
+ref table LocalDateTable_43cad610-b48f-48f6-a72a-0d5f739886cb
+ref table LocalDateTable_ceff3122-fc2b-437e-aae3-d18b9569b5c6
+ref table Cards
+ref table Users
+ref table LocalDateTable_384f9512-750b-4301-99e3-8ab7f6cd4ffa
+ref table Transactions
+
+ref cultureInfo es-MX
+

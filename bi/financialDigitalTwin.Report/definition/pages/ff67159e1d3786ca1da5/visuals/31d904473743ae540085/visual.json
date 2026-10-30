@@ -1,0 +1,141 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "31d904473743ae540085",
+  "position": {
+    "x": 203.1266846361186,
+    "y": 750.4043126684636,
+    "z": 6000,
+    "height": 253.58490566037736,
+    "width": 468.355795148248,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "fecha_local"
+                }
+              },
+              "queryRef": "Interacciones.fecha_local",
+              "nativeQueryRef": "fecha_local",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Interacciones"
+                        }
+                      },
+                      "Property": "usos_meta"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(Interacciones.usos_meta)",
+              "nativeQueryRef": "Metas de ahorro",
+              "displayName": "Metas de ahorro"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Interacciones"
+                        }
+                      },
+                      "Property": "usos_escenario"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(Interacciones.usos_escenario)",
+              "nativeQueryRef": "Escenarios",
+              "displayName": "Escenarios"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Interacciones"
+                        }
+                      },
+                      "Property": "usos_historial"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(Interacciones.usos_historial)",
+              "nativeQueryRef": "Consulta de historial",
+              "displayName": "Consulta de historial"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Interacciones"
+                        }
+                      },
+                      "Property": "usos_cancelacion"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(Interacciones.usos_cancelacion)",
+              "nativeQueryRef": "Cancelaciones",
+              "displayName": "Cancelaciones"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "fecha_local"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

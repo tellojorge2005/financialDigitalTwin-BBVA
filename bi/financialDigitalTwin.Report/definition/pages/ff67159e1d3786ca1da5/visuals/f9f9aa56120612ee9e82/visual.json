@@ -1,0 +1,122 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "f9f9aa56120612ee9e82",
+  "position": {
+    "x": 1219.6960486322189,
+    "y": 452.27963525835867,
+    "z": 10000,
+    "height": 434.77203647416411,
+    "width": 697.38601823708211,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "fecha_hora_local"
+                }
+              },
+              "queryRef": "Interacciones.fecha_hora_local",
+              "nativeQueryRef": "fecha_hora_local"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "resultado"
+                }
+              },
+              "queryRef": "Interacciones.resultado",
+              "nativeQueryRef": "resultado"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "duracion_segundos"
+                }
+              },
+              "queryRef": "Sum(Interacciones.duracion_segundos)",
+              "nativeQueryRef": "duracion_segundos1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "http_status"
+                }
+              },
+              "queryRef": "Sum(Interacciones.http_status)",
+              "nativeQueryRef": "http_status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "llamadas_modelo"
+                }
+              },
+              "queryRef": "Sum(Interacciones.llamadas_modelo)",
+              "nativeQueryRef": "llamadas_modelo"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "llamadas_herramientas"
+                }
+              },
+              "queryRef": "Sum(Interacciones.llamadas_herramientas)",
+              "nativeQueryRef": "llamadas_herramientas"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "errores_herramientas"
+                }
+              },
+              "queryRef": "Sum(Interacciones.errores_herramientas)",
+              "nativeQueryRef": "errores_herramientas"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
