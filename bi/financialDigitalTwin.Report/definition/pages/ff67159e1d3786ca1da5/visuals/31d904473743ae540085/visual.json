@@ -137,5 +137,99 @@
       }
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "1d3423dd1cc6275eb484",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "fecha_local"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "0abb79cc74c75b0d1920",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "usos_meta"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "376f74c0ba40bd107642",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "usos_escenario"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "5431ed3e615b2cd07c9c",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "usos_historial"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "c8053963804d4b8869c3",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "usos_cancelacion"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

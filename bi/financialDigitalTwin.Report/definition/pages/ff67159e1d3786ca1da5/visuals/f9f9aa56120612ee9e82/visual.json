@@ -118,5 +118,107 @@
       }
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "70202172de6e600dd9bd",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "fecha_hora_local"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "83d343d5804da963c7ca",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "resultado"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "48fb54307b5ae0c04782",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "duracion_segundos"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "b5baa10a352793e598a6",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "http_status"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "2df30373ddbeb315d043",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "llamadas_modelo"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "777f24d0e64b1b50ab89",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "llamadas_herramientas"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "a13771bbe4cb1e2b0ece",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "errores_herramientas"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }
