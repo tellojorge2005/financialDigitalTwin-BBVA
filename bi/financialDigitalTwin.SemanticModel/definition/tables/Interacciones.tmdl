@@ -51,6 +51,42 @@ table Interacciones
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	measure 'Tokens entrada promedio' =
+			
+			CALCULATE(
+			    AVERAGE(Interacciones[tokens_entrada]),
+			    Interacciones[registro_completo] = 1,
+			    Interacciones[uso_completo] = 1,
+			    Interacciones[llamadas_modelo] > 0
+			)
+		lineageTag: 187a0e23-c79c-48b3-b742-eb67d558aba1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Tokens salida promedio' =
+			
+			CALCULATE(
+			    AVERAGE(Interacciones[tokens_salida]),
+			    Interacciones[registro_completo] = 1,
+			    Interacciones[uso_completo] = 1,
+			    Interacciones[llamadas_modelo] > 0
+			)
+		lineageTag: 75061c38-8304-42fc-834e-ef2d627d61da
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Costo promedio por consulta USD' =
+			
+			CALCULATE(
+			    AVERAGE(Interacciones[costo_total_usd]),
+			    Interacciones[registro_completo] = 1,
+			    Interacciones[costo_completo] = 1,
+			    Interacciones[llamadas_modelo] > 0
+			)
+		lineageTag: 7c273b25-bc79-4d96-a5e8-83f87f494872
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
 	column interaccion_id
 		dataType: string
 		lineageTag: 5f594b18-5b19-4614-ac4e-49271331e8e2
@@ -253,6 +289,52 @@ table Interacciones
 
 		annotation SummarizationSetBy = Automatic
 
+	column tokens_entrada
+		dataType: int64
+		formatString: 0
+		lineageTag: fdfd5308-c824-4a41-ba80-47c10e32bd7f
+		summarizeBy: sum
+		sourceColumn: tokens_entrada
+
+		annotation SummarizationSetBy = Automatic
+
+	column tokens_salida
+		dataType: int64
+		formatString: 0
+		lineageTag: 8f640019-dc95-4c65-b4c3-baaad52dd740
+		summarizeBy: sum
+		sourceColumn: tokens_salida
+
+		annotation SummarizationSetBy = Automatic
+
+	column costo_total_usd
+		dataType: double
+		lineageTag: 5b50a000-282c-4186-8d8e-5c6b94b64fed
+		summarizeBy: sum
+		sourceColumn: costo_total_usd
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column uso_completo
+		dataType: int64
+		formatString: 0
+		lineageTag: 9e98a831-dbd9-4d9f-8e54-3a82711a0f14
+		summarizeBy: sum
+		sourceColumn: uso_completo
+
+		annotation SummarizationSetBy = Automatic
+
+	column costo_completo
+		dataType: int64
+		formatString: 0
+		lineageTag: 270233be-f1ab-4674-b2e9-55f446e034db
+		summarizeBy: sum
+		sourceColumn: costo_completo
+
+		annotation SummarizationSetBy = Automatic
+
 	partition Interacciones = m
 		mode: import
 		source =
@@ -377,7 +459,12 @@ table Interacciones
 				        "usos_meta",
 				        "usos_escenario",
 				        "usos_historial",
-				        "usos_cancelacion"
+				        "usos_cancelacion",
+				        "tokens_entrada",
+				        "tokens_salida",
+				        "costo_total_usd",
+				        "uso_completo",
+				        "costo_completo"
 				    },
 				
 				    Combinados =
@@ -419,7 +506,12 @@ table Interacciones
 				            {"usos_meta", Int64.Type},
 				            {"usos_escenario", Int64.Type},
 				            {"usos_historial", Int64.Type},
-				            {"usos_cancelacion", Int64.Type}
+				            {"usos_cancelacion", Int64.Type},
+				            {"tokens_entrada", Int64.Type},
+				            {"tokens_salida", Int64.Type},
+				            {"costo_total_usd", type number},
+				            {"uso_completo", Int64.Type},
+				            {"costo_completo", Int64.Type}
 				        },
 				        "en-US"
 				    ),

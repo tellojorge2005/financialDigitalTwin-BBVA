@@ -1,3 +1,5 @@
+import asyncio
+from time import monotonic
 import logging
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -7,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from openai import APIError, APITimeoutError, RateLimitError
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, EmailStr
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -23,15 +25,19 @@ from backend.data import (
     ClienteDuplicado,
     ErrorDatos,
     consultar_cliente,
+    consultar_por_correo,
+    panorama_publico,
     resumen_publico,
 )
 from backend.guardrails import RECHAZO
+from backend.turns import ejecutar_turno, LIMITE_TURNO
 from backend.history import (
     inicializar_historial,
     crear_conversacion,
     borrar_conversacion,
     leer_conversacion,
     reservar_conversacion,
+    estado_conversacion,
     guardar_turno,
     liberar_conversacion,
     SesionExpirada,
@@ -49,13 +55,12 @@ validar_configuracion()
 
 class SolicitudLogin(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    cliente_id: int = Field(
-        strict=True, ge=0, le=9007199254740991
-    )
+    email: EmailStr = Field(max_length=254)
 
 
 class SolicitudConsulta(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    request_id: str | None = Field(default=None, min_length=16, max_length=64, pattern=r"^[A-Za-z0-9-]+$")
     pregunta: Annotated[
         str,
         StringConstraints(
@@ -230,26 +235,24 @@ def obtener_sesion(request):
     return cliente, sid
 
 
-# Mantener el acceso de demostración por ID.
-# No equivale a autenticar la identidad del titular.
+# Acceso de demostración mediante el correo registrado del cliente
 @app.post("/api/login")
 def iniciar_sesion(body: SolicitudLogin, request: Request):
+    datos = consultar_por_correo(str(body.email))
+    if not datos:
+        raise HTTPException(404, "No se encontró un perfil con ese correo.")
+
+    cliente = datos["id"]
+    panorama = panorama_publico(cliente, datos)
     borrar_conversacion(request.session.get("sid"))
     request.session.clear()
-
-    datos = consultar_cliente(body.cliente_id)
-    if not datos:
-        raise HTTPException(404, "No se encontró información para ese ID.")
-
-    sid = crear_conversacion(body.cliente_id)
-    request.session.update({
-        "cliente_id": body.cliente_id,
-        "sid": sid,
-    })
+    sid = crear_conversacion(cliente)
+    request.session.update({"cliente_id": cliente, "sid": sid})
     return {
-        "cliente_id": body.cliente_id,
+        "cliente_id": cliente,
         "datos_cliente": resumen_publico(datos),
         "historial": [],
+        **panorama,
     }
 
 
@@ -267,6 +270,7 @@ def recuperar_sesion(request: Request):
         "cliente_id": cliente,
         "datos_cliente": resumen_publico(datos),
         "historial": conversacion["mensajes"],
+        **panorama_publico(cliente, datos),
     }
 
 
@@ -289,24 +293,38 @@ def limpiar_conversacion(request: Request):
     return Response(status_code=204)
 
 
+@app.get("/api/chat/status")
+def recuperar_estado_chat(request: Request):
+    cliente, sid = obtener_sesion(request)
+    return {"cliente_id": cliente, **estado_conversacion(sid, cliente)}
+
+
 @app.post("/api/chat")
-def consultar_asistente(body: SolicitudConsulta, request: Request):
+async def consultar_asistente(body: SolicitudConsulta, request: Request):
     cliente, sid = obtener_sesion(request)
 
     metricas = request.state.metricas
     metricas.asociar_conversacion(sid)
 
-    token, conversacion = reservar_conversacion(sid, cliente)
+    token, conversacion = await run_in_threadpool(reservar_conversacion, sid, cliente)
 
     try:
-        resultado = request.app.state.assistant.invoke(
-            {
-                "cliente_id": cliente,
-                "pregunta": body.pregunta,
-                "mensajes": conversacion["mensajes"],
-                "meta": conversacion["meta"],
-            },
-            config={"callbacks": [metricas]},
+        # Acotar el turno completo, no solo cada llamada individual
+        limite = monotonic() + LIMITE_TURNO - 2
+        resultado = await asyncio.wait_for(
+            asyncio.to_thread(
+                ejecutar_turno,
+                request.app.state.assistant,
+                {
+                    "cliente_id": cliente,
+                    "pregunta": body.pregunta,
+                    "mensajes": conversacion["mensajes"],
+                    "meta": conversacion["meta"],
+                },
+                {"callbacks": [metricas]},
+                limite,
+            ),
+            timeout=LIMITE_TURNO,
         )
 
         if not resultado["encontrado"]:
@@ -333,12 +351,14 @@ def consultar_asistente(body: SolicitudConsulta, request: Request):
             },
         ]
 
-        guardar_turno(
+        await run_in_threadpool(
+            guardar_turno,
             sid,
             cliente,
             token,
             mensajes,
             resultado.get("meta", conversacion["meta"]),
+            body.request_id,
         )
 
         return {
@@ -348,10 +368,11 @@ def consultar_asistente(body: SolicitudConsulta, request: Request):
             "datos_cliente": resumen_publico(resultado["datos_cliente"]),
         }
 
-    except APITimeoutError as exc:
+    except (TimeoutError, APITimeoutError) as exc:
+        logger.warning("Turno agotado; se descarta su resultado tardío y se libera la conversación.")
         raise HTTPException(
             504,
-            "La respuesta tardó demasiado. Intenta nuevamente.",
+            "No se completó la respuesta a tiempo. Tu conversación se conserva; puedes volver a intentar.",
         ) from exc
 
     except RateLimitError as exc:
@@ -373,7 +394,7 @@ def consultar_asistente(body: SolicitudConsulta, request: Request):
     finally:
         # No ocultar una respuesta o excepción anterior por un error al liberar.
         try:
-            liberar_conversacion(sid, token)
+            await run_in_threadpool(liberar_conversacion, sid, token)
         except Exception as exc:
             logger.error(
                 "No se pudo liberar la conversación: %s",

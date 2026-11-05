@@ -3,7 +3,7 @@ import unicodedata
 
 from backend.config import (
     OPENAI_API_KEY, OPENAI_MODEL, SESSION_SECRET, S3_BUCKET,
-    S3_CUSTOMER_PATH, S3_MONTHLY_PATH, AWS_REGION
+    S3_CUSTOMER_PATH, S3_MONTHLY_PATH, S3_SCENARIOS_PATH, S3_CATEGORIES_PATH, AWS_REGION
 )
 from backend.data import CUSTOMER_COLUMNS
 
@@ -15,11 +15,11 @@ RECHAZO = (
 
 # Comprobación complementaria al aislamiento de datos y al contexto permitido
 PATRON = re.compile(
-    r"\b(xgboost|langgraph|langchain|openai|chatgpt|gpt|spark|pyspark|"
+    r"\b(xgboost|monte\s*carlo|langgraph|langchain|openai|chatgpt|gpt|spark|pyspark|"
     r"airflow|postgres(?:ql)?|sqlite|parquet|docker|aws|s3|api|sdk|sql|"
     r"backend|frontend|endpoint|bucket|servidor|infraestructura|"
     r"credenciales|prompt|token|tokens|json|yaml|python|javascript|"
-    r"localhost|traceback|schema|modelo|algoritmo|arquitectura|"
+    r"localhost|traceback|schema|algoritmo|arquitectura|"
     r"infraestructuras|servidores|almacenamiento|framework|nube)\b|"
     r"https?://|s3a?://|[a-z]:\\|/opt/|/home/|/api/|\x60{3}|"
     r"\b[a-z]+_[a-z_]+\b|sk-[a-z0-9_-]{12,}",
@@ -30,7 +30,7 @@ ATAQUE = re.compile(
     r"(revela|muestra|imprime).{0,40}(instrucciones|configuraci[oó]n|secretos)|"
     r"(otro|otros|otra|otras).{0,15}(cliente|persona)|"
     r"(cliente|usuario).{0,10}(id|identificador)|"
-    r"(base64|rot13|hexadecimal|desarrollador|administrador)",
+    r"(base64|rot13|hexadecimal)",
     re.IGNORECASE
 )
 
@@ -55,7 +55,7 @@ def contiene_informacion_interna(texto):
         return True
     nombres = [
         OPENAI_MODEL, S3_BUCKET, S3_CUSTOMER_PATH, S3_MONTHLY_PATH,
-        AWS_REGION, *CUSTOMER_COLUMNS
+        S3_SCENARIOS_PATH, S3_CATEGORIES_PATH, AWS_REGION, *CUSTOMER_COLUMNS
     ]
     return any(
         len(v) >= 4

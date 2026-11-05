@@ -1,472 +1,202 @@
-// Seleccionar elementos
-const loginView = document.getElementById("login-view");
-const appView = document.getElementById("app-view");
-const loginForm = document.getElementById("login-form");
-const clientIdInput = document.getElementById("client-id");
-const loginButton = document.getElementById("login-button");
-const loginError = document.getElementById("login-error");
-const logoutButton = document.getElementById("logout-button");
-const sessionError = document.getElementById("session-error");
+import { api } from "./api.js";
+import { buscar, texto, cerrarMenu, seleccionarTab, prepararInterfaz } from "./ui.js";
+import { mostrarPanorama } from "./panorama.js";
+import { agregarMensaje, iniciarConversacion, prepararChat } from "./chat.js";
 
-const mensajes = document.getElementById("messages");
-const formulario = document.getElementById("chat-form");
-const pregunta = document.getElementById("question");
-const botonEnviar = document.getElementById("send-button");
-const botonLimpiar = document.getElementById("clear-chat");
-const contador = document.getElementById("character-count");
-const errorEntrada = document.getElementById("input-error");
-const estadoChat = document.getElementById("chat-status");
-const sugerencias = document.querySelectorAll("[data-question]");
+// Mantener la sesión en el servidor; no guardar perfiles ni chats en el navegador
+let sesion = null;
+let ocupado = false;
+let panorama = {};
 
-
-// Definir estado
-let clienteId = null;
-let ocupado = true;
-
-
-// Formatear importes
-const formatoImporte = new Intl.NumberFormat("es-MX", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-});
-
-function formatearImporte(valor) {
-    return typeof valor === "number" && Number.isFinite(valor)
-        ? formatoImporte.format(valor)
-        : "No disponible";
-}
-
-
-// Consultar backend
-async function consultarApi(ruta, opciones = {}) {
-    const controlador = new AbortController();
-    const timeout = window.setTimeout(() => {
-        controlador.abort();
-    }, 90000);
-
-    try {
-        const response = await fetch(ruta, {
-            ...opciones,
-            credentials: "same-origin",
-            signal: controlador.signal,
-            headers: {
-                "Accept": "application/json",
-                ...(opciones.body
-                    ? { "Content-Type": "application/json" }
-                    : {})
-            }
-        });
-
-        const datos = response.status === 204
-            ? null
-            : await response.json().catch(() => null);
-
-        if (!response.ok) {
-            const mensaje = typeof datos?.detail === "string"
-                ? datos.detail
-                : "No se pudo procesar la solicitud.";
-
-            const error = new Error(mensaje);
-            error.status = response.status;
-            throw error;
-        }
-
-        return datos;
-
-    } catch (error) {
-        if (error.name === "AbortError") {
-            throw new Error(
-                "La solicitud tardó demasiado. Intenta nuevamente."
-            );
-        }
-
-        if (error instanceof TypeError) {
-            throw new Error(
-                "No se pudo conectar con el servidor."
-            );
-        }
-
-        throw error;
-
-    } finally {
-        window.clearTimeout(timeout);
-    }
-}
-
-
-// Actualizar controles
 function actualizarControles() {
-    clientIdInput.disabled = ocupado;
-
-    loginButton.disabled =
-        ocupado || !clientIdInput.value.trim();
-
-    logoutButton.disabled = ocupado;
-    botonLimpiar.disabled = ocupado || clienteId === null;
-    pregunta.disabled = ocupado || clienteId === null;
-
-    botonEnviar.disabled =
-        ocupado ||
-        clienteId === null ||
-        !pregunta.value.trim();
-
-    sugerencias.forEach((boton) => {
-        boton.disabled = ocupado || clienteId === null;
+    const bloqueado = ocupado || sesion === null;
+    ["[data-logout]", "[data-clear]", "[data-input]", "[data-health]"].forEach(selector => {
+        buscar(selector).disabled = bloqueado;
     });
-
-    contador.textContent = `${pregunta.value.length} / 2000`;
-    formulario.setAttribute("aria-busy", String(ocupado));
+    document.querySelectorAll("[data-question]").forEach(boton => { boton.disabled = bloqueado; });
+    buscar("[data-send]").disabled = bloqueado || !buscar("[data-input]").value.trim();
+    buscar("[data-form]").setAttribute("aria-busy", String(ocupado));
+    texto("[data-count]", `${buscar("[data-input]").value.length} / 2000`);
 }
-
 
 function cambiarEstado(valor) {
     ocupado = valor;
     actualizarControles();
 }
 
-
-// Mostrar resumen
-function mostrarResumen(datos) {
-    document.getElementById("credit-limit").textContent =
-        formatearImporte(datos.total_credit_limit);
-
-    document.getElementById("transaction-count").textContent =
-        datos.total_transactions ?? "—";
-
-    document.getElementById("card-count").textContent =
-        datos.total_cards ?? "—";
-
-    document.getElementById("transaction-amount").textContent =
-        formatearImporte(datos.total_spent);
-
-    document.getElementById("total-debt").textContent =
-        formatearImporte(datos.total_debt);
-
-    document.getElementById("yearly-income").textContent =
-        formatearImporte(datos.yearly_income);
-
-    const nota = document.getElementById("credit-note");
-
-    if (datos.has_card_records === false) {
-        nota.textContent = "Sin registros de tarjetas";
-    } else if (datos.has_imputed_credit_limit === true) {
-        const cantidad = datos.total_credit_limits_imputed;
-
-        nota.textContent = cantidad == null
-            ? "Incluye límites estimados"
-            : `Incluye ${cantidad} límite(s) estimado(s)`;
-    } else if (datos.has_imputed_credit_limit === false) {
-        nota.textContent = "Sin límites marcados como estimados";
-    } else {
-        nota.textContent = "Procedencia de los límites no disponible";
+function actualizarPanorama(datos) {
+    // Una respuesta de chat sin series no borra el panorama ya recibido
+    for (const campo of ["monthly_history", "cashflow_scenarios"]) {
+        if (Object.hasOwn(datos, campo)) panorama[campo] = datos[campo];
     }
+    mostrarPanorama(panorama);
 }
 
-
-// Agregar mensaje
-function agregarMensaje(autor, texto) {
-    const mensaje = document.createElement("article");
-    const etiqueta = document.createElement("div");
-    const contenido = document.createElement("div");
-    const parrafo = document.createElement("p");
-
-    mensaje.classList.add(
-        "message",
-        autor === "user"
-            ? "message-user"
-            : "message-assistant"
-    );
-
-    etiqueta.className = "message-author";
-    etiqueta.textContent = autor === "user" ? "Tú" : "Asistente";
-
-    contenido.className = "message-bubble";
-    parrafo.textContent = texto;
-
-    contenido.appendChild(parrafo);
-    mensaje.append(etiqueta, contenido);
-    mensajes.appendChild(mensaje);
-
-    mensajes.scrollTop = mensajes.scrollHeight;
-
-    return mensaje;
-}
-
-
-// Iniciar conversación
-function iniciarConversacion() {
-    mensajes.replaceChildren();
-    pregunta.value = "";
-    errorEntrada.textContent = "";
-    estadoChat.textContent = "";
-
-    agregarMensaje(
-        "assistant",
-        `Estás consultando el cliente ${clienteId}.\n\n` +
-        "Puedes preguntar por los límites de crédito, las transacciones, " +
-        "la deuda, los ingresos y tus metas de ahorro. Por ejemplo: " +
-        "\"Quiero ahorrar para una computadora\"."
-    );
-
-    actualizarControles();
-}
-
-
-// Mostrar sesión
 function mostrarSesion(datos) {
-    clienteId = datos.cliente_id;
+    if (!Number.isSafeInteger(datos?.cliente_id) || datos.cliente_id < 0 || !datos.datos_cliente) {
+        throw new Error("No se pudo recuperar tu perfil. Intenta iniciar sesión nuevamente.");
+    }
+    buscar("[data-loading]").hidden = true;
+    sesion = datos;
+    panorama = {};
+    const perfil = datos.datos_cliente;
+    const nombre = typeof perfil.full_name === "string" ? perfil.full_name.trim() : "";
+    const correo = typeof perfil.email === "string" ? perfil.email : "";
+    const partes = nombre.split(/\s+/).filter(Boolean);
+    texto("[data-fullname]", nombre || "Mi perfil");
+    texto("[data-email]", correo);
+    texto("[data-initials]", partes.length ? partes.slice(0, 2).map(p => Array.from(p)[0]).join("").toUpperCase() : "●");
+    texto("[data-greeting]", partes.length ? `Hola, ${partes[0]}.` : "Hola.");
+    buscar("[data-app]").hidden = false;
+    buscar("[data-profile-area]").hidden = false;
+    texto("[data-session-error]", "");
+    cerrarMenu();
+    seleccionarTab("resumen");
+    actualizarPanorama(datos);
+    iniciarConversacion(perfil, datos.historial);
+}
 
-    document.getElementById("session-client").textContent =
-        `Cliente ${clienteId}`;
+// Vaciar la información antes de volver al acceso
+function mostrarLogin() {
+    sesion = null;
+    panorama = {};
+    cerrarMenu();
+    buscar("[data-app]").hidden = true;
+    buscar("[data-profile-area]").hidden = true;
+    buscar("[data-messages]").replaceChildren();
+    buscar("[data-input]").value = "";
+    for (const selector of ["[data-fullname]", "[data-email]", "[data-initials]"]) texto(selector, "");
+    mostrarPanorama();
+    window.location.replace("login.html");
+}
 
-    document.getElementById("active-profile").textContent =
-        `Cliente ${clienteId}`;
-
-    mostrarResumen(datos.datos_cliente);
-
-    loginView.hidden = true;
-    appView.hidden = false;
-    loginError.textContent = "";
-    sessionError.textContent = "";
-    clientIdInput.value = "";
-
-    iniciarConversacion();
-    if (Array.isArray(datos.historial) && datos.historial.length) {
-        mensajes.replaceChildren();
-        for (const item of datos.historial) {
-            if (
-                (item.autor === "user" || item.autor === "assistant") &&
-                typeof item.texto === "string"
-            ) {
-                agregarMensaje(item.autor, item.texto);
+// Recuperar la respuesta sin borrar la conversación ni reenviar el mensaje
+async function recuperarChat(pregunta = "", requestId = null) {
+    const limite = Date.now() + 80000;
+    while (sesion && Date.now() < limite) {
+        texto("[data-chat-status]", "Comprobando la respuesta anterior…");
+        const estado = await api.estadoChat();
+        if (estado.cliente_id !== sesion.cliente_id) {
+            mostrarLogin();
+            return;
+        }
+        if (!estado.en_curso) {
+            iniciarConversacion(sesion.datos_cliente, estado.historial);
+            if (pregunta && estado.ultimo_turno !== requestId) {
+                buscar("[data-input]").value = pregunta;
+                texto("[data-chat-error]", "No se guardó una respuesta para este mensaje. Lo dejamos escrito para que puedas volver a enviarlo; tu conversación se conserva.");
             }
+            return;
         }
+        texto("[data-chat-status]", "Prisma sigue trabajando. Recuperaremos la respuesta automáticamente…");
+        await new Promise(resolve => window.setTimeout(resolve, 2000));
     }
+    throw new Error("No se pudo confirmar el estado de la respuesta. Recarga la página para recuperar el historial; no necesitas limpiar el chat.");
 }
 
-
-// Mostrar inicio de sesión
-function mostrarLogin(mensaje = "") {
-    clienteId = null;
-    mensajes.replaceChildren();
-    pregunta.value = "";
-    errorEntrada.textContent = "";
-    estadoChat.textContent = "";
-    sessionError.textContent = "";
-
-    mostrarResumen({});
-
-    document.getElementById("session-client").textContent = "—";
-    document.getElementById("active-profile").textContent = "—";
-
-    appView.hidden = true;
-    loginView.hidden = false;
-    loginError.textContent = mensaje;
-
-    actualizarControles();
-}
-
-
-// Iniciar sesión
-loginForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    if (ocupado) {
-        return;
-    }
-
-    const texto = clientIdInput.value.trim();
-    const id = Number(texto);
-
-    if (!/^\d+$/.test(texto) || !Number.isSafeInteger(id) || id < 0) {
-        loginError.textContent =
-            "Escribe un ID entero no negativo válido.";
-        return;
-    }
-
-    loginError.textContent = "";
-    loginButton.textContent = "Consultando...";
+async function enviar() {
+    if (ocupado || !sesion) return;
+    const pregunta = buscar("[data-input]").value.trim();
+    if (!pregunta || pregunta.length > 2000) return;
+    const requestId = Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2, "0")).join("");
+    texto("[data-chat-error]", "");
+    const mensaje = agregarMensaje("user", pregunta);
+    buscar("[data-input]").value = "";
+    texto("[data-chat-status]", "Consultando tu información…");
     cambiarEstado(true);
-
     try {
-        const datos = await consultarApi("/api/login", {
-            method: "POST",
-            body: JSON.stringify({ cliente_id: id })
-        });
-
-        mostrarSesion(datos);
-
-    } catch (error) {
-        loginError.textContent = error.message;
-
-    } finally {
-        loginButton.textContent = "Iniciar sesión";
-        cambiarEstado(false);
-
-        if (clienteId !== null) {
-            pregunta.focus();
-        } else {
-            clientIdInput.focus();
+        const datos = await api.preguntar(pregunta, requestId);
+        if (datos.cliente_id !== sesion.cliente_id) {
+            mostrarLogin();
+            return;
         }
-    }
-});
-
-
-// Cerrar sesión
-logoutButton.addEventListener("click", async () => {
-    if (ocupado) {
-        return;
-    }
-
-    sessionError.textContent = "";
-    cambiarEstado(true);
-
-    try {
-        await consultarApi("/api/logout", { method: "POST" });
-        mostrarLogin();
-
-    } catch (error) {
-        sessionError.textContent = error.message;
-
-    } finally {
-        cambiarEstado(false);
-
-        if (clienteId === null) {
-            clientIdInput.focus();
+        if (typeof datos.respuesta !== "string" || !datos.respuesta.trim()) {
+            const error = new Error("No se recibió una respuesta válida.");
+            error.incierto = true;
+            throw error;
         }
-    }
-});
-
-
-// Procesar consulta
-formulario.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    if (ocupado || clienteId === null) {
-        return;
-    }
-
-    const texto = pregunta.value.trim();
-
-    if (!texto || texto.length > 2000) {
-        errorEntrada.textContent =
-            "Escribe una pregunta de entre 1 y 2000 caracteres.";
-        return;
-    }
-
-    errorEntrada.textContent = "";
-    const mensajeUsuario = agregarMensaje("user", texto);
-
-    pregunta.value = "";
-    estadoChat.textContent = "Consultando tu información...";
-    cambiarEstado(true);
-
-    try {
-        const datos = await consultarApi("/api/chat", {
-            method: "POST",
-            body: JSON.stringify({ pregunta: texto })
-        });
-
-        mostrarResumen(datos.datos_cliente);
         agregarMensaje("assistant", datos.respuesta);
-
+        actualizarPanorama(datos);
     } catch (error) {
-        if (error.status === 401) {
-            mostrarLogin(error.message);
+        if (error.status === 401) mostrarLogin();
+        else if (error.incierto || error.status === 409 || error.status >= 500) {
+            try {
+                await recuperarChat(pregunta, requestId);
+            } catch (recuperacion) {
+                if (recuperacion.status === 401) mostrarLogin();
+                else {
+                    mensaje.remove();
+                    buscar("[data-input]").value = pregunta;
+                    texto("[data-chat-error]", "No pudimos recuperar el estado. Recarga para consultar el historial antes de reenviar; no necesitas borrarlo.");
+                }
+            }
         } else {
-            mensajeUsuario.remove();
-            pregunta.value = texto;
-            errorEntrada.textContent = error.message;
+            mensaje.remove();
+            buscar("[data-input]").value = pregunta;
+            texto("[data-chat-error]", error.message);
         }
-
     } finally {
-        estadoChat.textContent = "";
+        texto("[data-chat-status]", "");
         cambiarEstado(false);
-
-        if (clienteId !== null) {
-            pregunta.focus();
-        } else {
-            clientIdInput.focus();
-        }
+        if (sesion) buscar("[data-input]").focus();
     }
-});
+}
 
-
-// Actualizar entrada
-pregunta.addEventListener("input", () => {
-    errorEntrada.textContent = "";
-    actualizarControles();
-});
-
-clientIdInput.addEventListener("input", () => {
-    loginError.textContent = "";
-    actualizarControles();
-});
-
-
-// Enviar con Enter
-pregunta.addEventListener("keydown", (event) => {
-    if (
-        event.key === "Enter" &&
-        !event.shiftKey &&
-        !event.isComposing
-    ) {
-        event.preventDefault();
-
-        if (!botonEnviar.disabled) {
-            formulario.requestSubmit();
-        }
-    }
-});
-
-
-// Seleccionar pregunta sugerida
-sugerencias.forEach((boton) => {
-    boton.addEventListener("click", () => {
-        pregunta.value = boton.dataset.question;
-        errorEntrada.textContent = "";
-        actualizarControles();
-        pregunta.focus();
-    });
-});
-
-
-// Limpiar conversación
-botonLimpiar.addEventListener("click", async () => {
-    if (ocupado || clienteId === null) return;
+async function limpiar() {
+    if (ocupado || !sesion) return;
     if (!window.confirm("¿Borrar la conversación y la meta que contiene?")) return;
-
     cambiarEstado(true);
-    errorEntrada.textContent = "";
+    texto("[data-chat-error]", "");
     try {
-        await consultarApi("/api/chat/clear", { method: "POST" });
-        iniciarConversacion();
+        await api.limpiar();
+        iniciarConversacion(sesion.datos_cliente);
     } catch (error) {
         if (error.status === 401) mostrarLogin(error.message);
-        else errorEntrada.textContent = error.message;
-    } finally {
-        cambiarEstado(false);
-        if (clienteId !== null) pregunta.focus();
-    }
-});
-
-
-// Recuperar sesión
-async function cargarSesion() {
-    cambiarEstado(true);
-
-    try {
-        const datos = await consultarApi("/api/me");
-        mostrarSesion(datos);
-
-    } catch (error) {
-        mostrarLogin(
-            error.status === 401 ? "" : error.message
-        );
-
+        else texto("[data-chat-error]", error.message);
     } finally {
         cambiarEstado(false);
     }
 }
 
-cargarSesion();
+prepararInterfaz();
+prepararChat(enviar, limpiar, actualizarControles, () => !ocupado && sesion !== null);
+
+buscar("[data-logout]").addEventListener("click", async () => {
+    if (ocupado || !sesion) return;
+    cambiarEstado(true);
+    texto("[data-session-error]", "");
+    try {
+        await api.salir();
+        mostrarLogin();
+    } catch (error) {
+        if (error.status === 401) mostrarLogin();
+        else texto("[data-session-error]", "No se pudo cerrar la sesión. Intenta nuevamente.");
+    } finally {
+        cambiarEstado(false);
+    }
+});
+
+// Recuperar la conversación de la cookie existente sin simular un acceso
+async function recuperarSesion() {
+    cambiarEstado(true);
+    try {
+        mostrarSesion(await api.sesion());
+        await recuperarChat();
+    } catch (error) {
+        if (error.status === 401) mostrarLogin();
+        else texto(sesion ? "[data-chat-error]" : "[data-loading]", `${error.message} Recarga la página para intentarlo nuevamente.`);
+    } finally {
+        cambiarEstado(false);
+    }
+}
+
+recuperarSesion();
+
+// Al volver con el navegador, comprobar otra vez la cookie antes de mostrar datos
+window.addEventListener("pagehide", () => {
+    buscar("[data-app]").hidden = true;
+    buscar("[data-profile-area]").hidden = true;
+});
+window.addEventListener("pageshow", evento => {
+    if (evento.persisted) window.location.reload();
+});

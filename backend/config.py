@@ -21,7 +21,7 @@ S3_BUCKET = os.getenv("S3_BUCKET", "").strip()
 
 S3_CUSTOMER_PATH = os.getenv(
     "S3_CUSTOMER_PATH",
-    "gold/customer_model_summary.parquet"
+    "data/gold/customer_model_summary.parquet"
 ).strip("/")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
@@ -70,9 +70,17 @@ CHAT_DB_PATH = Path(os.getenv(
 )).expanduser()
 
 S3_MONTHLY_PATH = os.getenv(
-    "S3_MONTHLY_PATH", "gold/customer_monthly_summary.parquet"
+    "S3_MONTHLY_PATH", "data/gold/customer_monthly_summary.parquet"
 ).strip("/")
 
 SESSION_SECONDS = 3600
 MAX_CHAT_MESSAGES = 30
 
+
+# Rutas adicionales del panorama financiero
+S3_SCENARIOS_PATH = os.getenv(
+    "S3_SCENARIOS_PATH", "data/gold/customer_cashflow_scenarios.parquet"
+).strip("/")
+S3_CATEGORIES_PATH = os.getenv(
+    "S3_CATEGORIES_PATH", "data/gold/customer_expenses_by_category.parquet"
+).strip("/")

@@ -159,8 +159,17 @@ def calcular_plan(meta, perfil, historial):
         revisar = ref["saldo"] < 0 or ref["vencido"] > 0
     else:
         ingreso, gastos, pagos = (importe(meta[c]) for c in ("ingreso", "gastos", "pagos"))
-        advertencia = "Presupuesto mensual declarado por ti; no está verificado."
-        revisar = False
+        advertencia = meta.get(
+            "_origen_presupuesto",
+            "Presupuesto mensual declarado por ti; no está verificado."
+        )
+        revisar = (
+            perfil.get("currency") == meta["moneda"] and (
+                (perfil.get("outstanding_due") or 0) > 0
+                or (perfil.get("account_balance") or 0) < 0
+                or (perfil.get("max_days_past_due") or 0) > 0
+            )
+        )
 
     pendiente = max(importe(meta["monto"]) - importe(meta["ahorro"]), Decimal(0))
     capacidad = max(
@@ -187,12 +196,18 @@ def calcular_plan(meta, perfil, historial):
         texto += "El ahorro que declaraste ya cubre el objetivo."
     elif revisar:
         texto += (
-            "El historial presenta saldo negativo o cuotas vencidas. "
+            "Los registros presentan saldo negativo o compromisos vencidos. "
             "Necesitamos revisar esos compromisos antes de considerar viable "
             "la aportación; este cálculo no incluye regularizar atrasos."
         )
     elif aporte <= capacidad:
-        texto += "La aportación cabe en este presupuesto de referencia."
+        texto += (
+            "La aportación entra en el margen aritmético de referencia, pero "
+            "falta completar la revisión de compromisos o la reserva para "
+            "imprevistos antes de considerarla viable."
+            if meta.get("_revision_pendiente") else
+            "La aportación cabe en este presupuesto de referencia."
+        )
     elif capacidad > 0:
         texto += (
             f"Faltarían {mostrar(aporte - capacidad)} {moneda} mensuales. "
@@ -316,7 +331,7 @@ def explicar_salida_trabajo(escenario):
 
 
 def orientar_meta(meta, perfil, historial):
-    # Ofrecer primero un cálculo útil; el presupuesto detallado es opcional.
+    # Calcular el aporte y revisar automáticamente la referencia financiera
     for campo, pregunta in [
         ("nombre", "Cuéntame, ¿para qué te gustaría ahorrar?"),
         ("monto", "¿Cuánto costaría aproximadamente lo que quieres conseguir?"),
@@ -344,13 +359,8 @@ def orientar_meta(meta, perfil, historial):
         ), False
 
     texto += f", contando los {mostrar(ahorro)} que ya apartaste."
-    if not meta.get("evaluar_presupuesto"):
-        return texto + (
-            " Este cálculo todavía no comprueba si cabe en tu presupuesto. "
-            "¿Quieres que también revisemos eso con tus ingresos y gastos actuales?"
-        ), True
 
-    # Solo usar cifras históricas si el usuario las solicitó expresamente.
+    # El asistente selecciona el historial disponible y conserva sus fechas
     if meta.get("usar_historial") is True:
         ref = referencia_historial(historial, meta["moneda"])
         if ref is None:

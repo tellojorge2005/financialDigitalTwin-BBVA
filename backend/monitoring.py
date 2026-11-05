@@ -20,6 +20,7 @@ from langchain_core.callbacks import BaseCallbackHandler
 
 # Importar config también carga el .env del proyecto.
 from backend.config import AWS_REGION, S3_BUCKET, SESSION_SECRET
+from backend.usage import UsoModelo, CAMPOS_USO
 
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ CONTADORES = (
     "usos_escenario",
     "usos_historial",
     "usos_cancelacion",
+    "usos_finanzas",
 )
 
 CAMPOS_CSV = (
@@ -46,6 +48,7 @@ CAMPOS_CSV = (
     "resultado",
     "registro_completo",
     *CONTADORES,
+    *CAMPOS_USO,
 )
 
 HERRAMIENTAS = {
@@ -53,6 +56,7 @@ HERRAMIENTAS = {
     "gestionar_escenario": "usos_escenario",
     "ver_historial": "usos_historial",
     "cancelar_plan": "usos_cancelacion",
+    "consultar_finanzas": "usos_finanzas",
 }
 
 
@@ -71,6 +75,7 @@ class MetricasInteraccion(BaseCallbackHandler):
         self._lock = threading.Lock()
         self._contadores = dict.fromkeys(CONTADORES, 0)
         self._conversacion_id = None
+        self._uso = UsoModelo()
 
         fecha = datetime.fromtimestamp(self.inicio_epoch, timezone.utc)
         self._base = {
@@ -84,6 +89,7 @@ class MetricasInteraccion(BaseCallbackHandler):
             "resultado": "en_curso",
             "registro_completo": 0,
             **dict.fromkeys(CONTADORES, None),
+            **dict.fromkeys(CAMPOS_USO, None),
         }
 
     def asociar_conversacion(self, sid):
@@ -103,12 +109,22 @@ class MetricasInteraccion(BaseCallbackHandler):
 
     def on_chat_model_start(self, serialized, messages, **kwargs):
         self._incrementar("llamadas_modelo")
+        with self._lock:
+            self._uso.iniciar(kwargs.get("run_id"), kwargs.get("invocation_params", {}))
 
     def on_llm_start(self, serialized, prompts, **kwargs):
         self._incrementar("llamadas_modelo")
+        with self._lock:
+            self._uso.iniciar(kwargs.get("run_id"), kwargs.get("invocation_params", {}))
+
+    def on_llm_end(self, response, **kwargs):
+        with self._lock:
+            self._uso.terminar(kwargs.get("run_id"), response)
 
     def on_llm_error(self, error, **kwargs):
         self._incrementar("errores_modelo")
+        with self._lock:
+            self._uso.fallar(kwargs.get("run_id"))
 
     def on_tool_start(self, serialized, input_str, **kwargs):
         nombre = (serialized or {}).get("name")
@@ -136,6 +152,7 @@ class MetricasInteraccion(BaseCallbackHandler):
                 "resultado": resultado,
                 "registro_completo": 1,
                 **self._contadores,
+                **self._uso.resumen(),
             }
 
 
@@ -338,7 +355,8 @@ class MonitorInteracciones:
             )
             writer.writeheader()
             for fila in filas:
-                writer.writerow(json.loads(fila["registro"]))
+                registro = json.loads(fila["registro"])
+                writer.writerow({campo: registro.get(campo) for campo in CAMPOS_CSV})
 
             # UTF-8 con BOM facilita la importación de acentos.
             contenido = buffer.getvalue().encode("utf-8-sig")

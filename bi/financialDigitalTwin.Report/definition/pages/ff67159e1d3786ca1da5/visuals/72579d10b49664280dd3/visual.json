@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "72579d10b49664280dd3",
   "position": {
-    "x": 507.72036474164133,
-    "y": 20.425531914893618,
+    "x": 346.87058823529406,
+    "y": 86.399999999999935,
     "z": 8000,
-    "height": 321,
-    "width": 466,
+    "height": 103.58662613981762,
+    "width": 465.41033434650456,
     "tabOrder": 8000
   },
   "visual": {
@@ -68,5 +68,23 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "421b1d5d5e726802720e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "fecha_local"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }
