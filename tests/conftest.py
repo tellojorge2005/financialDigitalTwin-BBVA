@@ -46,6 +46,34 @@ def spark(tmp_path_factory):
     session.stop()
 
 
+def completar_perfil(df):
+    # Preparar nombres genéricos y conservar los campos que ya tiene el caso
+    valores = {
+        "full_name": F.concat(F.lit("Ana María López Pérez "), F.col("id")),
+        "email": F.concat(F.lit("cliente."), F.col("id"), F.lit("@example.com")),
+        "city": F.lit("Ciudad de México"),
+        "state": F.lit("Ciudad de México"),
+        "country": F.lit("México"),
+        "postal_code": F.lit("06000"),
+        "currency": F.lit("MXN"),
+        "retirement_age": F.lit(65).cast("long"),
+        "birth_year": F.lit(1990).cast("long"),
+        "birth_month": F.lit(1).cast("long"),
+        "latitude": F.lit(19.4326),
+        "longitude": F.lit(-99.1332),
+        "num_credit_cards": F.lit(1).cast("long")
+    }
+    for columna, valor in valores.items():
+        if columna not in df.columns:
+            df = df.withColumn(columna, valor)
+    return df
+
+
+@pytest.fixture
+def perfil_cliente():
+    return completar_perfil
+
+
 # Preparar cinco datasets pequeños con resultados conocidos
 @pytest.fixture
 def raw_bundle(spark):
@@ -77,6 +105,12 @@ def raw_bundle(spark):
         """
     )
 
+    users = completar_perfil(users)
+    cards = (
+        cards.withColumn("currency", F.lit("MXN"))
+        .withColumn("year_pin_last_changed", F.lit(2025).cast("long"))
+    )
+
     campos = [
         "id", "date", "client_id", "card_id", "amount", "use_chip",
         "merchant_id", "merchant_city", "merchant_state", "zip", "mcc",
@@ -88,30 +122,30 @@ def raw_bundle(spark):
 
     filas = []
     for tid, cid, fecha, importe in [
-        (1, 1, "15/12/2009 10:00", "$50"),
-        (2, 2, "20/12/2009 10:00", "$80"),
+        (1, 1, "15/12/2025 10:00", "$50"),
+        (2, 2, "20/12/2025 10:00", "$80"),
         (3, 1, "fecha incorrecta", None),
-        (4, 999, "15/12/2009 10:00", "$25")
+        (4, 999, "15/12/2025 10:00", "$25")
     ]:
         fila = dict.fromkeys(campos)
         fila.update(
             id=str(tid), client_id=str(cid), date=fecha, amount=importe,
             merchant_city=" City ", merchant_state=" NY ",
-            use_chip=" Chip ", amount_convention="legacy_unchanged"
+            use_chip=" Chip ", currency="MXN", amount_convention="legacy_unchanged"
         )
         filas.append(fila)
 
     movimientos = [
-        (10, 1, "2010-01-05", "1000", "income", "100", "1100", None, None, None),
-        (11, 1, "2010-01-06", "-300", "expense", "1100", "800", None, None, None),
-        (12, 1, "2010-01-07", "-50", "transfer_out", "800", "750", "T-1", "A-2", None),
-        (13, 2, "2010-01-07", "50", "transfer_in", "200", "250", "T-1", "A-1", None),
-        (14, 1, "2010-01-20", "-100", "debt_payment", "750", "650", None, None, "O-1"),
-        (15, 1, "2010-02-05", "1200", "income", "650", "1850", None, None, None),
-        (16, 1, "2010-02-06", "-400", "expense", "1850", "1450", None, None, None),
-        (17, 1, "2010-03-05", "-50", "debt_payment", "1450", "1400", None, None, "O-2"),
-        (18, 1, "2010-03-06", "900", "income", "1400", "2300", None, None, None),
-        (19, 1, "2010-03-07", "-200", "expense", "2300", "2100", None, None, None)
+        (10, 1, "2026-01-05", "1000", "income", "100", "1100", None, None, None),
+        (11, 1, "2026-01-06", "-300", "expense", "1100", "800", None, None, None),
+        (12, 1, "2026-01-07", "-50", "transfer_out", "800", "750", "T-1", "A-2", None),
+        (13, 2, "2026-01-07", "50", "transfer_in", "200", "250", "T-1", "A-1", None),
+        (14, 1, "2026-01-20", "-100", "debt_payment", "750", "650", None, None, "O-1"),
+        (15, 1, "2026-02-05", "1200", "income", "650", "1850", None, None, None),
+        (16, 1, "2026-02-06", "-400", "expense", "1850", "1450", None, None, None),
+        (17, 1, "2026-03-05", "-50", "debt_payment", "1450", "1400", None, None, "O-2"),
+        (18, 1, "2026-03-06", "900", "income", "1400", "2300", None, None, None),
+        (19, 1, "2026-03-07", "-200", "expense", "2300", "2100", None, None, None)
     ]
 
     for tid, cid, fecha, importe, tipo, antes, despues, transferencia, otra, cuota in movimientos:
@@ -119,8 +153,8 @@ def raw_bundle(spark):
         fila.update(
             id=str(tid), client_id=str(cid), date=fecha + " 10:00:00",
             amount=importe, account_id=f"A-{cid}", movement_type=tipo,
-            category=tipo, direction="inflow" if float(importe) > 0 else "outflow",
-            currency="USD", balance_before=antes, balance_after=despues,
+            category="alimentación" if tipo == "expense" else tipo, direction="inflow" if float(importe) > 0 else "outflow",
+            currency="MXN", balance_before=antes, balance_after=despues,
             transfer_id=transferencia, counterparty_account_id=otra,
             obligation_id=cuota, is_recurring="false",
             amount_convention="signed_cashflow"
@@ -134,8 +168,8 @@ def raw_bundle(spark):
 
     accounts = spark.createDataFrame(
         [
-            ("A-1", "1", "USD", "2010-01-01 00:00:00", "100", "cash_account", "true", "2100", "2010-03-31 23:59:00"),
-            ("A-2", "2", "USD", "2010-01-01 00:00:00", "200", "cash_account", "true", "250", "2010-03-31 23:59:00")
+            ("A-1", "1", "MXN", "2026-01-01 00:00:00", "100", "cash_account", "true", "2100", "2026-03-31 23:59:00"),
+            ("A-2", "2", "MXN", "2026-01-01 00:00:00", "200", "cash_account", "true", "250", "2026-03-31 23:59:00")
         ],
         """
         account_id string, client_id string, currency string,
@@ -146,9 +180,9 @@ def raw_bundle(spark):
 
     obligations = spark.createDataFrame(
         [
-            ("O-1", "L-1", "1", "A-1", "1", "2009-12-31", "250", "0", "2010-01-20", "100", "2010-01-20", "100", "0", "14", "2010-03-31", "0", "0", "USD"),
-            ("O-2", "L-1", "1", "A-1", "2", "2009-12-31", "250", "0", "2010-02-20", "150", "2010-03-05", "50", "100", "17", "2010-03-31", "39", None, "USD"),
-            ("O-3", "L-2", "2", "A-2", "1", "2009-12-31", "75", "0", "2010-01-15", "75", None, "0", "75", None, "2010-03-31", "75", None, "USD")
+            ("O-1", "L-1", "1", "A-1", "1", "2025-12-31", "250", "0", "2026-01-20", "100", "2026-01-20", "100", "0", "14", "2026-03-31", "0", "0", "MXN"),
+            ("O-2", "L-1", "1", "A-1", "2", "2025-12-31", "250", "0", "2026-02-20", "150", "2026-03-05", "50", "100", "17", "2026-03-31", "39", None, "MXN"),
+            ("O-3", "L-2", "2", "A-2", "1", "2025-12-31", "75", "0", "2026-01-15", "75", None, "0", "75", None, "2026-03-31", "75", None, "MXN")
         ],
         """
         obligation_id string, contract_id string, client_id string,

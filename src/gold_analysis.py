@@ -32,8 +32,8 @@ BUCKET = os.getenv("S3_BUCKET", "").strip()
 if not BUCKET:
     raise RuntimeError("Configura S3_BUCKET en .env.")
 
-INPUT_PATH = f"s3a://{BUCKET}/silver"
-OUTPUT_PATH = f"s3a://{BUCKET}/gold"
+INPUT_PATH = f"s3a://{BUCKET}/data/silver"
+OUTPUT_PATH = f"s3a://{BUCKET}/data/gold"
 
 
 # Crear resumen de tarjetas
@@ -81,8 +81,16 @@ def create_transactions_summary(transactions_spark):
 
 # Crear información financiera
 def create_users_summary(users_spark):
-    return users_spark.select(
+    # Crear información financiera
+
+    users_gold = users_spark.select(
         "id",
+        "full_name",
+        "email",
+        "city",
+        "state",
+        "country",
+        "postal_code",
         "current_age",
         "retirement_age",
         "gender",
@@ -90,8 +98,10 @@ def create_users_summary(users_spark):
         "per_capita_income",
         "total_debt",
         "credit_score",
-        "num_credit_cards"
+        "num_credit_cards",
+        F.col("currency").alias("profile_currency")
     )
+    return users_gold
 
 
 def create_customer_summary(users_gold, cards_gold, transactions_gold):
@@ -1106,6 +1116,271 @@ def create_monthly_summaries(accounts_spark, obligations_spark, movements_spark)
     return account_monthly, monthly_gold, latest_summary
 
 
+def create_recent_summaries(customer_gold, monthly_gold, movements_spark):
+    # Recuperar el último mes de cada cliente
+    latest_monthly = (
+        monthly_gold
+        .withColumn("_position", F.row_number().over(
+            Window.partitionBy("client_id", "currency").orderBy(F.col("month").desc())
+        ))
+        .filter(F.col("_position") == 1)
+        .drop("_position")
+    )
+
+    # Conservar una sola columna de moneda en el perfil
+    customer_gold = (
+        customer_gold
+        .withColumn(
+            "currency",
+            F.coalesce(
+                F.col("currency"),
+                F.col("profile_currency")
+            )
+        )
+        .drop("profile_currency")
+        .withColumn(
+            "has_financial_history",
+            F.col("financial_cutoff_date").isNotNull()
+        )
+    )
+
+
+    # Seleccionar los últimos tres meses completos
+    ventana_reciente = Window.partitionBy(
+        "client_id",
+        "currency"
+    ).orderBy(F.col("month").desc())
+
+    recent_months_gold = (
+        monthly_gold
+        .withColumn(
+            "_position",
+            F.row_number().over(ventana_reciente)
+        )
+        .filter(F.col("_position") <= 3)
+        .drop("_position")
+    )
+
+
+    # Crear información de gastos por categoría y mes
+    expense_categories_gold = (
+        movements_spark
+        .filter(F.col("movement_type") == "expense")
+        .withColumn(
+            "month",
+            F.trunc(F.to_date("date"), "month")
+        )
+        .join(
+            monthly_gold.select(
+                "client_id",
+                "currency",
+                "month"
+            ),
+            ["client_id", "currency", "month"],
+            "left_semi"
+        )
+        .groupBy(
+            "client_id",
+            "currency",
+            "month",
+            "category"
+        )
+        .agg(
+            F.count("*").alias("expense_transactions"),
+            F.sum(-F.col("amount")).alias("total_expenses")
+        )
+    )
+
+
+    # Resumir los últimos tres meses por categoría
+    recent_categories_gold = (
+        expense_categories_gold
+        .join(
+            recent_months_gold.select(
+                "client_id",
+                "currency",
+                "month"
+            ),
+            ["client_id", "currency", "month"],
+            "left_semi"
+        )
+        .groupBy(
+            "client_id",
+            "currency",
+            "category"
+        )
+        .agg(
+            F.sum("expense_transactions").alias(
+                "expense_transactions"
+            ),
+            F.sum("total_expenses").alias("total_expenses")
+        )
+    )
+
+
+    # Crear indicadores para consultar la salud financiera
+    health_gold = (
+        recent_months_gold
+        .groupBy("client_id", "currency")
+        .agg(
+            F.count("*").alias("months_available_3m"),
+            F.min("month").alias("period_start"),
+            F.last_day(
+                F.max("month")
+            ).alias("financial_cutoff_date"),
+            F.sum("monthly_income").alias("income_3m"),
+            F.sum("monthly_expenses").alias("expenses_3m"),
+            F.sum(
+                "monthly_debt_payments"
+            ).alias("debt_payments_3m"),
+            F.sum("monthly_savings").alias("savings_3m"),
+            F.sum(
+                "monthly_transactions"
+            ).alias("transactions_3m"),
+            F.avg("monthly_income").alias("average_income_3m"),
+            F.avg("monthly_expenses").alias("average_expenses_3m")
+        )
+        .join(
+            latest_monthly.select(
+                "client_id",
+                "currency",
+                "closing_balance",
+                "outstanding_due",
+                "max_days_past_due"
+            ),
+            ["client_id", "currency"],
+            "left"
+        )
+        .withColumn(
+            "savings_rate_3m",
+            F.when(
+                F.col("income_3m") > 0,
+                F.round(
+                    F.col("savings_3m") / F.col("income_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "debt_payment_ratio_3m",
+            F.when(
+                F.col("income_3m") > 0,
+                F.round(
+                    F.col("debt_payments_3m") / F.col("income_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "expense_coverage_months",
+            F.when(
+                (
+                    F.col("expenses_3m")
+                    + F.col("debt_payments_3m")
+                ) > 0,
+                F.round(
+                    F.greatest(
+                        F.col("closing_balance"),
+                        F.lit(0)
+                    )
+                    / (
+                        (
+                            F.col("expenses_3m")
+                            + F.col("debt_payments_3m")
+                        )
+                        / F.col("months_available_3m")
+                    ),
+                    2
+                )
+            )
+        )
+        .withColumn(
+            "has_overdue_payments",
+            (F.col("outstanding_due") > 0)
+            & (F.col("max_days_past_due") > 0)
+        )
+        .withColumn(
+            "has_negative_balance",
+            F.col("closing_balance") < 0
+        )
+        .withColumn(
+            "has_budget_deficit_3m",
+            F.col("savings_3m") < 0
+        )
+        .withColumn(
+            "financial_health_status",
+            F.when(
+                F.col("months_available_3m") < 3,
+                "historial_insuficiente"
+            )
+            .when(
+                F.col("has_overdue_payments")
+                | F.col("has_negative_balance")
+                | F.col("has_budget_deficit_3m"),
+                "requiere_atencion"
+            )
+            .when(
+                F.col("income_3m") <= 0,
+                "sin_ingresos"
+            )
+            .when(
+                F.col("savings_3m") > 0,
+                "margen_positivo"
+            )
+            .otherwise("sin_margen")
+        )
+    )
+
+
+    # Incorporar indicadores al resumen del cliente
+    columnas_salud = [
+        "months_available_3m",
+        "period_start",
+        "income_3m",
+        "expenses_3m",
+        "debt_payments_3m",
+        "savings_3m",
+        "transactions_3m",
+        "average_income_3m",
+        "average_expenses_3m",
+        "savings_rate_3m",
+        "debt_payment_ratio_3m",
+        "expense_coverage_months",
+        "has_overdue_payments",
+        "has_negative_balance",
+        "has_budget_deficit_3m",
+        "financial_health_status"
+    ]
+
+    customer_gold = (
+        customer_gold
+        .drop(*columnas_salud)
+        .join(
+            health_gold.select(
+                F.col("client_id").alias("id"),
+                "currency",
+                "financial_cutoff_date",
+                *columnas_salud
+            ),
+            ["id", "currency", "financial_cutoff_date"],
+            "left"
+        )
+        .withColumn(
+            "financial_health_status",
+            F.coalesce(
+                F.col("financial_health_status"),
+                F.lit("historial_insuficiente")
+            )
+        )
+    )
+
+
+    return (
+        customer_gold, recent_months_gold, expense_categories_gold,
+        recent_categories_gold, health_gold
+    )
+
+
 def create_customer_model_summary(customer_gold, predictions_spark=None):
     # Conservar el perfil base separado de sus predicciones
     columnas_prediccion = [
@@ -1113,7 +1388,8 @@ def create_customer_model_summary(customer_gold, predictions_spark=None):
         "prediction_month",
         "predicted_income",
         "income_prediction_method",
-        "has_income_prediction"
+        "has_income_prediction",
+        "prediction_validation_status"
     ]
     customer = customer_gold.drop(*columnas_prediccion)
 
@@ -1126,6 +1402,7 @@ def create_customer_model_summary(customer_gold, predictions_spark=None):
             .withColumn("predicted_income", F.lit(None).cast("double"))
             .withColumn("income_prediction_method", F.lit(None).cast("string"))
             .withColumn("has_income_prediction", F.lit(False))
+            .withColumn("prediction_validation_status", F.lit("PENDIENTE"))
         )
 
     # Validar columnas y tipos antes de interpretar las predicciones
@@ -1238,29 +1515,149 @@ def create_customer_model_summary(customer_gold, predictions_spark=None):
             "has_income_prediction",
             F.col("predicted_income").isNotNull()
         )
+        .withColumn(
+            "prediction_validation_status",
+            F.when(F.col("has_income_prediction"), "APROBADO")
+            .otherwise("SIN_HISTORIAL")
+        )
     )
 
 
-def run_prediction_pipeline(
-    spark,
-    gold_path=OUTPUT_PATH,
-    predictions_path=None
-):
-    # El notebook 06 debe generar y publicar primero este Parquet
+def guardar_validacion_modelo(spark, output_path, estado, detalle, **conteos):
+    columnas = [
+        "expected_rows", "received_rows", "missing_rows", "unexpected_rows",
+        "duplicate_keys", "invalid_rows", "xgboost_rows", "last_month_rows"
+    ]
+    control = spark.range(1).select(
+        F.lit(estado).alias("status"),
+        F.lit(detalle).alias("detail"),
+        *[
+            F.lit(conteos.get(columna)).cast("long").alias(columna)
+            for columna in columnas
+        ],
+        F.current_timestamp().alias("validated_at")
+    )
+    control.write.mode("overwrite").parquet(
+        f"{output_path}/income_model_validation.parquet"
+    )
+
+
+def contar_predicciones(customer, predictions):
+    # Comprobar el esquema antes de calcular la cobertura
+    tipos = {
+        "client_id": TIPOS_ENTEROS,
+        "currency": TIPOS_TEXTO,
+        "feature_month": TIPOS_FECHA,
+        "prediction_month": TIPOS_FECHA,
+        "predicted_income": TIPOS_NUMERICOS,
+        "method": TIPOS_TEXTO
+    }
+    esquema = {campo.name: campo.dataType for campo in predictions.schema.fields}
+    for columna, permitidos in tipos.items():
+        if columna not in esquema or not isinstance(esquema[columna], permitidos):
+            raise ErrorCalidadDatos(
+                f"Predicciones: falta la columna {columna} o su tipo es incorrecto."
+            )
+
+    esperados = customer.filter(
+        F.col("financial_cutoff_date").isNotNull()
+    ).select(
+        F.col("id").alias("client_id"), "currency",
+        F.trunc("financial_cutoff_date", "month").alias("feature_month"),
+        F.add_months(F.trunc("financial_cutoff_date", "month"), 1)
+        .alias("prediction_month")
+    )
+    claves = ["client_id", "currency", "feature_month", "prediction_month"]
+    errores = (
+        F.col("client_id").isNull() | (F.col("client_id") < 0)
+        | F.col("currency").isNull() | (F.col("currency") != "MXN")
+        | F.col("feature_month").isNull()
+        | (F.dayofmonth("feature_month") != 1)
+        | F.col("prediction_month").isNull()
+        | (F.to_date("prediction_month") != F.add_months("feature_month", 1))
+        | F.col("predicted_income").isNull()
+        | F.isnan(F.col("predicted_income").cast("double"))
+        | (F.abs(F.col("predicted_income")) == F.lit(float("inf")))
+        | (F.col("predicted_income") < 0)
+        | F.col("method").isNull()
+        | ~F.col("method").isin("xgboost", "last_month")
+    )
+    recibidos = predictions.select(
+        "client_id", "currency",
+        F.to_date("feature_month").alias("feature_month"),
+        F.to_date("prediction_month").alias("prediction_month")
+    )
+    return {
+        "expected_rows": esperados.count(),
+        "received_rows": predictions.count(),
+        "missing_rows": esperados.join(recibidos, claves, "left_anti").count(),
+        "unexpected_rows": recibidos.join(esperados, claves, "left_anti").count(),
+        "duplicate_keys": predictions.groupBy("client_id", "currency")
+        .count().filter(F.col("count") > 1).count(),
+        "invalid_rows": predictions.filter(errores).count(),
+        "xgboost_rows": predictions.filter(F.col("method") == "xgboost").count(),
+        "last_month_rows": predictions.filter(F.col("method") == "last_month").count()
+    }
+
+
+def run_prediction_pipeline(spark, gold_path=OUTPUT_PATH, predictions_path=None):
     if predictions_path is None:
         predictions_path = f"{gold_path}/income_predictions.parquet"
 
     customer = spark.read.parquet(
         f"{gold_path}/customer_financial_summary.parquet"
     )
-    predictions = spark.read.parquet(predictions_path)
+    base = create_customer_model_summary(customer)
+    conteos = {
+        "expected_rows": customer.filter(
+            F.col("financial_cutoff_date").isNotNull()
+        ).count()
+    }
 
-    # Validar antes de reemplazar el resumen enriquecido
-    enriched = create_customer_model_summary(customer, predictions)
-    enriched.write.mode("overwrite").parquet(
+    # Invalidar predicciones anteriores antes de revisar el nuevo resultado
+    base.write.mode("overwrite").parquet(
         f"{gold_path}/customer_model_summary.parquet"
     )
-    print("Resumen GOLD con predicciones guardado")
+    guardar_validacion_modelo(
+        spark, gold_path, "PENDIENTE", "Validando salida del modelo.", **conteos
+    )
+
+    try:
+        predictions = spark.read.parquet(predictions_path)
+        conteos.update(contar_predicciones(customer, predictions))
+        enriched = create_customer_model_summary(customer, predictions)
+
+        if (
+            conteos["expected_rows"] == 0
+            or conteos["received_rows"] != conteos["expected_rows"]
+            or any(conteos[c] > 0 for c in [
+                "missing_rows", "unexpected_rows", "duplicate_keys", "invalid_rows"
+            ])
+        ):
+            raise ErrorCalidadDatos(
+                "La salida del modelo está incompleta o contiene valores inválidos."
+            )
+
+        enriched.write.mode("overwrite").parquet(
+            f"{gold_path}/customer_model_summary.parquet"
+        )
+        guardar_validacion_modelo(
+            spark, gold_path, "APROBADO",
+            "Cobertura, claves, moneda, períodos e importes aprobados.", **conteos
+        )
+    except Exception as error:
+        # Conservar el perfil base sin predicciones cuando la salida es rechazada
+        base.withColumn(
+            "prediction_validation_status", F.lit("RECHAZADO")
+        ).write.mode("overwrite").parquet(
+            f"{gold_path}/customer_model_summary.parquet"
+        )
+        guardar_validacion_modelo(
+            spark, gold_path, "RECHAZADO", str(error), **conteos
+        )
+        raise
+
+    print("Predicciones validadas e incorporadas a GOLD")
 
 
 def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
@@ -1298,6 +1695,12 @@ def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
 
     customer_gold = customer_gold.join(latest_summary, "id", "left")
 
+    # Preparar los últimos tres meses y los indicadores financieros
+    (
+        customer_gold, recent_months_gold, expense_categories_gold,
+        recent_categories_gold, health_gold
+    ) = create_recent_summaries(customer_gold, monthly_gold, movements_spark)
+
     # Validar antes de guardar
     validar_salida_gold(customer_gold, total_users)
 
@@ -1320,6 +1723,40 @@ def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
     ).limit(1).count():
         raise ErrorCalidadDatos("Los flujos mensuales no coinciden.")
 
+    # Validar que las categorías sumen el gasto mensual
+    gastos_categorias = (
+        expense_categories_gold
+        .groupBy("client_id", "currency", "month")
+        .agg(
+            F.sum("total_expenses").alias("category_expenses")
+        )
+    )
+
+    revision_categorias = (
+        monthly_gold
+        .select(
+            "client_id",
+            "currency",
+            "month",
+            "monthly_expenses"
+        )
+        .join(
+            gastos_categorias,
+            ["client_id", "currency", "month"],
+            "left"
+        )
+        .fillna(0, subset=["category_expenses"])
+    )
+
+    if revision_categorias.filter(
+        ~F.col("monthly_expenses").eqNullSafe(F.col("category_expenses"))
+    ).limit(1).count():
+        raise ValueError(
+            "Los gastos por categoría no coinciden con el total mensual."
+        )
+
+
+
     # Guardar GOLD
     datasets = {
         "customer_model_summary": create_customer_model_summary(customer_gold),
@@ -1328,6 +1765,10 @@ def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
         "cards_summary": cards_gold,
         "customer_monthly_summary": monthly_gold,
         "account_monthly_summary": account_monthly,
+        "customer_recent_months": recent_months_gold,
+        "customer_expenses_by_category": expense_categories_gold,
+        "customer_recent_expenses_by_category": recent_categories_gold,
+        "customer_financial_health": health_gold,
         "accounts": accounts_spark,
         "obligations_payments": obligations_spark,
         "movements": movements_spark
@@ -1338,6 +1779,13 @@ def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
             f"{output_path}/{nombre}.parquet"
         )
 
+    guardar_validacion_modelo(
+        spark, output_path, "PENDIENTE",
+        "GOLD base generado; falta validar la salida del modelo.",
+        expected_rows=customer_gold.filter(
+            F.col("financial_cutoff_date").isNotNull()
+        ).count()
+    )
     print("Pipeline GOLD completado")
 
 
@@ -1377,4 +1825,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

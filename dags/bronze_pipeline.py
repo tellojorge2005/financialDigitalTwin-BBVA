@@ -40,7 +40,10 @@ with DAG(
         conf={
             "spark.master": SPARK_MASTER,
             "spark.executor.memory": "2g",
-            "spark.driver.memory": "1g",
+            "spark.executor.cores": "2",
+            "spark.cores.max": "2",
+            "spark.sql.shuffle.partitions": "200",
+            "spark.driver.memory": "4g",
         },
     )
 

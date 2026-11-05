@@ -43,7 +43,7 @@ def test_clean_currency(spark):
     assert rows[0].income == pytest.approx(80000.0)
     assert rows[1].income == pytest.approx(-1250.50)
     assert rows[2].income is None
-    assert cleaned.schema["income"].dataType.simpleString() == "float"
+    assert cleaned.schema["income"].dataType.simpleString() == "decimal(18,2)"
 
 
 def test_impute_mode(spark):
@@ -99,13 +99,13 @@ def test_impute_median_without_values(spark):
     assert all(row.current_age is None for row in rows)
 
 
-def test_clean_users(spark):
+def test_clean_users(spark, perfil_cliente):
     df = spark.createDataFrame(
         [
-            (1, 10.0, " Male ", " New York ", "$30,000", "$60,000", "$5,000", 200),
-            (2, 130.0, "male", " Chicago ", "$40,000", "$80,000", "$8,000", 900),
-            (3, 40.0, "Female", " Miami ", "$35,000", "$70,000", "$6,000", 700),
-            (4, None, None, " Boston ", "$20,000", "$40,000", "$2,000", None)
+            (1, 10.0, " Male ", " Ciudad de México ", "$30,000", "$60,000", "$5,000", 200),
+            (2, 130.0, "male", " Guadalajara ", "$40,000", "$80,000", "$8,000", 900),
+            (3, 40.0, "Female", " Monterrey ", "$35,000", "$70,000", "$6,000", 700),
+            (4, None, None, " Puebla ", "$20,000", "$40,000", "$2,000", None)
         ],
         """
         id long,
@@ -121,14 +121,14 @@ def test_clean_users(spark):
 
     rows = {
         row.id: row
-        for row in clean_users(df).collect()
+        for row in clean_users(perfil_cliente(df)).collect()
     }
 
     assert rows[1].current_age == 18
     assert rows[2].current_age == 120
     assert rows[4].current_age == 40
     assert rows[4].gender == "male"
-    assert rows[1].address == "new york"
+    assert rows[1].address == "Ciudad de México"
     assert rows[1].yearly_income == 60000.0
     assert rows[1].credit_score == 300
     assert rows[2].credit_score == 850
@@ -153,6 +153,11 @@ def test_clean_cards(spark):
         """
     )
 
+    df = (
+        df.withColumn("client_id", F.col("id"))
+        .withColumn("year_pin_last_changed", F.lit(2025).cast("long"))
+        .withColumn("currency", F.lit("MXN"))
+    )
     rows = {
         row.id: row
         for row in clean_cards(df).collect()
@@ -188,7 +193,7 @@ def test_clean_transactions(raw_bundle):
     assert rows[10].merchant_city is None
     assert rows[10].card_id is None
     assert rows[10].account_id == "A-1"
-    assert rows[10].currency == "USD"
+    assert rows[10].currency == "MXN"
     assert rows[10].balance_after == Decimal("1100.00")
     assert rows[1].merchant_city == "city"
     assert rows[1].use_chip == "chip"
@@ -200,13 +205,31 @@ def test_invalid_amount_remains_missing(raw_bundle):
     assert clean_transactions(df).filter(F.col("amount").isNotNull()).count() == 0
 
 
+# Conservar nombres y códigos postales sin convertir nuevamente los pesos
+def test_identidad_y_pesos(raw_bundle):
+    users = (
+        raw_bundle["users"].filter(F.col("id") == 1)
+        .withColumn("full_name", F.lit("  Ana   María López Pérez  "))
+        .withColumn("email", F.lit(" ANA.LOPEZ@EXAMPLE.COM "))
+        .withColumn("postal_code", F.lit("06000"))
+        .withColumn("currency", F.lit(" mxn "))
+        .withColumn("yearly_income", F.lit("$240,000.25"))
+    )
+    row = clean_users(users).first()
+    assert row.full_name == "Ana María López Pérez"
+    assert row.email == "ana.lopez@example.com"
+    assert row.postal_code == "06000"
+    assert row.currency == "MXN"
+    assert row.yearly_income == Decimal("240000.25")
+
+
 def test_clean_accounts(raw_bundle):
     rows = {r.account_id: r for r in clean_accounts(raw_bundle["accounts"]).collect()}
     assert rows["A-1"].client_id == 1
     assert rows["A-1"].opening_balance == Decimal("100.00")
     assert rows["A-1"].closing_balance == Decimal("2100.00")
     assert rows["A-1"].overdraft_allowed is True
-    assert rows["A-1"].currency == "USD"
+    assert rows["A-1"].currency == "MXN"
 
 
 def test_clean_obligations(raw_bundle):

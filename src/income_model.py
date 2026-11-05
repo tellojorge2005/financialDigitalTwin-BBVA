@@ -9,6 +9,12 @@ from pyspark.sql import SparkSession
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from xgboost import XGBRegressor
 
+# Importar escenarios al ejecutar como módulo o mediante spark-submit
+if __package__:
+    from .monte_carlo import run_pipeline as generar_escenarios
+else:
+    from monte_carlo import run_pipeline as generar_escenarios
+
 # Cargar configuración sin depender del notebook
 PROJECT_PATH = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_PATH / ".env", override=False)
@@ -35,9 +41,9 @@ def entrenar_ingresos(mensual):
             "Existen resúmenes mensuales duplicados."
         )
 
-    if mensual["currency"].nunique() != 1:
+    if mensual["currency"].isna().any() or set(mensual["currency"]) != {"MXN"}:
         raise ValueError(
-            "Entrena un modelo por moneda."
+            "Se esperaba historial en MXN."
         )
 
     # Definir variables predictoras
@@ -146,7 +152,7 @@ def entrenar_ingresos(mensual):
         tree_method="hist",
         early_stopping_rounds=30,
         random_state=42,
-        n_jobs=4
+        n_jobs=2
     )
 
     modelo_ingreso.fit(
@@ -327,7 +333,9 @@ def run_pipeline(spark, gold_path):
     predictions_spark.write.mode("overwrite").parquet(
         f"{gold_path}/income_predictions.parquet"
     )
-    print("Predicciones de ingresos guardadas en GOLD")
+    # Preparar los escenarios que acompañan al historial del cliente
+    generar_escenarios(spark, gold_path)
+    print("Predicciones de ingresos y escenarios guardados en GOLD")
 
 
 def main():
@@ -341,7 +349,7 @@ def main():
     if not gold_path:
         if not bucket:
             raise RuntimeError("Configura S3_BUCKET.")
-        gold_path = f"s3a://{bucket}/gold"
+        gold_path = f"s3a://{bucket}/data/gold"
 
     spark = (
         SparkSession.builder
@@ -356,4 +364,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

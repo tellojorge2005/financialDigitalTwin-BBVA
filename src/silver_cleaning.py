@@ -1,4 +1,5 @@
 import os
+from functools import reduce
 from pathlib import Path
 
 import numpy as np
@@ -46,8 +47,8 @@ BUCKET = os.getenv("S3_BUCKET", "").strip()
 if not BUCKET:
     raise RuntimeError("Configura S3_BUCKET en .env.")
 
-INPUT_PATH = f"s3a://{BUCKET}/bronze"
-OUTPUT_PATH = f"s3a://{BUCKET}/silver"
+INPUT_PATH = f"s3a://{BUCKET}/data/bronze"
+OUTPUT_PATH = f"s3a://{BUCKET}/data/silver"
 
 
 # Definir variables
@@ -68,14 +69,67 @@ CATEGORICAL_COLUMNS = [
 FEATURE_COLUMNS = NUMERIC_COLUMNS + CATEGORICAL_COLUMNS
 
 
+def conservar_completo(df, clave, columnas=None):
+    campos = columnas or [
+        c for c in df.columns
+        if c != clave
+    ]
+
+    completos = reduce(
+        lambda a, b: a + b,
+        [
+            F.col(c).isNotNull().cast("int")
+            for c in campos
+        ],
+        F.lit(0)
+    )
+
+    contenido = F.to_json(
+        F.struct(*[
+            F.col(c)
+            for c in sorted(df.columns)
+        ]),
+        options={"ignoreNullFields": "false"}
+    )
+
+    ventana = Window.partitionBy(clave).orderBy(
+        completos.desc(),
+        F.sha2(contenido, 256).asc()
+    )
+
+    return (
+        df
+        .withColumn(
+            "_position",
+            F.row_number().over(ventana)
+        )
+        .filter(F.col("_position") == 1)
+        .drop("_position")
+    )
+
+
+
 # Transformar users
 def clean_users(users_spark):
     users_silver = users_spark
 
-    for column in ["gender", "address"]:
+    for column in ["gender", "email"]:
         users_silver = users_silver.withColumn(
             column,
-            trim(lower(col(column)))
+            F.lower(F.trim(F.col(column)))
+        )
+
+    for column in [
+        "full_name",
+        "address",
+        "city",
+        "state",
+        "country",
+        "postal_code"
+    ]:
+        users_silver = users_silver.withColumn(
+            column,
+            F.trim(F.col(column))
         )
 
     for column in [
@@ -85,11 +139,46 @@ def clean_users(users_spark):
     ]:
         users_silver = users_silver.withColumn(
             column,
-            col(column).cast("double")
+            F.col(column).cast("double")
         )
 
-    # Eliminar duplicados
-    return users_silver.dropDuplicates(["id"])
+    users_silver = conservar_completo(
+        users_silver,
+        "id"
+    )
+
+
+    # Validar identidad y correo antes de relacionar los datasets
+    identidad_invalida = (
+        F.col("id").isNull()
+        | (F.col("id") < 0)
+        | F.col("full_name").isNull()
+        | (F.length("full_name") == 0)
+        | F.col("email").isNull()
+        | ~F.col("email").rlike(
+            r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+        )
+    )
+
+    if users_silver.filter(
+        identidad_invalida
+    ).limit(1).count():
+        raise ValueError(
+            "Hay usuarios con identificador, nombre o correo inválido."
+        )
+
+    if (
+        users_silver
+        .groupBy("email")
+        .count()
+        .filter("count > 1")
+        .limit(1)
+        .count()
+    ):
+        raise ValueError(
+            "Un correo está relacionado con más de un cliente."
+        )
+    return users_silver
 
 
 # Transformar cards
@@ -113,7 +202,7 @@ def clean_cards(cards_spark):
     )
 
     # Eliminar duplicados
-    return cards_silver.dropDuplicates(["id"])
+    return conservar_completo(cards_silver, "id")
 
 
 # Transformar transactions
@@ -211,25 +300,59 @@ def clean_transactions(transactions_spark):
         )
     )
 
-    # No ocultar movimientos distintos con el mismo identificador
     transactions_silver = transactions_silver.dropDuplicates()
 
     movimientos = transactions_silver.filter(
         F.col("amount_convention") == "signed_cashflow"
     )
 
-    exigir_clave("Movements", movimientos, "id")
 
-    ids_movimientos = movimientos.select("id")
+    # No elegir arbitrariamente entre movimientos distintos con el mismo ID
+    if (
+        movimientos
+        .groupBy("id")
+        .count()
+        .filter("count > 1")
+        .limit(1)
+        .count()
+    ):
+        raise ValueError(
+            "Movements: existen claves duplicadas con movimientos diferentes."
+        )
 
     anteriores = transactions_silver.filter(
         F.col("amount_convention") == "legacy_unchanged"
     )
 
-    if anteriores.join(ids_movimientos, "id", "inner").limit(1).count():
-        raise ValueError("Un ID aparece en las dos convenciones de transacciones.")
+    if anteriores.join(
+        movimientos.select("id"),
+        "id",
+        "inner"
+    ).limit(1).count():
+        raise ValueError(
+            "Un ID aparece en las dos convenciones de transacciones."
+        )
 
-    return transactions_silver.dropDuplicates(["id"])
+    otras = transactions_silver.filter(
+        F.col("amount_convention").isNull()
+        | ~F.col("amount_convention").isin(
+            "signed_cashflow",
+            "legacy_unchanged"
+        )
+    )
+
+    anteriores = conservar_completo(
+        anteriores,
+        "id",
+        ["date", "amount", "client_id"]
+    )
+
+    transactions_silver = (
+        movimientos
+        .unionByName(anteriores)
+        .unionByName(otras)
+    )
+    return transactions_silver
 
 
 # Crear modelo
@@ -984,6 +1107,46 @@ def prepare_financial_data(
     )
 
 
+def normalizar_categorias(transactions_silver):
+    # Normalizar categorías de gastos
+
+    categorias_gasto = [
+        "alimentación",
+        "transporte",
+        "vivienda",
+        "servicios",
+        "salud",
+        "entretenimiento",
+        "compras",
+        "viajes",
+        "otros"
+    ]
+
+    transactions_silver = transactions_silver.withColumn(
+        "category",
+        F.when(
+            F.col("movement_type") == "expense",
+            F.when(
+                F.col("category").isin(*categorias_gasto),
+                F.col("category")
+            ).otherwise("otros")
+        ).otherwise(F.col("category"))
+    )
+
+
+
+    return transactions_silver
+
+
+def validar_monedas(datasets):
+    # Validar pesos mexicanos sin volver a convertir los importes
+    for nombre, datos in datasets.items():
+        if datos.filter(
+            F.col("currency").isNull() | (F.col("currency") != "MXN")
+        ).limit(1).count():
+            raise ValueError(f"{nombre}: se esperaba moneda MXN.")
+
+
 def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
     # Cargar datasets
     users_spark = spark.read.parquet(f"{input_path}/users.parquet")
@@ -1063,6 +1226,16 @@ def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
         transactions_rejected,
         clientes
     )
+
+    # Preparar categorías y comprobar moneda
+    transactions_silver = normalizar_categorias(transactions_silver)
+    validar_monedas({
+        "users": users_silver,
+        "cards": cards_silver,
+        "transactions": transactions_silver,
+        "accounts": accounts_silver,
+        "obligations_payments": obligations_silver
+    })
 
     # Completar límites de crédito
     cards_silver = impute_credit_limits(cards_silver, users_silver)

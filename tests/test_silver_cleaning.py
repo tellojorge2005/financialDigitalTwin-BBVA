@@ -11,6 +11,8 @@ import pytest
 from pyspark.sql.functions import date_format
 
 from src.silver_cleaning import (
+    normalizar_categorias,
+    validar_monedas,
     clean_users,
     clean_cards,
     clean_transactions,
@@ -20,20 +22,53 @@ from src.silver_cleaning import (
 )
 
 
+# Elegir la fila completa aunque cambie el orden de los duplicados
+def test_conserva_perfil_completo(users_data):
+    incompleto = users_data.filter(F.col("id") == 1).withColumn(
+        "email", F.lit(None).cast("string")
+    )
+    resultado = clean_users(incompleto.unionByName(users_data))
+    assert resultado.count() == 3
+    assert resultado.filter(F.col("id") == 1).first().email == "cliente.1@example.com"
+
+
+def test_rechaza_correo_compartido(users_data):
+    users = users_data.withColumn("email", F.lit("cliente@example.com"))
+    with pytest.raises(ValueError, match="más de un cliente"):
+        clean_users(users)
+
+
+def test_categorias_generales(spark):
+    df = spark.createDataFrame(
+        [(1, "expense", "viajes"), (2, "expense", "detalle específico"),
+         (3, "expense", None), (4, "income", "salario")],
+        "id long, movement_type string, category string"
+    )
+    rows = {r.id: r.category for r in normalizar_categorias(df).collect()}
+    assert rows == {1: "viajes", 2: "otros", 3: "otros", 4: "salario"}
+
+
+@pytest.mark.parametrize("moneda", ["USD", None])
+def test_rechaza_moneda_incorrecta(spark, moneda):
+    df = spark.createDataFrame([(moneda,)], "currency string")
+    with pytest.raises(ValueError, match="se esperaba moneda MXN"):
+        validar_monedas({"users": df})
+
+
 @pytest.fixture
-def users_data(spark):
-    return spark.createDataFrame(
+def users_data(spark, perfil_cliente):
+    return perfil_cliente(spark.createDataFrame(
         [
             (
-                1, 30.0, " Male ", " New York ",
+                1, 30.0, " Male ", " Ciudad de México ",
                 30000.0, 60000.0, 10000.0, 750
             ),
             (
-                2, 40.0, " Female ", " Boston ",
+                2, 40.0, " Female ", " Puebla ",
                 40000.0, 80000.0, 20000.0, 720
             ),
             (
-                3, 50.0, " Male ", " Miami ",
+                3, 50.0, " Male ", " Monterrey ",
                 25000.0, 50000.0, 15000.0, 700
             )
         ],
@@ -47,7 +82,7 @@ def users_data(spark):
         total_debt double,
         credit_score long
         """
-    )
+    ))
 
 
 @pytest.fixture
@@ -76,7 +111,7 @@ def test_clean_users(users_data):
 
     assert len(rows) == 3
     assert rows[1].gender == "male"
-    assert rows[1].address == "new york"
+    assert rows[1].address == "Ciudad de México"
 
     for column in [
         "yearly_income",
@@ -314,8 +349,8 @@ def test_clean_transactions(bronze_bundle):
     ).collect()}
 
     assert len(rows) == 14
-    assert rows[1].date == "2009-12-15 10:00:00"
-    assert rows[10].date == "2010-01-05 10:00:00"
+    assert rows[1].date == "2025-12-15 10:00:00"
+    assert rows[10].date == "2026-01-05 10:00:00"
     assert rows[3].date is None
     assert rows[11].amount == Decimal("-300.00")
     assert rows[10].merchant_city is None
@@ -324,8 +359,8 @@ def test_clean_transactions(bronze_bundle):
 
 @pytest.mark.parametrize(
     "texto,esperado",
-    [("01/20/2010 10:00", "2010-01-20 10:00:00"),
-     ("02/03/2010 12:00", "2010-03-02 12:00:00")]
+    [("01/20/2026 10:00", "2026-01-20 10:00:00"),
+     ("02/03/2026 12:00", "2026-03-02 12:00:00")]
 )
 def test_date_formats(bronze_bundle, texto, esperado):
     df = bronze_bundle["transactions"].filter(F.col("id") == 1)

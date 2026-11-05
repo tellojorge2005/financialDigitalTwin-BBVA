@@ -20,135 +20,179 @@ BUCKET = os.getenv("S3_BUCKET", "").strip()
 if not BUCKET:
     raise RuntimeError("Configura S3_BUCKET en .env.")
 
-INPUT_PATH = f"s3a://{BUCKET}/incoming"
-OUTPUT_PATH = f"s3a://{BUCKET}/bronze"
+INPUT_PATH = f"s3a://{BUCKET}/data/incoming"
+OUTPUT_PATH = f"s3a://{BUCKET}/data/bronze"
 
 
 # Limpiar strings: quitar espacios y convertir a minúsculas
 def clean_string(df, column):
     return df.withColumn(
         column,
-        trim(lower(col(column)))
+        F.lower(F.trim(F.col(column)))
     )
 
 
 # Limpiar moneda: quitar $ y comas
 def clean_currency(df, column):
-    return df.withColumn(
-        column,
-        regexp_replace(
-            regexp_replace(col(column), r"\$", ""),
-            ",",
-            ""
-        ).cast("float")
-    )
+    return convertir_importes(df, [column])
 
 
 # Imputar con moda
 def impute_mode(df, column):
-    mode_row = (
-        df.filter(col(column).isNotNull())
+    fila = (
+        df.filter(F.col(column).isNotNull())
         .groupBy(column)
         .count()
-        .orderBy(col("count").desc(), col(column).asc())
+        .orderBy(F.desc("count"), F.asc(column))
         .first()
     )
 
-    if mode_row is None:
-        return df
-
-    return df.fillna({column: mode_row[column]})
+    return df.fillna({column: fila[column]}) if fila else df
 
 
 # Imputar con mediana
 def impute_median(df, column):
-    valid_values = df.filter(
-        col(column).isNotNull()
-        & ~isnan(col(column))
-    )
+    valores = df.approxQuantile(column, [0.5], 0.001)
 
-    if not valid_values.take(1):
-        return df
+    return df.fillna({column: valores[0]}) if valores else df
 
-    imputer = Imputer(
-        inputCols=[column],
-        outputCols=[column]
-    ).setStrategy("median")
 
-    return imputer.fit(df).transform(df)
+def convertir_tipos(df, columnas, tipo):
+    for columna in columnas:
+        df = df.withColumn(
+            columna,
+            F.expr(f"try_cast(`{columna}` as {tipo})")
+        )
+
+    return df
 
 
 # Limpiar users
 def clean_users(users_spark):
-    # Limpiar strings
-    users_spark = clean_string(users_spark, "gender")
-    users_spark = clean_string(users_spark, "address")
+    # Limpiar users_spark
 
-    # Limpiar columnas de moneda
-    currency_columns = [
+    users_spark = preparar_textos(users_spark)
+
+    users_spark = convertir_tipos(
+        users_spark,
+        [
+            "id",
+            "retirement_age",
+            "birth_year",
+            "birth_month",
+            "credit_score",
+            "num_credit_cards"
+        ],
+        "bigint"
+    )
+
+    users_spark = convertir_tipos(
+        users_spark,
+        ["current_age", "latitude", "longitude"],
+        "double"
+    )
+
+    for column in [
         "per_capita_income",
         "yearly_income",
         "total_debt"
-    ]
+    ]:
+        users_spark = clean_currency(users_spark, column)
 
-    for column in currency_columns:
-        if column in users_spark.columns:
-            users_spark = clean_currency(users_spark, column)
 
-    # Imputar current_age con mediana
+    # Conservar nombres y ubicaciones con su escritura original
+    for column in [
+        "full_name",
+        "address",
+        "city",
+        "state",
+        "country"
+    ]:
+        users_spark = users_spark.withColumn(
+            column,
+            F.regexp_replace(
+                F.trim(F.col(column)),
+                r"\s+",
+                " "
+            )
+        )
+
+    users_spark = clean_string(users_spark, "email")
+    users_spark = clean_string(users_spark, "gender")
+
+    users_spark = users_spark.withColumn(
+        "currency",
+        F.upper("currency")
+    )
+
+
+    # Validar rangos e imputar los campos previstos
+    users_spark = (
+        users_spark
+        .withColumn(
+            "current_age",
+            F.when(F.col("current_age") < 18, 18)
+            .when(F.col("current_age") > 120, 120)
+            .otherwise(F.col("current_age"))
+        )
+        .withColumn(
+            "credit_score",
+            F.when(F.col("credit_score") < 300, 300)
+            .when(F.col("credit_score") > 850, 850)
+            .otherwise(F.col("credit_score"))
+        )
+    )
+
     users_spark = impute_median(users_spark, "current_age")
-
-    # Imputar gender con moda
     users_spark = impute_mode(users_spark, "gender")
 
-    # Validar rangos
-    users_spark = users_spark.withColumn(
-        "current_age",
-        when(col("current_age") < 18, 18)
-        .when(col("current_age") > 120, 120)
-        .otherwise(col("current_age"))
-    )
-
-    users_spark = users_spark.withColumn(
-        "credit_score",
-        when(col("credit_score") < 300, 300)
-        .when(col("credit_score") > 850, 850)
-        .otherwise(col("credit_score"))
-    )
 
     return users_spark
 
 
 # Limpiar cards
 def clean_cards(cards_spark):
-    # Limpiar strings
-    string_columns = [
+    # Limpiar cards_spark
+
+    cards_spark = preparar_textos(cards_spark)
+
+    cards_spark = convertir_tipos(
+        cards_spark,
+        ["id", "client_id", "year_pin_last_changed"],
+        "bigint"
+    )
+
+    cards_spark = convertir_tipos(
+        cards_spark,
+        ["num_cards_issued"],
+        "double"
+    )
+
+    for column in [
         "card_brand",
         "card_type",
         "has_chip",
         "card_on_dark_web"
-    ]
+    ]:
+        cards_spark = clean_string(cards_spark, column)
 
-    for column in string_columns:
-        if column in cards_spark.columns:
-            cards_spark = clean_string(cards_spark, column)
+    cards_spark = clean_currency(cards_spark, "credit_limit")
 
-    # Limpiar credit_limit
-    if "credit_limit" in cards_spark.columns:
-        cards_spark = clean_currency(cards_spark, "credit_limit")
+    cards_spark = cards_spark.withColumn(
+        "currency",
+        F.upper("currency")
+    )
 
-    # Imputar num_cards_issued con mediana
     cards_spark = impute_median(cards_spark, "num_cards_issued")
-
-    # Imputar card_brand con moda
     cards_spark = impute_mode(cards_spark, "card_brand")
 
-    # Validar credit_limit
     cards_spark = cards_spark.withColumn(
         "credit_limit",
-        when(col("credit_limit") < 0, 0)
-        .otherwise(col("credit_limit"))
+        F.when(F.col("credit_limit") < 0, 0)
+        .otherwise(F.col("credit_limit"))
     )
+
+    # Los límites faltantes se estiman en SILVER con el modelo existente
 
     return cards_spark
 
@@ -328,16 +372,17 @@ def clean_transactions(transactions_spark):
 
 def run_pipeline(spark, input_path=INPUT_PATH, output_path=OUTPUT_PATH):
     # Cargar datasets
-    def cargar(nombre, inferir=False):
+    def cargar(nombre):
         return (
             spark.read
             .option("header", True)
-            .option("inferSchema", inferir)
+            .option("inferSchema", False)
+            .option("encoding", "UTF-8")
             .csv(f"{input_path}/{nombre}_data.csv")
         )
 
-    users_spark = clean_users(cargar("users", True))
-    cards_spark = clean_cards(cargar("cards", True))
+    users_spark = clean_users(cargar("users"))
+    cards_spark = clean_cards(cargar("cards"))
     transactions_spark = clean_transactions(cargar("transactions"))
     accounts_spark = clean_accounts(cargar("accounts"))
     obligations_spark = clean_obligations(cargar("obligations_payments"))
