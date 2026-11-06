@@ -1,0 +1,224 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "f9f9aa56120612ee9e82",
+  "position": {
+    "x": 1121.9294117647057,
+    "y": 489.17647058823525,
+    "z": 10000,
+    "height": 434.77203647416411,
+    "width": 697.38601823708211,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "fecha_hora_local"
+                }
+              },
+              "queryRef": "Interacciones.fecha_hora_local",
+              "nativeQueryRef": "fecha_hora_local"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "resultado"
+                }
+              },
+              "queryRef": "Interacciones.resultado",
+              "nativeQueryRef": "resultado"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "duracion_segundos"
+                }
+              },
+              "queryRef": "Sum(Interacciones.duracion_segundos)",
+              "nativeQueryRef": "duracion_segundos1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "http_status"
+                }
+              },
+              "queryRef": "Sum(Interacciones.http_status)",
+              "nativeQueryRef": "http_status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "llamadas_modelo"
+                }
+              },
+              "queryRef": "Sum(Interacciones.llamadas_modelo)",
+              "nativeQueryRef": "llamadas_modelo"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "llamadas_herramientas"
+                }
+              },
+              "queryRef": "Sum(Interacciones.llamadas_herramientas)",
+              "nativeQueryRef": "llamadas_herramientas"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "errores_herramientas"
+                }
+              },
+              "queryRef": "Sum(Interacciones.errores_herramientas)",
+              "nativeQueryRef": "errores_herramientas"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "70202172de6e600dd9bd",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "fecha_hora_local"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "83d343d5804da963c7ca",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "resultado"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "48fb54307b5ae0c04782",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "duracion_segundos"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "b5baa10a352793e598a6",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "http_status"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "2df30373ddbeb315d043",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "llamadas_modelo"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "777f24d0e64b1b50ab89",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "llamadas_herramientas"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "a13771bbe4cb1e2b0ece",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "errores_herramientas"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

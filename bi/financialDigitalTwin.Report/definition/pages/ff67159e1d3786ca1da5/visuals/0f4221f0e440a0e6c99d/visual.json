@@ -1,0 +1,75 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "0f4221f0e440a0e6c99d",
+  "position": {
+    "x": 1526.3712497765066,
+    "y": 226.55691042374417,
+    "z": 10003,
+    "height": 94.832826747720361,
+    "width": 275.74468085106383,
+    "tabOrder": 10003
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "Costo promedio por consulta USD"
+                }
+              },
+              "queryRef": "Interacciones.Costo promedio por consulta USD",
+              "nativeQueryRef": "Costo promedio por consulta USD",
+              "format": "0.000000"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "Costo promedio por consulta USD"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "4b9ca17b1c560d2a042b",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "Costo promedio por consulta USD"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

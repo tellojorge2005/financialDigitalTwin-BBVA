@@ -1,0 +1,74 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "1cb557bb371bb19a516d",
+  "position": {
+    "x": 194.39999999999998,
+    "y": 226.16470588235293,
+    "z": 0,
+    "height": 94.832826747720361,
+    "width": 173.61702127659575,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "Total interacciones"
+                }
+              },
+              "queryRef": "Interacciones.Total_interacciones",
+              "nativeQueryRef": "Total interacciones"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "Total interacciones"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "27fb21f590c0ed2c2874",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "Total interacciones"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

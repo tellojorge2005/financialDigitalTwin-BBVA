@@ -1,0 +1,5 @@
+﻿obligation_id,contract_id,client_id,account_id,installment_number,contract_start_date,contract_principal,annual_interest_rate,due_date,amount_due,payment_date,amount_paid,outstanding_amount,payment_transaction_id,as_of_date,days_past_due_as_of,days_to_full_payment,currency
+O-1-201104-R7,L-1-R7,1,A-1,15,2025-01-31,342727.20,0.00,2026-04-20,14280.30,2026-07-24,7140.15,7140.15,78183396,2026-07-31,102,,MXN
+O-0-201107-R7,L-0-R7,0,A-0,18,2025-01-31,331417.01,0.00,2026-07-20,13809.04,2026-07-20,13809.04,0.00,78179265,2026-07-31,0,0,MXN
+O-1-201107-R7,L-1-R7,1,A-1,18,2025-01-31,342727.20,0.00,2026-07-20,14280.30,2026-07-18,14280.30,0.00,78176508,2026-07-31,0,0,MXN
+O-2-201107-R7,L-2-R7,2,A-2,18,2025-01-31,102315.87,0.00,2026-07-20,4263.16,2026-07-18,4263.16,0.00,78176509,2026-07-31,0,0,MXN

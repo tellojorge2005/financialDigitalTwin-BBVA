@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "ff67159e1d3786ca1da5",
+  "displayName": "Monitoreo del asistente",
+  "displayOption": "FitToPage",
+  "height": 1080,
+  "width": 1920,
+  "pageBinding": {
+    "name": "397359404502ebd1045c",
+    "type": "Default",
+    "parameters": []
+  }
+}

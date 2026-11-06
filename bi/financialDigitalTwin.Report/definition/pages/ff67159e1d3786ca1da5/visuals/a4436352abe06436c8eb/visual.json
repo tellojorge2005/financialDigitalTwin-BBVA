@@ -1,0 +1,74 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "a4436352abe06436c8eb",
+  "position": {
+    "x": 391.2952619345611,
+    "y": 226.55691042374417,
+    "z": 1000,
+    "height": 94.832826747720361,
+    "width": 157.56838905775075,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "Conversaciones"
+                }
+              },
+              "queryRef": "Interacciones.Conversaciones",
+              "nativeQueryRef": "Conversaciones"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "Conversaciones"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "8155c17d2c149c563816",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "Conversaciones"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}
