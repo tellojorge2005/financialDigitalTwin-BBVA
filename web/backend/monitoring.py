@@ -19,8 +19,8 @@ from botocore.config import Config
 from langchain_core.callbacks import BaseCallbackHandler
 
 # Importar config también carga el .env del proyecto.
-from backend.config import AWS_REGION, S3_BUCKET, SESSION_SECRET
-from backend.usage import UsoModelo, CAMPOS_USO
+from web.backend.config import AWS_REGION, S3_BUCKET, SESSION_SECRET
+from web.backend.usage import UsoModelo, CAMPOS_USO
 
 
 logger = logging.getLogger(__name__)

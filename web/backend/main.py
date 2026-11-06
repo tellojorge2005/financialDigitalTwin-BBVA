@@ -13,15 +13,15 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, EmailStr
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
-from backend.assistant import crear_asistente
-from backend.config import (
+from web.backend.assistant import crear_asistente
+from web.backend.config import (
     COOKIE_SECURE,
     FRONTEND_PATH,
     SESSION_SECRET,
     SESSION_SECONDS,
     validar_configuracion,
 )
-from backend.data import (
+from web.backend.data import (
     ClienteDuplicado,
     ErrorDatos,
     consultar_cliente,
@@ -29,9 +29,9 @@ from backend.data import (
     panorama_publico,
     resumen_publico,
 )
-from backend.guardrails import RECHAZO
-from backend.turns import ejecutar_turno, LIMITE_TURNO
-from backend.history import (
+from web.backend.guardrails import RECHAZO
+from web.backend.turns import ejecutar_turno, LIMITE_TURNO
+from web.backend.history import (
     inicializar_historial,
     crear_conversacion,
     borrar_conversacion,
@@ -43,7 +43,7 @@ from backend.history import (
     SesionExpirada,
     ConversacionOcupada,
 )
-from backend.monitoring import (
+from web.backend.monitoring import (
     MetricasInteraccion,
     MonitorInteracciones,
 )

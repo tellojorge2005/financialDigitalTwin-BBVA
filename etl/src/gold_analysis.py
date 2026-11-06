@@ -21,7 +21,10 @@ from pyspark.sql import types as T
 
 
 # Cargar variables de entorno
+# En local: <proyecto>/etl/src. En Docker: /opt/project/src.
 PROJECT_PATH = Path(__file__).resolve().parent.parent
+if PROJECT_PATH.name == "etl":
+    PROJECT_PATH = PROJECT_PATH.parent
 
 load_dotenv(PROJECT_PATH / ".env", override=False)
 

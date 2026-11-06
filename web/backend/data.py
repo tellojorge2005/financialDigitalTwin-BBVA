@@ -13,12 +13,12 @@ import boto3
 import pyarrow.dataset as ds
 import pyarrow.fs as fs
 
-from backend.config import (
+from web.backend.config import (
     AWS_REGION, S3_BUCKET, S3_CUSTOMER_PATH, S3_MONTHLY_PATH,
     S3_SCENARIOS_PATH, S3_CATEGORIES_PATH,
 )
 
-from backend.turns import comprobar_plazo, TiempoConsulta, medir_etapa
+from web.backend.turns import comprobar_plazo, TiempoConsulta, medir_etapa
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +251,7 @@ def consultar_proyecciones(cliente_id):
         3, opcional=True,
     )
     if not filas:
-        from backend.finances import simular_proyecciones
+        from web.backend.finances import simular_proyecciones
         return simular_proyecciones(cliente_id, historial)
     claves = set()
     for fila in filas:

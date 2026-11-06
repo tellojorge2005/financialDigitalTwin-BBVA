@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+import pendulum
 
 from airflow import DAG
 from airflow.providers.standard.operators.trigger_dagrun import (
@@ -14,7 +16,7 @@ DEFAULT_ARGS = {
     "depends_on_past": False,
     "retries": 2,
     "retry_delay": timedelta(minutes=5),
-    "start_date": datetime(2026, 9, 1),
+    "start_date": pendulum.datetime(2026, 9, 1, tz="America/Mexico_City"),
 }
 
 
@@ -25,7 +27,7 @@ with DAG(
     dag_id="bronze_cleaning_pipeline",
     default_args=DEFAULT_ARGS,
     description="Pipeline de limpieza para capa BRONZE en S3",
-    schedule="@daily",
+    schedule="0 0 * * *",  # Medianoche en Ciudad de Mexico
     catchup=False,
     max_active_runs=1,
     tags=["etl", "spark", "bronze"],
@@ -40,9 +42,9 @@ with DAG(
         conf={
             "spark.master": SPARK_MASTER,
             "spark.executor.memory": "2g",
-            "spark.executor.cores": "2",
-            "spark.cores.max": "2",
-            "spark.sql.shuffle.partitions": "200",
+            "spark.executor.cores": "4",
+            "spark.cores.max": "4",
+            "spark.sql.shuffle.partitions": "32",
             "spark.driver.memory": "4g",
         },
     )

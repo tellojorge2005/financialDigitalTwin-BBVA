@@ -1,13 +1,13 @@
 from datetime import date
 from decimal import Decimal
 
-from src.gold_analysis import create_monthly_summaries
+from etl.src.gold_analysis import create_monthly_summaries
 
 import pytest
 
 from pyspark.sql import functions as F
 
-from src.gold_analysis import (
+from etl.src.gold_analysis import (
     ErrorCalidadDatos,
     create_cards_summary,
     create_transactions_summary,

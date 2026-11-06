@@ -3,7 +3,7 @@ import re
 from decimal import Decimal, InvalidOperation
 from time import perf_counter
 
-from backend.config import OPENAI_MODEL
+from web.backend.config import OPENAI_MODEL
 
 
 # Tarifas estándar de texto en USD por millón de tokens, consultadas 2026-11-05

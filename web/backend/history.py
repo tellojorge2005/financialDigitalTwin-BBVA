@@ -4,8 +4,8 @@ import sqlite3
 import time
 from contextlib import contextmanager
 
-from backend.config import CHAT_DB_PATH, SESSION_SECONDS, MAX_CHAT_MESSAGES
-from backend.turns import LIMITE_RESERVA
+from web.backend.config import CHAT_DB_PATH, SESSION_SECONDS, MAX_CHAT_MESSAGES
+from web.backend.turns import LIMITE_RESERVA
 
 
 class SesionExpirada(Exception):

@@ -49,8 +49,8 @@ services:
       PYSPARK_PYTHON: /opt/venv/bin/python
 
     volumes:
-      - ../dags:/opt/airflow/dags
-      - ../src:/opt/project/src
+      - ../etl/dags:/opt/airflow/dags
+      - ../etl/src:/opt/project/src
       - ../data:/opt/project/data
 
     ports:
@@ -85,7 +85,7 @@ services:
       PYSPARK_PYTHON: /opt/venv/bin/python
 
     volumes:
-      - ../src:/opt/project/src
+      - ../etl/src:/opt/project/src
       - ../data:/opt/project/data
 
     ports:
@@ -110,7 +110,7 @@ services:
     build:
       context: ./spark
       dockerfile: Dockerfile
-      
+
     container_name: spark-worker
     restart: unless-stopped
 
@@ -126,7 +126,7 @@ services:
       PYSPARK_PYTHON: /opt/venv/bin/python
 
     volumes:
-      - ../src:/opt/project/src
+      - ../etl/src:/opt/project/src
       - ../data:/opt/project/data
 
     ports:
@@ -140,7 +140,7 @@ services:
       - org.apache.spark.deploy.worker.Worker
       - spark://spark-master:7077
       - --cores
-      - "2"
+      - "4"
       - --memory
       - "2g"
 

@@ -13,18 +13,18 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import START, END, StateGraph
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from backend.config import OPENAI_API_KEY, OPENAI_MODEL
-from backend.turns import comprobar_plazo, medir_etapa
-from backend.data import (
+from web.backend.config import OPENAI_API_KEY, OPENAI_MODEL
+from web.backend.turns import comprobar_plazo, medir_etapa
+from web.backend.data import (
     consultar_cliente, consultar_historial, consultar_categorias,
     consultar_proyecciones, meses_completos, ErrorDatos,
 )
-from backend.finances import evaluar_finanzas, explicar_proyecciones, numero, cantidad
-from backend.goals import (
+from web.backend.finances import evaluar_finanzas, explicar_proyecciones, numero, cantidad
+from web.backend.goals import (
     CambioMeta, CambioEscenario, actualizar_meta, orientar_meta,
     preparar_escenario, explicar_salida_trabajo,
 )
-from backend.guardrails import entrada_restringida, proteger_respuesta, RECHAZO
+from web.backend.guardrails import entrada_restringida, proteger_respuesta, RECHAZO
 
 logger = logging.getLogger(__name__)
 MAX_RONDAS_HERRAMIENTAS = 3

@@ -1,11 +1,11 @@
 import re
 import unicodedata
 
-from backend.config import (
+from web.backend.config import (
     OPENAI_API_KEY, OPENAI_MODEL, SESSION_SECRET, S3_BUCKET,
     S3_CUSTOMER_PATH, S3_MONTHLY_PATH, S3_SCENARIOS_PATH, S3_CATEGORIES_PATH, AWS_REGION
 )
-from backend.data import CUSTOMER_COLUMNS
+from web.backend.data import CUSTOMER_COLUMNS
 
 
 RECHAZO = (

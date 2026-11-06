@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 
 # Definir directorio del proyecto
-PROJECT_PATH = Path(__file__).resolve().parent.parent
-FRONTEND_PATH = PROJECT_PATH / "frontend"
+PROJECT_PATH = Path(__file__).resolve().parents[2]
+FRONTEND_PATH = PROJECT_PATH / "web" / "frontend"
 
 
 # Cargar variables de entorno
@@ -61,7 +61,7 @@ def validar_configuracion():
         raise RuntimeError("Configura la ubicación de los datos en S3.")
 
     if not (FRONTEND_PATH / "index.html").is_file():
-        raise RuntimeError("No se encontró frontend/index.html.")
+        raise RuntimeError("No se encontró web/frontend/index.html.")
 
 # Historial del prototipo, fuera del repositorio y de las cookies
 CHAT_DB_PATH = Path(os.getenv(

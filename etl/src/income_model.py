@@ -16,7 +16,10 @@ else:
     from monte_carlo import run_pipeline as generar_escenarios
 
 # Cargar configuración sin depender del notebook
+# En local: <proyecto>/etl/src. En Docker: /opt/project/src.
 PROJECT_PATH = Path(__file__).resolve().parent.parent
+if PROJECT_PATH.name == "etl":
+    PROJECT_PATH = PROJECT_PATH.parent
 load_dotenv(PROJECT_PATH / ".env", override=False)
 
 

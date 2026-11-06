@@ -19,9 +19,9 @@ SPARK_MASTER = "spark://spark-master:7077"
 SPARK_CONF = {
     "spark.master": SPARK_MASTER,
     "spark.executor.memory": "2g",
-    "spark.executor.cores": "2",
-    "spark.cores.max": "2",
-    "spark.sql.shuffle.partitions": "200",
+    "spark.executor.cores": "4",
+    "spark.cores.max": "4",
+    "spark.sql.shuffle.partitions": "32",
     "spark.driver.memory": "4g",
 }
 

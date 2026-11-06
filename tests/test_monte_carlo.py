@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.monte_carlo import simular_historial
+from etl.src.monte_carlo import simular_historial
 
 
 @pytest.fixture

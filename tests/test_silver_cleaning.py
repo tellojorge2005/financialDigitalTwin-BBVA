@@ -1,16 +1,13 @@
 from decimal import Decimal
-from datetime import datetime
 
 from pyspark.sql import functions as F
-from src.silver_cleaning import prepare_financial_data
+from etl.src.silver_cleaning import prepare_financial_data
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from pyspark.sql.functions import date_format
-
-from src.silver_cleaning import (
+from etl.src.silver_cleaning import (
     normalizar_categorias,
     validar_monedas,
     clean_users,

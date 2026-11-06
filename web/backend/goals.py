@@ -5,7 +5,7 @@ from typing import Literal
 import re
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from backend.guardrails import entrada_restringida
+from web.backend.guardrails import entrada_restringida
 
 
 class CambioMeta(BaseModel):
