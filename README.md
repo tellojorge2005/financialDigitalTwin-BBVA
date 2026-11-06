@@ -1,85 +1,99 @@
-# financialDigitalTwin-BBVA
-**💵 Data Experience — Gemelo Digital Financiero**
+<h1 align="center">BBVA PRISMA</h1>
+<p align="center">
+  <img src="docs/images/bbva_prisma.svg" alt="Logo PRISMA" width="100">
+</p>
+<p align="center"><strong>💵Inteligencia para tus finanzas💵</strong><br>🏦 Gemelo Digital Financiero · Data Experience🏦</p>
 
-Proyecto académico desarrollado en el contexto del reto Data Experience de BBVA. Integra información de clientes, tarjetas y transacciones para construir un perfil financiero que pueda consultarse mediante visualizaciones y un asistente de inteligencia artificial.
+Proyecto desarrollado en el contexto del reto Data Experience de BBVA. Integra datos financieros, procesamiento automatizado y una aplicación web para consultar el panorama de un cliente y explorar sus decisiones mediante el asistente **PRISMA**.
 
-Combina ingeniería de datos, una aplicación web y pruebas de Machine Learning y simulación para explorar la situación financiera de los clientes.
+El repositorio conserva el nombre `financialDigitalTwin-BBVA`. **PRISMA** identifica la aplicación y su asistente dentro del prototipo.
 
-## 🚀 Funciones principales
+## 💬 ¿Qué hace PRISMA?
 
-- **Procesamiento de datos:** Pipeline organizado en capas Bronze, Silver y Gold para limpiar, transformar y consolidar información financiera.
-- **Calidad de datos:** Validación de registros, eliminación de duplicados, separación de rechazados e imputación de valores faltantes.
-- **Perfil financiero:** Generación de indicadores y resúmenes por cliente a partir de sus datos, tarjetas y transacciones.
-- **Asistente de IA:** Consulta en lenguaje natural de la información financiera del cliente mediante una interfaz web.
-- **Visualización:** Reporte y modelo semántico en Power BI para explorar los datos.
-- **Modelaje y simulación:** Pruebas con XGBoost para estimar el score crediticio y Monte Carlo para generar escenarios financieros.
-- **Observabilidad:** Registro de métricas, resultados, errores y alertas de las pruebas de modelaje en SQLite.
+PRISMA permite consultar ingresos, gastos, deudas e historial financiero en lenguaje natural. También ayuda a definir metas de ahorro y explorar escenarios ante cambios de ingresos, tomando como referencia los datos disponibles y la información que proporciona el usuario.
 
-Las pruebas de modelaje se ejecutan en notebooks y todavía no están integradas al asistente web. Las simulaciones representan escenarios basados en supuestos.
+La aplicación reúne un panorama financiero y un chat con historial temporal. El asistente utiliza herramientas para consultar datos y realizar cálculos en Python; las estimaciones y simulaciones se presentan como referencias, no como resultados garantizados.
 
-## 🖥️ Stack tecnológico principal
+## 🚀 Componentes principales
 
-- **Procesamiento y análisis:** Python, PySpark, pandas y NumPy.
-- **Almacenamiento:** Amazon S3 y archivos Parquet.
-- **Orquestación e infraestructura:** Apache Airflow, Docker y Docker Compose; PostgreSQL para los metadatos de Airflow.
-- **Backend:** FastAPI, Pydantic y Uvicorn.
-- **Frontend:** HTML, CSS y JavaScript.
-- **Inteligencia artificial:** LangGraph, LangChain y OpenAI API.
-- **Machine Learning:** scikit-learn y XGBoost.
-- **Visualización y experimentación:** Power BI y Jupyter Notebooks.
-- **Observabilidad y pruebas:** SQLite, logging, pytest y GitHub Actions.
+- **ETL:** limpieza, validación, separación de rechazados y consolidación de clientes, tarjetas, transacciones, cuentas y pagos en capas Bronze, Silver y Gold.
+- **Automatización:** Airflow encadena Bronze → Silver → Gold. Gold genera los datos base, ejecuta el modelo de ingresos junto con Monte Carlo e integra las predicciones validadas. Monte Carlo se invoca desde `income_model.py`; no necesita un DAG separado.
+- **Modelaje y simulación:** XGBoost para estimar ingresos del siguiente mes y Monte Carlo para generar escenarios de ingresos, gastos y saldo a uno, dos y tres meses. El asistente puede consultar la estimación de ingresos cuando está disponible y aprobada por las validaciones del pipeline.
+- **Aplicación web:** panorama del cliente, asistente conversacional, metas y escenarios financieros.
+- **Monitoreo:** registro de tiempos, errores, uso de herramientas, tokens y costos estimados del asistente, con persistencia local y exportación de lotes CSV a S3.
+- **Power BI:** reporte y modelo semántico, con monitoreo de las interacciones del asistente.
+
+## 🛠️ Tecnologías
+
+- **Datos:** Python, PySpark, pandas, NumPy, Amazon S3 y Parquet.
+- **Aplicación:** FastAPI, Pydantic, Uvicorn, HTML, CSS y JavaScript.
+- **IA y modelaje:** LangGraph, LangChain, OpenAI API, scikit-learn y XGBoost.
+- **Infraestructura:** Airflow, Docker, Docker Compose y PostgreSQL.
+- **Análisis y seguimiento:** Power BI, Jupyter, SQLite, pytest y GitHub Actions.
 
 ## 👩‍💻 Ejecución
 
-### Configurar el entorno
+Ejecutar los comandos desde la raíz del repositorio.
+
+### 1. Configurar el entorno
 
 ```bash
 conda env create -f environment.yml
 conda activate financialDigitalTwin-BBVA
 ```
 
-Crear un archivo `.env` en la raíz utilizando [.env.example](.env.example) como referencia. Configurar el acceso a AWS, la ubicación de los datos en S3, OpenAI y las variables de sesión.
+Crear `.env` en la raíz tomando [.env.example](.env.example) como referencia. Completar de forma local la configuración de los servicios, la sesión y el monitoreo con los valores del entorno de ejecución. No publicar credenciales ni detalles internos de conexión.
 
-El entorno local incluye dependencias de Windows. Para ejecutar PySpark se requiere Java.
+El entorno incluye dependencias de Windows. La ejecución local de PySpark requiere Java; las imágenes Docker incluyen su propio entorno.
 
-### Procesamiento local
+### 2. Ejecutar el ETL
 
-Ejecutar los notebooks en el siguiente orden:
-
-1. `02_bronze_cleaning.ipynb`
-2. `03_silver_cleaning.ipynb`
-3. `04_gold_analysis.ipynb`
-
-Los notebooks `05_customer_assistant.ipynb` y `06_modelaje_observabilidad.ipynb` utilizan los resultados de Gold. Revisar que las rutas relativas se ejecuten desde `notebooks/`.
-
-### Aplicación web
-
-Con los datos Gold disponibles en S3:
-
-```bash
-uvicorn backend.main:app --reload
-```
-
-Abrir [localhost:8000](http://localhost:8000). El acceso por ID de cliente es parte de la demostración.
-
-### Airflow y Spark
-
-Con Docker disponible y el archivo `.env` configurado:
+Con Docker abierto y `.env` configurado:
 
 ```bash
 docker compose --env-file .env -f docker/docker-compose.yml up --build -d
 ```
 
-Abrir [localhost:8080](http://localhost:8080) y activar `bronze_cleaning_pipeline`. Los CSV de entrada deben estar en el prefijo `incoming/` del bucket configurado.
+Preparar los datos de entrada de clientes, tarjetas, transacciones, cuentas y pagos en el entorno configurado para el ETL.
 
-### Power BI
+Abrir [Airflow](http://localhost:8080), habilitar los DAGs de la cadena y ejecutar `bronze_cleaning_pipeline` para una corrida manual. Bronze dispara Silver y Silver dispara Gold; no es necesario ejecutar cada etapa por separado.
 
-Abrir [financialDigitalTwin.pbip](bi/financialDigitalTwin.pbip) en Power BI Desktop y ajustar las conexiones a los archivos Parquet.
+Bronze está programado diariamente a las **00:00, hora de Ciudad de México**. Para la ejecución automática, Docker y Airflow deben permanecer activos. El estado del worker puede consultarse en [Spark Master](http://localhost:8081).
+
+### 3. Abrir PRISMA
+
+Con los datos procesados disponibles y la configuración local completa:
+
+```bash
+uvicorn web.backend.main:app --reload
+```
+
+Abrir [PRISMA](http://localhost:8000) e ingresar el correo registrado de un cliente. Este acceso es demostrativo y no constituye autenticación bancaria.
+
+### 4. Consultar Power BI
+
+Abrir [financialDigitalTwin.pbip](bi/financialDigitalTwin.pbip) en Power BI Desktop. Configurar las conexiones de forma local para consultar los datos y las métricas de interacciones del prototipo.
+
+## 📓 Notebooks y experimentación
+
+Los [notebooks](notebooks/) conservan la evolución del proyecto: exploración, limpieza, análisis Gold, asistente inicial y experimentos de modelaje y observabilidad. Se mantienen juntos y no son necesarios para ejecutar la cadena de Airflow. Sus rutas relativas deben resolverse desde `notebooks/`.
+
+La estimación exploratoria de `credit_score` del notebook de modelaje es distinta del modelo de ingresos integrado en el ETL.
+
+## 🧪 Pruebas y CI
+
+Con las dependencias y Java disponibles, ejecutar las pruebas indicando explícitamente el orden Bronze → Silver → Gold → Monte Carlo:
+
+```bash
+python -m pytest tests/test_bronze_cleaning.py tests/test_silver_cleaning.py tests/test_gold_analysis.py tests/test_monte_carlo.py -v
+```
+
+El [workflow de CI](.github/workflows/ci.yml) ejecuta esos mismos cuatro archivos, en ese orden, en pull requests dirigidos a `main` o mediante ejecución manual. Utiliza Python 3.11 y Java 17 en Ubuntu.
+
+Las pruebas usan datos de prueba y rutas temporales. Cubren procesamiento e integración de predicciones en Gold, además de casos de simulación Monte Carlo; no ejecutan el entrenamiento completo de XGBoost ni validan el asistente web, Airflow o el acceso al S3 real.
 
 ## 📊 Datos y alcance
 
-Se utilizan datos públicos de [Financial Transactions Dataset: Analytics](https://www.kaggle.com/datasets/computingvictor/transactions-fraud-datasets), con modificaciones para realizar prácticas de limpieza y validación.
+El proyecto parte de datos públicos de [Financial Transactions Dataset: Analytics](https://www.kaggle.com/datasets/computingvictor/transactions-fraud-datasets), adaptados para las prácticas del prototipo. Las muestras del repositorio están en [data/sample](data/sample/).
 
-El proyecto es un prototipo académico en desarrollo. La estimación del score y los escenarios financieros son pruebas exploratorias.
-
-Las credenciales, los archivos Parquet generados y la base SQLite se mantienen fuera del control de versiones.
+PRISMA es un prototipo, no un servicio bancario de producción. Las predicciones y los escenarios dependen de datos históricos y supuestos; los costos del asistente son estimaciones basadas en el uso registrado y las tarifas configuradas.

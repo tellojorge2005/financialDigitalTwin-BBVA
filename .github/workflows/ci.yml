@@ -44,10 +44,11 @@ jobs:
             python-dotenv \
             pytest
 
-      - name: Run tests
+      - name: Run tests (Bronze, Silver, Gold, Monte Carlo)
         run: |
           python -m pytest \
             tests/test_bronze_cleaning.py \
             tests/test_silver_cleaning.py \
             tests/test_gold_analysis.py \
+            tests/test_monte_carlo.py \
             -v
