@@ -1,0 +1,166 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - dev
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: deploy-oci-web
+  cancel-in-progress: true
+
+jobs:
+  deploy-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Esperar a que el workflow CI termine en verde en el PR antes de desplegar
+      - name: Wait for CI to succeed
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMIT_SHA="${{ github.event.pull_request.head.sha }}"
+          echo "Buscando ejecucion de CI para el commit $COMMIT_SHA..."
+          sleep 10
+          RUN_ID=$(gh run list --workflow=ci.yml --commit="$COMMIT_SHA" --json databaseId --jq '.[0].databaseId')
+          if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
+            echo "Esperando a que termine CI (Run ID: $RUN_ID)..."
+            gh run watch "$RUN_ID" --exit-status
+          fi
+
+      # Descargar codigo de la rama o PR actual
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Generar archivo .env desde GitHub Secrets
+      - name: Generate .env file
+        run: |
+          cat << 'EOF' > .env
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION || 'us-east-2' }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL=${{ secrets.OPENAI_MODEL || 'gpt-4o-mini' }}
+          S3_BUCKET=${{ secrets.S3_BUCKET }}
+          S3_CUSTOMER_PATH=data/gold/customer_model_summary.parquet
+          S3_MONTHLY_PATH=data/gold/customer_monthly_summary.parquet
+          S3_SCENARIOS_PATH=data/gold/customer_cashflow_scenarios.parquet
+          S3_CATEGORIES_PATH=data/gold/customer_expenses_by_category.parquet
+          S3_INTERACTIONS_PREFIX=data/monitoring/interactions
+          MONITOR_EXPORT_SECONDS=300
+          MONITOR_RETENTION_DAYS=30
+          SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+          COOKIE_SECURE=false
+          EOF
+
+      # Empaquetar carpeta web junto con el .env generado
+      - name: Package web directory and .env
+        run: tar -czf web_bundle.tar.gz .env web/
+
+      # Copiar paquete al servidor OCI
+      - name: Upload web bundle to OCI
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          port: 22
+          source: "web_bundle.tar.gz"
+          target: "/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA"
+
+      # Configurar servidor, instalar dependencias y reiniciar servicio
+      - name: Configure server and restart service on OCI
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            APP_DIR="/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA"
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+
+            # Crear memoria swap de 2 GB si no existe para proteger 1 GB de RAM
+            if [ ! -f /swapfile ]; then
+              sudo fallocate -l 2G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+            fi
+
+            # Instalar python3-venv si no esta instalado
+            if ! dpkg -s python3-venv >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y python3-venv python3-pip curl
+            fi
+
+            # Abrir puerto 8000 en firewall interno de Ubuntu si no esta abierto
+            sudo iptables -C INPUT -p tcp --dport 8000 -j ACCEPT 2>/dev/null || \
+              sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8000 -j ACCEPT
+
+            # Extraer nueva version de web y archivo .env
+            rm -rf web
+            tar -xzf web_bundle.tar.gz
+            rm -f web_bundle.tar.gz
+            chmod 600 .env
+
+            # Crear entorno virtual ligero si no existe
+            if [ ! -d ".venv" ]; then
+              python3 -m venv .venv
+            fi
+
+            # Instalar dependencias exclusivas de web
+            ./.venv/bin/pip install --upgrade pip
+            ./.venv/bin/pip install --no-cache-dir \
+              fastapi \
+              "uvicorn[standard]" \
+              "pydantic[email]" \
+              email-validator \
+              itsdangerous \
+              python-dotenv \
+              boto3 \
+              pyarrow \
+              numpy \
+              openai \
+              langchain \
+              langchain-core \
+              langchain-openai \
+              langgraph
+
+            # Crear o actualizar servicio systemd automaticamente
+            sudo tee /etc/systemd/system/prisma-web.service > /dev/null << EOF
+            [Unit]
+            Description=BBVA PRISMA Web Application
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=${{ secrets.OCI_USER }}
+            WorkingDirectory=/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA
+            EnvironmentFile=/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA/.env
+            ExecStart=/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA/.venv/bin/uvicorn web.backend.main:app --host 0.0.0.0 --port 8000 --workers 1
+            Restart=always
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            # Recargar systemd y reiniciar servicio de la web
+            sudo systemctl daemon-reload
+            sudo systemctl enable prisma-web
+            sudo systemctl restart prisma-web
+
+            # Verificar que el servidor respondio correctamente
+            sleep 3
+            curl -fsS http://127.0.0.1:8000/login.html > /dev/null
