@@ -29,15 +29,15 @@ jobs:
           cat << 'EOF' > .env
           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION || 'us-east-2' }}
+          AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL=${{ secrets.OPENAI_MODEL || 'gpt-4o-mini' }}
+          OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}
           S3_BUCKET=${{ secrets.S3_BUCKET }}
-          S3_CUSTOMER_PATH=data/gold/customer_model_summary.parquet
-          S3_MONTHLY_PATH=data/gold/customer_monthly_summary.parquet
-          S3_SCENARIOS_PATH=data/gold/customer_cashflow_scenarios.parquet
-          S3_CATEGORIES_PATH=data/gold/customer_expenses_by_category.parquet
-          S3_INTERACTIONS_PREFIX=data/monitoring/interactions
+          S3_CUSTOMER_PATH=${{ secrets.S3_CUSTOMER_PATH }}
+          S3_MONTHLY_PATH=${{ secrets.S3_MONTHLY_PATH }}
+          S3_SCENARIOS_PATH=${{ secrets.S3_SCENARIOS_PATH }}
+          S3_CATEGORIES_PATH=${{ secrets.S3_CATEGORIES_PATH }}
+          S3_INTERACTIONS_PREFIX=${{ secrets.S3_INTERACTIONS_PREFIX }}
           MONITOR_EXPORT_SECONDS=300
           MONITOR_RETENTION_DAYS=30
           SESSION_SECRET=${{ secrets.SESSION_SECRET || 'prisma_bbva_secreto_produccion_oci_2026_seguro_987654321' }}
