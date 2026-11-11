@@ -3,13 +3,12 @@ name: CD
 on:
   push:
     branches:
-      - dev
+      - main
 
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: deploy-oci-web
@@ -20,22 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Esperar a que el workflow CI termine en verde en el PR antes de desplegar
-      - name: Wait for CI to succeed
-        if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          COMMIT_SHA="${{ github.event.pull_request.head.sha }}"
-          echo "Buscando ejecucion de CI para el commit $COMMIT_SHA..."
-          sleep 10
-          RUN_ID=$(gh run list --workflow=ci.yml --commit="$COMMIT_SHA" --json databaseId --jq '.[0].databaseId')
-          if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
-            echo "Esperando a que termine CI (Run ID: $RUN_ID)..."
-            gh run watch "$RUN_ID" --exit-status
-          fi
-
-      # Descargar codigo de la rama o PR actual
+      # Descargar codigo del repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
