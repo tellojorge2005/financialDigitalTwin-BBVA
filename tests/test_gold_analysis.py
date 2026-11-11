@@ -344,6 +344,15 @@ def test_monthly_summaries(silver_bundle):
     assert mar.income_lag_1 == Decimal("1200")
     assert mar.income_lag_3 is None
     assert float(mar.income_mean_3) == pytest.approx(3100 / 3)
+    assert float(mar.income_std_3) == pytest.approx(152.752523)
+    assert float(mar.expenses_mean_3) == pytest.approx(300.0)
+    assert float(mar.expenses_std_3) == pytest.approx(100.0)
+    assert float(mar.income_cv_3) == pytest.approx(0.1478)
+    assert float(mar.income_to_mean_3_ratio) == pytest.approx(0.871)
+    assert float(mar.income_change_3) == pytest.approx(-0.129)
+    assert float(mar.savings_rate) == pytest.approx(0.7222)
+    assert float(mar.expense_to_income_ratio) == pytest.approx(0.2222)
+    assert float(mar.debt_payment_ratio) == pytest.approx(0.0556)
     assert mar.history_months == 3
     assert [jan.month_number, feb.month_number, mar.month_number] == [1, 2, 3]
     assert mar.negative_balance_months_3 == 0
@@ -432,6 +441,27 @@ def test_run_pipeline(spark, tmp_path, silver_bundle, escribir_parquet):
     assert rows[1].expenses_3m == Decimal("900")
     assert rows[1].debt_payments_3m == Decimal("150")
     assert rows[1].savings_3m == Decimal("2050")
+    assert float(rows[1].average_income_3m) == pytest.approx(3100 / 3)
+    assert float(rows[1].average_expenses_3m) == pytest.approx(300.0)
+    assert float(rows[1].average_debt_payments_3m) == pytest.approx(50.0)
+    assert float(rows[1].average_savings_3m) == pytest.approx(2050 / 3)
+    assert float(rows[1].income_std_3m) == pytest.approx(152.752523)
+    assert float(rows[1].expenses_std_3m) == pytest.approx(100.0)
+    assert float(rows[1].savings_rate_3m) == pytest.approx(0.6613)
+    assert float(rows[1].debt_payment_ratio_3m) == pytest.approx(0.0484)
+    assert float(rows[1].expense_to_income_ratio_3m) == pytest.approx(0.2903)
+    assert float(rows[1].income_variation_ratio_3m) == pytest.approx(0.1478)
+    assert float(rows[1].income_to_average_ratio_3m) == pytest.approx(0.871)
+    assert float(rows[1].income_change_3m) == pytest.approx(-0.129)
+    assert float(rows[1].expenses_change_3m) == pytest.approx(-0.3333)
+    assert float(rows[1].savings_rate_change_3m) == pytest.approx(0.0609)
+    assert float(rows[1].expense_ratio_change_3m) == pytest.approx(-0.0681)
+    assert float(rows[1].debt_payment_ratio_change_3m) == pytest.approx(0.0072)
+    assert rows[2].expense_to_income_ratio_3m is None
+    assert rows[2].income_variation_ratio_3m is None
+    assert rows[2].income_change_3m is None
+    assert rows[3].average_income_3m is None
+    assert rows[3].income_std_3m is None
     assert rows[1].has_overdue_payments is True
     assert rows[1].financial_health_status == "requiere_atencion"
     categorias = spark.read.parquet(

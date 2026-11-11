@@ -879,6 +879,28 @@ def create_monthly_summaries(accounts_spark, obligations_spark, movements_spark)
                 )
             )
         )
+        .withColumn(
+            "expense_to_income_ratio",
+            F.when(
+                F.col("monthly_income") > 0,
+                F.round(
+                    F.col("monthly_expenses")
+                    / F.col("monthly_income"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "debt_payment_ratio",
+            F.when(
+                F.col("monthly_income") > 0,
+                F.round(
+                    F.col("monthly_debt_payments")
+                    / F.col("monthly_income"),
+                    4
+                )
+            )
+        )
     )
 
     # Preparar cortes mensuales
@@ -1020,6 +1042,48 @@ def create_monthly_summaries(accounts_spark, obligations_spark, movements_spark)
             F.avg("monthly_expenses").over(ventana_tres_meses)
         )
         .withColumn(
+            "expenses_std_3",
+            F.stddev_samp("monthly_expenses").over(
+                ventana_tres_meses
+            )
+        )
+        .withColumn(
+            "income_cv_3",
+            F.when(
+                F.col("income_mean_3") > 0,
+                F.round(
+                    F.col("income_std_3")
+                    / F.col("income_mean_3"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "income_to_mean_3_ratio",
+            F.when(
+                F.col("income_mean_3") > 0,
+                F.round(
+                    F.col("monthly_income")
+                    / F.col("income_mean_3"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "income_change_3",
+            F.when(
+                F.col("income_mean_3") > 0,
+                F.round(
+                    (
+                        F.col("monthly_income")
+                        - F.col("income_mean_3")
+                    )
+                    / F.col("income_mean_3"),
+                    4
+                )
+            )
+        )
+        .withColumn(
             "negative_balance_months_3",
             F.sum(
                 F.when(
@@ -1099,6 +1163,9 @@ def create_monthly_summaries(accounts_spark, obligations_spark, movements_spark)
         "monthly_expenses",
         "monthly_debt_payments",
         "monthly_savings",
+        "savings_rate",
+        "expense_to_income_ratio",
+        "debt_payment_ratio",
         "monthly_transactions",
         "transfers_in",
         "transfers_out",
@@ -1108,6 +1175,10 @@ def create_monthly_summaries(accounts_spark, obligations_spark, movements_spark)
         "income_mean_3",
         "income_std_3",
         "expenses_mean_3",
+        "expenses_std_3",
+        "income_cv_3",
+        "income_to_mean_3_ratio",
+        "income_change_3",
         "history_months",
         "income_lag_1",
         "income_lag_3",
@@ -1241,12 +1312,24 @@ def create_recent_summaries(customer_gold, monthly_gold, movements_spark):
                 "monthly_transactions"
             ).alias("transactions_3m"),
             F.avg("monthly_income").alias("average_income_3m"),
-            F.avg("monthly_expenses").alias("average_expenses_3m")
+            F.avg("monthly_expenses").alias("average_expenses_3m"),
+            F.avg(
+                "monthly_debt_payments"
+            ).alias("average_debt_payments_3m"),
+            F.avg("monthly_savings").alias("average_savings_3m"),
+            F.stddev_samp("monthly_income").alias("income_std_3m"),
+            F.stddev_samp("monthly_expenses").alias("expenses_std_3m")
         )
         .join(
             latest_monthly.select(
                 "client_id",
                 "currency",
+                "monthly_income",
+                "monthly_expenses",
+                "monthly_debt_payments",
+                "savings_rate",
+                "expense_to_income_ratio",
+                "debt_payment_ratio",
                 "closing_balance",
                 "outstanding_due",
                 "max_days_past_due"
@@ -1270,6 +1353,103 @@ def create_recent_summaries(customer_gold, monthly_gold, movements_spark):
                 F.col("income_3m") > 0,
                 F.round(
                     F.col("debt_payments_3m") / F.col("income_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "expense_to_income_ratio_3m",
+            F.when(
+                F.col("income_3m") > 0,
+                F.round(
+                    F.col("expenses_3m") / F.col("income_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "income_variation_ratio_3m",
+            F.when(
+                (F.col("average_income_3m") > 0)
+                & F.col("income_std_3m").isNotNull(),
+                F.round(
+                    F.col("income_std_3m")
+                    / F.col("average_income_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "income_to_average_ratio_3m",
+            F.when(
+                F.col("average_income_3m") > 0,
+                F.round(
+                    F.col("monthly_income")
+                    / F.col("average_income_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "income_change_3m",
+            F.when(
+                F.col("average_income_3m") > 0,
+                F.round(
+                    (
+                        F.col("monthly_income")
+                        - F.col("average_income_3m")
+                    )
+                    / F.col("average_income_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "expenses_change_3m",
+            F.when(
+                F.col("average_expenses_3m") > 0,
+                F.round(
+                    (
+                        F.col("monthly_expenses")
+                        - F.col("average_expenses_3m")
+                    )
+                    / F.col("average_expenses_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "savings_rate_change_3m",
+            F.when(
+                F.col("savings_rate").isNotNull()
+                & F.col("savings_rate_3m").isNotNull(),
+                F.round(
+                    F.col("savings_rate")
+                    - F.col("savings_rate_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "expense_ratio_change_3m",
+            F.when(
+                F.col("expense_to_income_ratio").isNotNull()
+                & F.col("expense_to_income_ratio_3m").isNotNull(),
+                F.round(
+                    F.col("expense_to_income_ratio")
+                    - F.col("expense_to_income_ratio_3m"),
+                    4
+                )
+            )
+        )
+        .withColumn(
+            "debt_payment_ratio_change_3m",
+            F.when(
+                F.col("debt_payment_ratio").isNotNull()
+                & F.col("debt_payment_ratio_3m").isNotNull(),
+                F.round(
+                    F.col("debt_payment_ratio")
+                    - F.col("debt_payment_ratio_3m"),
                     4
                 )
             )
@@ -1346,8 +1526,20 @@ def create_recent_summaries(customer_gold, monthly_gold, movements_spark):
         "transactions_3m",
         "average_income_3m",
         "average_expenses_3m",
+        "average_debt_payments_3m",
+        "average_savings_3m",
+        "income_std_3m",
+        "expenses_std_3m",
         "savings_rate_3m",
         "debt_payment_ratio_3m",
+        "expense_to_income_ratio_3m",
+        "income_variation_ratio_3m",
+        "income_to_average_ratio_3m",
+        "income_change_3m",
+        "expenses_change_3m",
+        "savings_rate_change_3m",
+        "expense_ratio_change_3m",
+        "debt_payment_ratio_change_3m",
         "expense_coverage_months",
         "has_overdue_payments",
         "has_negative_balance",

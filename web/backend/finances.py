@@ -75,18 +75,43 @@ def evaluar_finanzas(perfil, historial):
         return reporte
     ingresos, gastos, pagos = [sum(numero(f[c]) for f in filas) for c in campos]
     margen = ingresos - gastos - pagos
+    promedio_ingreso = ingresos / len(filas)
+    promedio_gasto = gastos / len(filas)
+    ultimo_ingreso = numero(filas[-1]["monthly_income"])
+    ultimo_gasto = numero(filas[-1]["monthly_expenses"])
     reporte.update({
         "Ingreso total del período": cantidad(ingresos),
         "Gasto total del período sin deuda": cantidad(gastos),
         "Pagos de deuda del período": cantidad(pagos),
         "Margen del período después de pagos de deuda": cantidad(margen),
-        "Ingreso mensual promedio": cantidad(ingresos / len(filas)),
-        "Gasto mensual promedio sin deuda": cantidad(gastos / len(filas)),
+        "Ingreso mensual promedio": cantidad(promedio_ingreso),
+        "Gasto mensual promedio sin deuda": cantidad(promedio_gasto),
         "Pago mensual promedio de deuda": cantidad(pagos / len(filas)),
         "Pago de deuda del último mes": filas[-1]["monthly_debt_payments"],
         "Margen mensual promedio después de deuda": cantidad(margen / len(filas)),
+        "Desviación estándar de ingresos en el período": perfil.get("income_std_3m"),
+        "Desviación estándar de gastos en el período": perfil.get("expenses_std_3m"),
+        "Proporción de ingreso destinada a gastos sin deuda": float(gastos / ingresos) if ingresos > 0 else None,
         "Proporción de ingreso destinada a deuda": float(pagos / ingresos) if ingresos > 0 else None,
         "Proporción del ingreso que queda después de gastos y deuda": float(margen / ingresos) if ingresos > 0 else None,
+        "Ratio de ingreso del último mes frente al promedio": (
+            perfil.get("income_to_average_ratio_3m")
+            if perfil.get("income_to_average_ratio_3m") is not None
+            else float(round(ultimo_ingreso / promedio_ingreso, 4)) if promedio_ingreso > 0 else None
+        ),
+        "Cambio de ingreso frente al promedio del período": (
+            perfil.get("income_change_3m")
+            if perfil.get("income_change_3m") is not None
+            else float(round((ultimo_ingreso - promedio_ingreso) / promedio_ingreso, 4)) if promedio_ingreso > 0 else None
+        ),
+        "Cambio de gasto frente al promedio del período": (
+            perfil.get("expenses_change_3m")
+            if perfil.get("expenses_change_3m") is not None
+            else float(round((ultimo_gasto - promedio_gasto) / promedio_gasto, 4)) if promedio_gasto > 0 else None
+        ),
+        "Cambio en proporción de ahorro frente al período": perfil.get("savings_rate_change_3m"),
+        "Cambio en proporción de gasto frente al período": perfil.get("expense_ratio_change_3m"),
+        "Cambio en proporción de pago de deuda frente al período": perfil.get("debt_payment_ratio_change_3m"),
     })
     saldo = numero(filas[-1].get("closing_balance"))
     reporte["Meses de gastos y pagos cubiertos por el saldo"] = (

@@ -38,7 +38,12 @@ CUSTOMER_COLUMNS = [
     "predicted_income", "has_income_prediction", "prediction_validation_status",
     "months_available_3m", "period_start", "income_3m", "expenses_3m",
     "debt_payments_3m", "savings_3m", "average_income_3m",
-    "average_expenses_3m", "savings_rate_3m", "debt_payment_ratio_3m",
+    "average_expenses_3m", "average_debt_payments_3m", "average_savings_3m",
+    "income_std_3m", "expenses_std_3m", "savings_rate_3m",
+    "debt_payment_ratio_3m", "expense_to_income_ratio_3m",
+    "income_variation_ratio_3m", "income_to_average_ratio_3m",
+    "income_change_3m", "expenses_change_3m", "savings_rate_change_3m",
+    "expense_ratio_change_3m", "debt_payment_ratio_change_3m",
     "expense_coverage_months", "has_overdue_payments", "has_negative_balance",
     "has_budget_deficit_3m", "financial_health_status",
 ]
