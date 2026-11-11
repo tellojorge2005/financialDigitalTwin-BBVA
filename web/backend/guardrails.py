@@ -2,11 +2,17 @@ import re
 import unicodedata
 
 from web.backend.config import (
-    OPENAI_API_KEY, OPENAI_MODEL, SESSION_SECRET, S3_BUCKET,
-    S3_CUSTOMER_PATH, S3_MONTHLY_PATH, S3_SCENARIOS_PATH, S3_CATEGORIES_PATH, AWS_REGION
+    OPENAI_API_KEY,
+    OPENAI_MODEL,
+    SESSION_SECRET,
+    S3_BUCKET,
+    S3_CUSTOMER_PATH,
+    S3_MONTHLY_PATH,
+    S3_SCENARIOS_PATH,
+    S3_CATEGORIES_PATH,
+    AWS_REGION,
 )
 from web.backend.data import CUSTOMER_COLUMNS
-
 
 RECHAZO = (
     "Puedo ayudarte con tu información financiera y tus metas de ahorro. "
@@ -23,7 +29,7 @@ PATRON = re.compile(
     r"infraestructuras|servidores|almacenamiento|framework|nube)\b|"
     r"https?://|s3a?://|[a-z]:\\|/opt/|/home/|/api/|\x60{3}|"
     r"\b[a-z]+_[a-z_]+\b|sk-[a-z0-9_-]{12,}",
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 ATAQUE = re.compile(
     r"ignora.{0,40}(reglas|instrucciones)|"
@@ -31,13 +37,14 @@ ATAQUE = re.compile(
     r"(otro|otros|otra|otras).{0,15}(cliente|persona)|"
     r"(cliente|usuario).{0,10}(id|identificador)|"
     r"(base64|rot13|hexadecimal)",
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
 
 def normalizar(texto):
     return "".join(
-        c for c in unicodedata.normalize("NFKC", texto)
+        c
+        for c in unicodedata.normalize("NFKC", texto)
         if unicodedata.category(c) != "Cf"
     )
 
@@ -54,13 +61,20 @@ def contiene_informacion_interna(texto):
     if any(v and len(v) >= 8 and v.lower() in normal.lower() for v in secretos):
         return True
     nombres = [
-        OPENAI_MODEL, S3_BUCKET, S3_CUSTOMER_PATH, S3_MONTHLY_PATH,
-        S3_SCENARIOS_PATH, S3_CATEGORIES_PATH, AWS_REGION, *CUSTOMER_COLUMNS
+        OPENAI_MODEL,
+        S3_BUCKET,
+        S3_CUSTOMER_PATH,
+        S3_MONTHLY_PATH,
+        S3_SCENARIOS_PATH,
+        S3_CATEGORIES_PATH,
+        AWS_REGION,
+        *CUSTOMER_COLUMNS,
     ]
     return any(
         len(v) >= 4
         and re.search(r"(?<!\w)" + re.escape(v) + r"(?!\w)", normal, re.IGNORECASE)
-        for v in nombres if isinstance(v, str)
+        for v in nombres
+        if isinstance(v, str)
     )
 
 
@@ -74,5 +88,3 @@ def proteger_respuesta(texto):
     if contiene_informacion_interna(texto):
         return RECHAZO
     return texto.strip()[:5000]
-
-

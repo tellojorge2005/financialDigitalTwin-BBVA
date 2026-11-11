@@ -3,13 +3,8 @@ from datetime import timedelta
 import pendulum
 
 from airflow import DAG
-from airflow.providers.standard.operators.trigger_dagrun import (
-    TriggerDagRunOperator
-)
-from airflow.providers.apache.spark.operators.spark_submit import (
-    SparkSubmitOperator
-)
-
+from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 
 DEFAULT_ARGS = {
     "owner": "jorge_tello",

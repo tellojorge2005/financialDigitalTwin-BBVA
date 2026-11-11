@@ -12,29 +12,21 @@ from etl.src.bronze_cleaning import (
     impute_median,
     clean_users,
     clean_cards,
-    clean_transactions
+    clean_transactions,
 )
 
 
 def test_clean_string(spark):
-    df = spark.createDataFrame(
-        [(" Male ",), (" FEMALE ",), (None,)],
-        "gender string"
-    )
+    df = spark.createDataFrame([(" Male ",), (" FEMALE ",), (None,)], "gender string")
 
     rows = clean_string(df, "gender").collect()
 
-    assert [row.gender for row in rows] == [
-        "male",
-        "female",
-        None
-    ]
+    assert [row.gender for row in rows] == ["male", "female", None]
 
 
 def test_clean_currency(spark):
     df = spark.createDataFrame(
-        [("$80,000",), ("$-1,250.50",), (None,)],
-        "income string"
+        [("$80,000",), ("$-1,250.50",), (None,)], "income string"
     )
 
     cleaned = clean_currency(df, "income")
@@ -48,24 +40,17 @@ def test_clean_currency(spark):
 
 def test_impute_mode(spark):
     df = spark.createDataFrame(
-        [("male",), ("male",), ("female",), (None,)],
-        "gender string"
+        [("male",), ("male",), ("female",), (None,)], "gender string"
     )
 
-    values = [
-        row.gender
-        for row in impute_mode(df, "gender").collect()
-    ]
+    values = [row.gender for row in impute_mode(df, "gender").collect()]
 
     assert values.count("male") == 3
     assert None not in values
 
 
 def test_impute_mode_without_values(spark):
-    df = spark.createDataFrame(
-        [(None,), (None,)],
-        "gender string"
-    )
+    df = spark.createDataFrame([(None,), (None,)], "gender string")
 
     rows = impute_mode(df, "gender").collect()
 
@@ -75,24 +60,17 @@ def test_impute_mode_without_values(spark):
 
 def test_impute_median(spark):
     df = spark.createDataFrame(
-        [(1, 20.0), (2, 40.0), (3, 60.0), (4, None)],
-        "id long, current_age double"
+        [(1, 20.0), (2, 40.0), (3, 60.0), (4, None)], "id long, current_age double"
     )
 
-    rows = {
-        row.id: row
-        for row in impute_median(df, "current_age").collect()
-    }
+    rows = {row.id: row for row in impute_median(df, "current_age").collect()}
 
     assert rows[4].current_age == 40.0
     assert rows[1].current_age == 20.0
 
 
 def test_impute_median_without_values(spark):
-    df = spark.createDataFrame(
-        [(None,), (None,)],
-        "current_age double"
-    )
+    df = spark.createDataFrame([(None,), (None,)], "current_age double")
 
     rows = impute_median(df, "current_age").collect()
 
@@ -102,10 +80,19 @@ def test_impute_median_without_values(spark):
 def test_clean_users(spark, perfil_cliente):
     df = spark.createDataFrame(
         [
-            (1, 10.0, " Male ", " Ciudad de México ", "$30,000", "$60,000", "$5,000", 200),
+            (
+                1,
+                10.0,
+                " Male ",
+                " Ciudad de México ",
+                "$30,000",
+                "$60,000",
+                "$5,000",
+                200,
+            ),
             (2, 130.0, "male", " Guadalajara ", "$40,000", "$80,000", "$8,000", 900),
             (3, 40.0, "Female", " Monterrey ", "$35,000", "$70,000", "$6,000", 700),
-            (4, None, None, " Puebla ", "$20,000", "$40,000", "$2,000", None)
+            (4, None, None, " Puebla ", "$20,000", "$40,000", "$2,000", None),
         ],
         """
         id long,
@@ -116,13 +103,10 @@ def test_clean_users(spark, perfil_cliente):
         yearly_income string,
         total_debt string,
         credit_score long
-        """
+        """,
     )
 
-    rows = {
-        row.id: row
-        for row in clean_users(perfil_cliente(df)).collect()
-    }
+    rows = {row.id: row for row in clean_users(perfil_cliente(df)).collect()}
 
     assert rows[1].current_age == 18
     assert rows[2].current_age == 120
@@ -140,7 +124,7 @@ def test_clean_cards(spark):
         [
             (1, " VISA ", " Credit ", " YES ", " NO ", "$-100", 1.0),
             (2, "visa", "debit", "no", "yes", "$2,000", 3.0),
-            (3, None, " Credit ", " YES ", " NO ", None, None)
+            (3, None, " Credit ", " YES ", " NO ", None, None),
         ],
         """
         id long,
@@ -150,7 +134,7 @@ def test_clean_cards(spark):
         card_on_dark_web string,
         credit_limit string,
         num_cards_issued double
-        """
+        """,
     )
 
     df = (
@@ -158,10 +142,7 @@ def test_clean_cards(spark):
         .withColumn("year_pin_last_changed", F.lit(2025).cast("long"))
         .withColumn("currency", F.lit("MXN"))
     )
-    rows = {
-        row.id: row
-        for row in clean_cards(df).collect()
-    }
+    rows = {row.id: row for row in clean_cards(df).collect()}
 
     assert rows[1].credit_limit == 0.0
     assert rows[2].credit_limit == 2000.0
@@ -173,15 +154,13 @@ def test_clean_cards(spark):
     assert rows[1].card_on_dark_web == "no"
 
 
-
-
 # Validar que los movimientos no se recorten ni se imputen
 def test_clean_transactions(raw_bundle):
     df = raw_bundle["transactions"].withColumn(
         "amount",
         F.when(F.col("id") == "10", "$20,000.25")
         .when(F.col("id") == "11", "-$20,000.25")
-        .otherwise(F.col("amount"))
+        .otherwise(F.col("amount")),
     )
 
     cleaned = clean_transactions(df)
@@ -208,7 +187,8 @@ def test_invalid_amount_remains_missing(raw_bundle):
 # Conservar nombres y códigos postales sin convertir nuevamente los pesos
 def test_identidad_y_pesos(raw_bundle):
     users = (
-        raw_bundle["users"].filter(F.col("id") == 1)
+        raw_bundle["users"]
+        .filter(F.col("id") == 1)
         .withColumn("full_name", F.lit("  Ana   María López Pérez  "))
         .withColumn("email", F.lit(" ANA.LOPEZ@EXAMPLE.COM "))
         .withColumn("postal_code", F.lit("06000"))
@@ -258,8 +238,13 @@ def test_run_pipeline(spark, tmp_path, raw_bundle):
 
     run_pipeline(spark, input_path=entrada.as_uri(), output_path=salida.as_uri())
 
-    expected = {"users": 3, "cards": 4, "transactions": 14,
-                "accounts": 2, "obligations_payments": 3}
+    expected = {
+        "users": 3,
+        "cards": 4,
+        "transactions": 14,
+        "accounts": 2,
+        "obligations_payments": 3,
+    }
     for nombre, cantidad in expected.items():
         datos = spark.read.parquet((salida / f"{nombre}.parquet").as_uri())
         assert datos.count() == cantidad

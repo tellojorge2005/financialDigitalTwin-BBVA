@@ -3,7 +3,6 @@ import sys
 
 import pytest
 
-
 # Configurar pruebas locales antes de importar src
 os.environ["S3_BUCKET"] = "financial-twin-tests"
 os.environ["SPARK_LOCAL_IP"] = "127.0.0.1"
@@ -15,9 +14,7 @@ if os.name == "nt":
     os.environ["HADOOP_HOME"] = HADOOP_HOME
     os.environ["hadoop.home.dir"] = HADOOP_HOME
     os.environ["PATH"] = (
-        os.path.join(HADOOP_HOME, "bin")
-        + os.pathsep
-        + os.environ.get("PATH", "")
+        os.path.join(HADOOP_HOME, "bin") + os.pathsep + os.environ.get("PATH", "")
     )
 
 from pyspark.sql import SparkSession
@@ -29,8 +26,7 @@ def spark(tmp_path_factory):
     directorio = tmp_path_factory.mktemp("spark")
 
     session = (
-        SparkSession.builder
-        .master("local[2]")
+        SparkSession.builder.master("local[2]")
         .appName("TestFinancialDigitalTwin")
         .config("spark.ui.enabled", "false")
         .config("spark.sql.shuffle.partitions", "2")
@@ -61,7 +57,7 @@ def completar_perfil(df):
         "birth_month": F.lit(1).cast("long"),
         "latitude": F.lit(19.4326),
         "longitude": F.lit(-99.1332),
-        "num_credit_cards": F.lit(1).cast("long")
+        "num_credit_cards": F.lit(1).cast("long"),
     }
     for columna, valor in valores.items():
         if columna not in df.columns:
@@ -81,14 +77,14 @@ def raw_bundle(spark):
         [
             (1, 30.0, 65, " Male ", " City ", "$24,000", "$36,000", "$250", 750, 1),
             (2, 40.0, 65, " Female ", " City ", "$24,000", "$48,000", "$75", 700, 1),
-            (3, 50.0, 65, " Male ", " City ", "$24,000", "$60,000", "$0", 720, 0)
+            (3, 50.0, 65, " Male ", " City ", "$24,000", "$60,000", "$0", 720, 0),
         ],
         """
         id long, current_age double, retirement_age long,
         gender string, address string, per_capita_income string,
         yearly_income string, total_debt string, credit_score long,
         num_credit_cards long
-        """
+        """,
     )
 
     cards = spark.createDataFrame(
@@ -96,28 +92,46 @@ def raw_bundle(spark):
             (1, 1, " VISA ", " Credit ", " YES ", " NO ", 1.0, "$1,000"),
             (2, 2, " VISA ", " Debit ", " YES ", " NO ", 1.0, "$2,000"),
             (3, 999, "visa", "credit", "yes", "no", 1.0, "$500"),
-            (None, 1, "visa", "credit", "yes", "no", 1.0, "$500")
+            (None, 1, "visa", "credit", "yes", "no", 1.0, "$500"),
         ],
         """
         id long, client_id long, card_brand string, card_type string,
         has_chip string, card_on_dark_web string, num_cards_issued double,
         credit_limit string
-        """
+        """,
     )
 
     users = completar_perfil(users)
-    cards = (
-        cards.withColumn("currency", F.lit("MXN"))
-        .withColumn("year_pin_last_changed", F.lit(2025).cast("long"))
+    cards = cards.withColumn("currency", F.lit("MXN")).withColumn(
+        "year_pin_last_changed", F.lit(2025).cast("long")
     )
 
     campos = [
-        "id", "date", "client_id", "card_id", "amount", "use_chip",
-        "merchant_id", "merchant_city", "merchant_state", "zip", "mcc",
-        "errors", "account_id", "movement_type", "category", "direction",
-        "currency", "balance_before", "balance_after", "transfer_id",
-        "counterparty_account_id", "obligation_id", "income_source",
-        "is_recurring", "amount_convention"
+        "id",
+        "date",
+        "client_id",
+        "card_id",
+        "amount",
+        "use_chip",
+        "merchant_id",
+        "merchant_city",
+        "merchant_state",
+        "zip",
+        "mcc",
+        "errors",
+        "account_id",
+        "movement_type",
+        "category",
+        "direction",
+        "currency",
+        "balance_before",
+        "balance_after",
+        "transfer_id",
+        "counterparty_account_id",
+        "obligation_id",
+        "income_source",
+        "is_recurring",
+        "amount_convention",
     ]
 
     filas = []
@@ -125,13 +139,19 @@ def raw_bundle(spark):
         (1, 1, "15/12/2025 10:00", "$50"),
         (2, 2, "20/12/2025 10:00", "$80"),
         (3, 1, "fecha incorrecta", None),
-        (4, 999, "15/12/2025 10:00", "$25")
+        (4, 999, "15/12/2025 10:00", "$25"),
     ]:
         fila = dict.fromkeys(campos)
         fila.update(
-            id=str(tid), client_id=str(cid), date=fecha, amount=importe,
-            merchant_city=" City ", merchant_state=" NY ",
-            use_chip=" Chip ", currency="MXN", amount_convention="legacy_unchanged"
+            id=str(tid),
+            client_id=str(cid),
+            date=fecha,
+            amount=importe,
+            merchant_city=" City ",
+            merchant_state=" NY ",
+            use_chip=" Chip ",
+            currency="MXN",
+            amount_convention="legacy_unchanged",
         )
         filas.append(fila)
 
@@ -145,44 +165,141 @@ def raw_bundle(spark):
         (16, 1, "2026-02-06", "-400", "expense", "1850", "1450", None, None, None),
         (17, 1, "2026-03-05", "-50", "debt_payment", "1450", "1400", None, None, "O-2"),
         (18, 1, "2026-03-06", "900", "income", "1400", "2300", None, None, None),
-        (19, 1, "2026-03-07", "-200", "expense", "2300", "2100", None, None, None)
+        (19, 1, "2026-03-07", "-200", "expense", "2300", "2100", None, None, None),
     ]
 
-    for tid, cid, fecha, importe, tipo, antes, despues, transferencia, otra, cuota in movimientos:
+    for (
+        tid,
+        cid,
+        fecha,
+        importe,
+        tipo,
+        antes,
+        despues,
+        transferencia,
+        otra,
+        cuota,
+    ) in movimientos:
         fila = dict.fromkeys(campos)
         fila.update(
-            id=str(tid), client_id=str(cid), date=fecha + " 10:00:00",
-            amount=importe, account_id=f"A-{cid}", movement_type=tipo,
-            category="alimentación" if tipo == "expense" else tipo, direction="inflow" if float(importe) > 0 else "outflow",
-            currency="MXN", balance_before=antes, balance_after=despues,
-            transfer_id=transferencia, counterparty_account_id=otra,
-            obligation_id=cuota, is_recurring="false",
-            amount_convention="signed_cashflow"
+            id=str(tid),
+            client_id=str(cid),
+            date=fecha + " 10:00:00",
+            amount=importe,
+            account_id=f"A-{cid}",
+            movement_type=tipo,
+            category="alimentación" if tipo == "expense" else tipo,
+            direction="inflow" if float(importe) > 0 else "outflow",
+            currency="MXN",
+            balance_before=antes,
+            balance_after=despues,
+            transfer_id=transferencia,
+            counterparty_account_id=otra,
+            obligation_id=cuota,
+            is_recurring="false",
+            amount_convention="signed_cashflow",
         )
         filas.append(fila)
 
     transactions = spark.createDataFrame(
         [tuple(fila[c] for c in campos) for fila in filas],
-        ", ".join(f"{c} string" for c in campos)
+        ", ".join(f"{c} string" for c in campos),
     )
 
     accounts = spark.createDataFrame(
         [
-            ("A-1", "1", "MXN", "2026-01-01 00:00:00", "100", "cash_account", "true", "2100", "2026-03-31 23:59:00"),
-            ("A-2", "2", "MXN", "2026-01-01 00:00:00", "200", "cash_account", "true", "250", "2026-03-31 23:59:00")
+            (
+                "A-1",
+                "1",
+                "MXN",
+                "2026-01-01 00:00:00",
+                "100",
+                "cash_account",
+                "true",
+                "2100",
+                "2026-03-31 23:59:00",
+            ),
+            (
+                "A-2",
+                "2",
+                "MXN",
+                "2026-01-01 00:00:00",
+                "200",
+                "cash_account",
+                "true",
+                "250",
+                "2026-03-31 23:59:00",
+            ),
         ],
         """
         account_id string, client_id string, currency string,
         opened_at string, opening_balance string, account_type string,
         overdraft_allowed string, closing_balance string, balance_as_of string
-        """
+        """,
     )
 
     obligations = spark.createDataFrame(
         [
-            ("O-1", "L-1", "1", "A-1", "1", "2025-12-31", "250", "0", "2026-01-20", "100", "2026-01-20", "100", "0", "14", "2026-03-31", "0", "0", "MXN"),
-            ("O-2", "L-1", "1", "A-1", "2", "2025-12-31", "250", "0", "2026-02-20", "150", "2026-03-05", "50", "100", "17", "2026-03-31", "39", None, "MXN"),
-            ("O-3", "L-2", "2", "A-2", "1", "2025-12-31", "75", "0", "2026-01-15", "75", None, "0", "75", None, "2026-03-31", "75", None, "MXN")
+            (
+                "O-1",
+                "L-1",
+                "1",
+                "A-1",
+                "1",
+                "2025-12-31",
+                "250",
+                "0",
+                "2026-01-20",
+                "100",
+                "2026-01-20",
+                "100",
+                "0",
+                "14",
+                "2026-03-31",
+                "0",
+                "0",
+                "MXN",
+            ),
+            (
+                "O-2",
+                "L-1",
+                "1",
+                "A-1",
+                "2",
+                "2025-12-31",
+                "250",
+                "0",
+                "2026-02-20",
+                "150",
+                "2026-03-05",
+                "50",
+                "100",
+                "17",
+                "2026-03-31",
+                "39",
+                None,
+                "MXN",
+            ),
+            (
+                "O-3",
+                "L-2",
+                "2",
+                "A-2",
+                "1",
+                "2025-12-31",
+                "75",
+                "0",
+                "2026-01-15",
+                "75",
+                None,
+                "0",
+                "75",
+                None,
+                "2026-03-31",
+                "75",
+                None,
+                "MXN",
+            ),
         ],
         """
         obligation_id string, contract_id string, client_id string,
@@ -192,12 +309,15 @@ def raw_bundle(spark):
         outstanding_amount string, payment_transaction_id string,
         as_of_date string, days_past_due_as_of string,
         days_to_full_payment string, currency string
-        """
+        """,
     )
 
     return {
-        "users": users, "cards": cards, "transactions": transactions,
-        "accounts": accounts, "obligations_payments": obligations
+        "users": users,
+        "cards": cards,
+        "transactions": transactions,
+        "accounts": accounts,
+        "obligations_payments": obligations,
     }
 
 
@@ -210,21 +330,31 @@ def bronze_bundle(raw_bundle):
         "cards": ["credit_limit"],
         "transactions": ["amount", "balance_before", "balance_after"],
         "accounts": ["opening_balance", "closing_balance"],
-        "obligations_payments": ["contract_principal", "amount_due", "amount_paid", "outstanding_amount"]
+        "obligations_payments": [
+            "contract_principal",
+            "amount_due",
+            "amount_paid",
+            "outstanding_amount",
+        ],
     }
 
     for nombre, columnas in importes.items():
         for columna in columnas:
             tipo = "double" if nombre in ("users", "cards") else "decimal(18,2)"
             datos[nombre] = datos[nombre].withColumn(
-                columna,
-                F.regexp_replace(F.col(columna), r"[$,]", "").cast(tipo)
+                columna, F.regexp_replace(F.col(columna), r"[$,]", "").cast(tipo)
             )
 
     enteros = {
         "transactions": ["id", "client_id", "card_id", "merchant_id", "mcc"],
         "accounts": ["client_id"],
-        "obligations_payments": ["client_id", "installment_number", "payment_transaction_id", "days_past_due_as_of", "days_to_full_payment"]
+        "obligations_payments": [
+            "client_id",
+            "installment_number",
+            "payment_transaction_id",
+            "days_past_due_as_of",
+            "days_to_full_payment",
+        ],
     }
 
     for nombre, columnas in enteros.items():
@@ -262,8 +392,8 @@ def silver_bundle(bronze_bundle):
             "date",
             F.coalesce(
                 F.try_to_timestamp("date", F.lit("yyyy-MM-dd HH:mm:ss")),
-                F.try_to_timestamp("date", F.lit("dd/MM/yyyy HH:mm"))
-            )
+                F.try_to_timestamp("date", F.lit("dd/MM/yyyy HH:mm")),
+            ),
         )
     )
     for columna in ["opened_at", "balance_as_of"]:
@@ -283,4 +413,5 @@ def escribir_parquet():
         for nombre, df in datos.items():
             df.write.parquet((carpeta / f"{nombre}.parquet").as_uri())
         return carpeta.as_uri()
+
     return escribir

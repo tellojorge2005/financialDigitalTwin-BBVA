@@ -39,8 +39,12 @@ def evaluar_finanzas(perfil, historial):
         "Puntuación crediticia registrada": perfil.get("credit_score"),
         "Cantidad de tarjetas registradas": perfil.get("total_cards"),
         "Límite de crédito total registrado": perfil.get("total_credit_limit"),
-        "Los límites de crédito incluyen estimaciones": perfil.get("has_imputed_credit_limit"),
-        "Cantidad de límites de crédito estimados": perfil.get("total_credit_limits_imputed"),
+        "Los límites de crédito incluyen estimaciones": perfil.get(
+            "has_imputed_credit_limit"
+        ),
+        "Cantidad de límites de crédito estimados": perfil.get(
+            "total_credit_limits_imputed"
+        ),
         "Saldo de cuenta registrado": perfil.get("account_balance"),
         "Compromisos vencidos pendientes": perfil.get("outstanding_due"),
         "Mayor atraso en días": perfil.get("max_days_past_due"),
@@ -51,19 +55,25 @@ def evaluar_finanzas(perfil, historial):
     alertas = reporte["Alertas"]
     faltantes = reporte["Información pendiente"]
     for campo, etiqueta in [
-        ("total_debt", "Deuda total"), ("account_balance", "Saldo disponible"),
-        ("outstanding_due", "Compromisos vencidos"), ("max_days_past_due", "Días de atraso"),
+        ("total_debt", "Deuda total"),
+        ("account_balance", "Saldo disponible"),
+        ("outstanding_due", "Compromisos vencidos"),
+        ("max_days_past_due", "Días de atraso"),
     ]:
         if numero(perfil.get(campo)) is None:
             faltantes.append(etiqueta)
     if (numero(perfil.get("outstanding_due")) or 0) > 0:
-        alertas.append("Hay compromisos vencidos que no se descuentan de nuevo automáticamente; revisar su regularización.")
+        alertas.append(
+            "Hay compromisos vencidos que no se descuentan de nuevo automáticamente; revisar su regularización."
+        )
     if (numero(perfil.get("max_days_past_due")) or 0) > 0:
         alertas.append("Hay atraso registrado en pagos.")
     if (numero(perfil.get("account_balance")) or 0) < 0:
         alertas.append("El saldo registrado es negativo.")
     if len(filas) < 3 or not periodo_continuo(filas):
-        faltantes.append("Tres meses completos y consecutivos para evaluar una referencia estable")
+        faltantes.append(
+            "Tres meses completos y consecutivos para evaluar una referencia estable"
+        )
     if not filas:
         reporte["Estado orientativo"] = "Información insuficiente"
         return reporte
@@ -79,44 +89,77 @@ def evaluar_finanzas(perfil, historial):
     promedio_gasto = gastos / len(filas)
     ultimo_ingreso = numero(filas[-1]["monthly_income"])
     ultimo_gasto = numero(filas[-1]["monthly_expenses"])
-    reporte.update({
-        "Ingreso total del período": cantidad(ingresos),
-        "Gasto total del período sin deuda": cantidad(gastos),
-        "Pagos de deuda del período": cantidad(pagos),
-        "Margen del período después de pagos de deuda": cantidad(margen),
-        "Ingreso mensual promedio": cantidad(promedio_ingreso),
-        "Gasto mensual promedio sin deuda": cantidad(promedio_gasto),
-        "Pago mensual promedio de deuda": cantidad(pagos / len(filas)),
-        "Pago de deuda del último mes": filas[-1]["monthly_debt_payments"],
-        "Margen mensual promedio después de deuda": cantidad(margen / len(filas)),
-        "Desviación estándar de ingresos en el período": perfil.get("income_std_3m"),
-        "Desviación estándar de gastos en el período": perfil.get("expenses_std_3m"),
-        "Proporción de ingreso destinada a gastos sin deuda": float(gastos / ingresos) if ingresos > 0 else None,
-        "Proporción de ingreso destinada a deuda": float(pagos / ingresos) if ingresos > 0 else None,
-        "Proporción del ingreso que queda después de gastos y deuda": float(margen / ingresos) if ingresos > 0 else None,
-        "Ratio de ingreso del último mes frente al promedio": (
-            perfil.get("income_to_average_ratio_3m")
-            if perfil.get("income_to_average_ratio_3m") is not None
-            else float(round(ultimo_ingreso / promedio_ingreso, 4)) if promedio_ingreso > 0 else None
-        ),
-        "Cambio de ingreso frente al promedio del período": (
-            perfil.get("income_change_3m")
-            if perfil.get("income_change_3m") is not None
-            else float(round((ultimo_ingreso - promedio_ingreso) / promedio_ingreso, 4)) if promedio_ingreso > 0 else None
-        ),
-        "Cambio de gasto frente al promedio del período": (
-            perfil.get("expenses_change_3m")
-            if perfil.get("expenses_change_3m") is not None
-            else float(round((ultimo_gasto - promedio_gasto) / promedio_gasto, 4)) if promedio_gasto > 0 else None
-        ),
-        "Cambio en proporción de ahorro frente al período": perfil.get("savings_rate_change_3m"),
-        "Cambio en proporción de gasto frente al período": perfil.get("expense_ratio_change_3m"),
-        "Cambio en proporción de pago de deuda frente al período": perfil.get("debt_payment_ratio_change_3m"),
-    })
+    reporte.update(
+        {
+            "Ingreso total del período": cantidad(ingresos),
+            "Gasto total del período sin deuda": cantidad(gastos),
+            "Pagos de deuda del período": cantidad(pagos),
+            "Margen del período después de pagos de deuda": cantidad(margen),
+            "Ingreso mensual promedio": cantidad(promedio_ingreso),
+            "Gasto mensual promedio sin deuda": cantidad(promedio_gasto),
+            "Pago mensual promedio de deuda": cantidad(pagos / len(filas)),
+            "Pago de deuda del último mes": filas[-1]["monthly_debt_payments"],
+            "Margen mensual promedio después de deuda": cantidad(margen / len(filas)),
+            "Desviación estándar de ingresos en el período": perfil.get(
+                "income_std_3m"
+            ),
+            "Desviación estándar de gastos en el período": perfil.get(
+                "expenses_std_3m"
+            ),
+            "Proporción de ingreso destinada a gastos sin deuda": (
+                float(gastos / ingresos) if ingresos > 0 else None
+            ),
+            "Proporción de ingreso destinada a deuda": (
+                float(pagos / ingresos) if ingresos > 0 else None
+            ),
+            "Proporción del ingreso que queda después de gastos y deuda": (
+                float(margen / ingresos) if ingresos > 0 else None
+            ),
+            "Ratio de ingreso del último mes frente al promedio": (
+                perfil.get("income_to_average_ratio_3m")
+                if perfil.get("income_to_average_ratio_3m") is not None
+                else (
+                    float(round(ultimo_ingreso / promedio_ingreso, 4))
+                    if promedio_ingreso > 0
+                    else None
+                )
+            ),
+            "Cambio de ingreso frente al promedio del período": (
+                perfil.get("income_change_3m")
+                if perfil.get("income_change_3m") is not None
+                else (
+                    float(
+                        round((ultimo_ingreso - promedio_ingreso) / promedio_ingreso, 4)
+                    )
+                    if promedio_ingreso > 0
+                    else None
+                )
+            ),
+            "Cambio de gasto frente al promedio del período": (
+                perfil.get("expenses_change_3m")
+                if perfil.get("expenses_change_3m") is not None
+                else (
+                    float(round((ultimo_gasto - promedio_gasto) / promedio_gasto, 4))
+                    if promedio_gasto > 0
+                    else None
+                )
+            ),
+            "Cambio en proporción de ahorro frente al período": perfil.get(
+                "savings_rate_change_3m"
+            ),
+            "Cambio en proporción de gasto frente al período": perfil.get(
+                "expense_ratio_change_3m"
+            ),
+            "Cambio en proporción de pago de deuda frente al período": perfil.get(
+                "debt_payment_ratio_change_3m"
+            ),
+        }
+    )
     saldo = numero(filas[-1].get("closing_balance"))
     reporte["Meses de gastos y pagos cubiertos por el saldo"] = (
         cantidad(max(saldo, Decimal(0)) / ((gastos + pagos) / len(filas)))
-        if saldo is not None and gastos + pagos > 0 else None
+        if saldo is not None and gastos + pagos > 0
+        else None
     )
     if margen < 0:
         alertas.append("Los gastos y pagos de deuda superan los ingresos del período.")
@@ -124,13 +167,25 @@ def evaluar_finanzas(perfil, historial):
         alertas.append("No se registran ingresos positivos en el período.")
     if ingresos > 0:
         valores = [float(numero(f["monthly_income"])) for f in filas]
-        reporte["Variación relativa observada de ingresos"] = float(np.std(valores) / np.mean(valores))
+        reporte["Variación relativa observada de ingresos"] = float(
+            np.std(valores) / np.mean(valores)
+        )
     if (numero(perfil.get("total_debt")) or 0) > 0 and pagos == 0:
-        faltantes.append("Existe deuda pero no pagos registrados: confirmar la próxima cuota antes de asumir que es cero")
+        faltantes.append(
+            "Existe deuda pero no pagos registrados: confirmar la próxima cuota antes de asumir que es cero"
+        )
     reporte["Estado orientativo"] = (
-        "Requiere revisar compromisos" if alertas else
-        "Información insuficiente" if faltantes else
-        "Margen positivo de referencia" if margen > 0 else "Sin margen de referencia"
+        "Requiere revisar compromisos"
+        if alertas
+        else (
+            "Información insuficiente"
+            if faltantes
+            else (
+                "Margen positivo de referencia"
+                if margen > 0
+                else "Sin margen de referencia"
+            )
+        )
     )
     reporte["Nota temporal"] = (
         "Usar las fechas indicadas; estos registros no garantizan que el presupuesto siga igual hoy."
@@ -143,7 +198,12 @@ def simular_proyecciones(cliente_id, historial):
     filas = historial[-12:]
     if len(filas) < 6 or not periodo_continuo(filas):
         return []
-    campos = ["monthly_income", "monthly_expenses", "monthly_debt_payments", "closing_balance"]
+    campos = [
+        "monthly_income",
+        "monthly_expenses",
+        "monthly_debt_payments",
+        "closing_balance",
+    ]
     if any(numero(f.get(c)) is None for f in filas for c in campos):
         return []
     datos = np.array([[float(numero(f[c])) for c in campos] for f in filas])
@@ -155,8 +215,8 @@ def simular_proyecciones(cliente_id, historial):
 
     def generar(media, observaciones):
         variacion = np.std(observaciones, ddof=1) / media if media > 0 else 0.0
-        sigma = np.sqrt(np.log1p(variacion ** 2))
-        return media * rng.lognormal(-0.5 * sigma ** 2, sigma, size=(10000, 3))
+        sigma = np.sqrt(np.log1p(variacion**2))
+        return media * rng.lognormal(-0.5 * sigma**2, sigma, size=(10000, 3))
 
     ingresos = generar(ingreso, datos[:, 0])
     gastos = generar(gasto, datos[:, 1])
@@ -168,11 +228,18 @@ def simular_proyecciones(cliente_id, historial):
         fila = {
             "feature_month": corte.isoformat(),
             "prediction_month": date(indice // 12, indice % 12 + 1, 1).isoformat(),
-            "horizon_months": horizonte, "currency": "MXN", "status": "GENERADO",
-            "base_debt_payment": float(pago), "initial_balance": float(saldo),
+            "horizon_months": horizonte,
+            "currency": "MXN",
+            "status": "GENERADO",
+            "base_debt_payment": float(pago),
+            "initial_balance": float(saldo),
             "prob_negative_balance": float((saldos[:, horizonte - 1] < 0).mean()),
         }
-        for nombre, valores in [("income", ingresos), ("expenses", gastos), ("balance", saldos)]:
+        for nombre, valores in [
+            ("income", ingresos),
+            ("expenses", gastos),
+            ("balance", saldos),
+        ]:
             for percentil in [10, 50, 90]:
                 valor = float(np.quantile(valores[:, horizonte - 1], percentil / 100))
                 if not math.isfinite(valor):
@@ -183,14 +250,20 @@ def simular_proyecciones(cliente_id, historial):
 
 
 def explicar_proyecciones(filas):
-    return [{
-        "Mes observado de referencia": f["feature_month"],
-        "Mes estimado": f["prediction_month"],
-        "Moneda": f["currency"],
-        "Ingreso típico estimado": f.get("income_p50"),
-        "Gasto típico estimado sin pagos de deuda": f.get("expenses_p50"),
-        "Pago de deuda mensual supuesto": f.get("base_debt_payment"),
-        "Saldo típico estimado después de deuda": f.get("balance_p50"),
-        "Proporción de escenarios con saldo negativo": f.get("prob_negative_balance"),
-        "Límites": "Estimación orientativa desde el último mes registrado; pagos de deuda constantes, sin transferencias futuras ni garantía de precisión.",
-    } for f in filas if f.get("status") == "GENERADO"]
+    return [
+        {
+            "Mes observado de referencia": f["feature_month"],
+            "Mes estimado": f["prediction_month"],
+            "Moneda": f["currency"],
+            "Ingreso típico estimado": f.get("income_p50"),
+            "Gasto típico estimado sin pagos de deuda": f.get("expenses_p50"),
+            "Pago de deuda mensual supuesto": f.get("base_debt_payment"),
+            "Saldo típico estimado después de deuda": f.get("balance_p50"),
+            "Proporción de escenarios con saldo negativo": f.get(
+                "prob_negative_balance"
+            ),
+            "Límites": "Estimación orientativa desde el último mes registrado; pagos de deuda constantes, sin transferencias futuras ni garantía de precisión.",
+        }
+        for f in filas
+        if f.get("status") == "GENERADO"
+    ]

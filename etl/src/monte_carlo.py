@@ -21,8 +21,10 @@ def simular_historial(historial, meses=3, escenarios=10000, semilla=42):
         raise ValueError("Se esperaba historial en MXN.")
 
     importes = [
-        "monthly_income", "monthly_expenses",
-        "monthly_debt_payments", "closing_balance"
+        "monthly_income",
+        "monthly_expenses",
+        "monthly_debt_payments",
+        "closing_balance",
     ]
     datos[importes] = datos[importes].apply(pd.to_numeric, errors="coerce")
     if not np.isfinite(datos[importes].to_numpy(dtype=float)).all():
@@ -31,12 +33,16 @@ def simular_historial(historial, meses=3, escenarios=10000, semilla=42):
         raise ValueError("Los ingresos, gastos y pagos deben ser no negativos.")
 
     filas = []
-    for (cliente_id, moneda), grupo in datos.groupby(["client_id", "currency"], sort=True):
+    for (cliente_id, moneda), grupo in datos.groupby(
+        ["client_id", "currency"], sort=True
+    ):
         grupo = grupo.sort_values("month").tail(12)
         fechas = pd.DatetimeIndex(grupo["month"])
         esperadas = pd.date_range(fechas[0], periods=len(fechas), freq="MS")
         if not fechas.equals(esperadas):
-            raise ValueError("El historial mensual debe ser continuo e iniciar el día uno.")
+            raise ValueError(
+                "El historial mensual debe ser continuo e iniciar el día uno."
+            )
 
         corte = grupo.iloc[-1]["month"]
         saldo = float(grupo.iloc[-1]["closing_balance"])
@@ -48,22 +54,25 @@ def simular_historial(historial, meses=3, escenarios=10000, semilla=42):
         # Estimar la variación con un máximo de doce meses observados
         variacion_ingreso = (
             float(grupo["monthly_income"].std(ddof=1) / ingreso)
-            if suficiente and ingreso > 0 else 0.0
+            if suficiente and ingreso > 0
+            else 0.0
         )
         variacion_gasto = (
             float(grupo["monthly_expenses"].std(ddof=1) / gasto)
-            if suficiente and gasto > 0 else 0.0
+            if suficiente and gasto > 0
+            else 0.0
         )
 
         if suficiente:
             # Mantener resultados reproducibles por cliente
-            rng = np.random.default_rng(np.random.SeedSequence([semilla, int(cliente_id)]))
+            rng = np.random.default_rng(
+                np.random.SeedSequence([semilla, int(cliente_id)])
+            )
 
             def generar(media, variacion):
-                sigma = np.sqrt(np.log1p(variacion ** 2))
+                sigma = np.sqrt(np.log1p(variacion**2))
                 return media * rng.lognormal(
-                    mean=-0.5 * sigma ** 2, sigma=sigma,
-                    size=(escenarios, meses)
+                    mean=-0.5 * sigma**2, sigma=sigma, size=(escenarios, meses)
                 )
 
             ingresos = generar(ingreso, variacion_ingreso)
@@ -93,7 +102,7 @@ def simular_historial(historial, meses=3, escenarios=10000, semilla=42):
                     "Lognormal; independencia entre meses e ingresos/gastos; "
                     "pago de deuda constante; sin transferencias futuras. "
                     "Escenarios sin validación predictiva."
-                )
+                ),
             }
             for nombre in ["income", "expenses", "balance"]:
                 for percentil in [10, 50, 90]:
@@ -101,7 +110,9 @@ def simular_historial(historial, meses=3, escenarios=10000, semilla=42):
 
             if suficiente:
                 for nombre, valores in [
-                    ("income", ingresos), ("expenses", gastos), ("balance", saldos)
+                    ("income", ingresos),
+                    ("expenses", gastos),
+                    ("balance", saldos),
                 ]:
                     for percentil in [10, 50, 90]:
                         fila[f"{nombre}_p{percentil}"] = float(
@@ -121,8 +132,13 @@ def run_pipeline(spark, gold_path):
         .withColumn("_position", F.row_number().over(orden))
         .filter(F.col("_position") <= 12)
         .select(
-            "client_id", "currency", "month", "monthly_income",
-            "monthly_expenses", "monthly_debt_payments", "closing_balance"
+            "client_id",
+            "currency",
+            "month",
+            "monthly_income",
+            "monthly_expenses",
+            "monthly_debt_payments",
+            "closing_balance",
         )
         .toPandas()
     )

@@ -2,7 +2,6 @@ import logging
 from contextvars import ContextVar
 from time import monotonic
 
-
 logger = logging.getLogger(__name__)
 LIMITE_TURNO = 60
 LIMITE_RESERVA = 70

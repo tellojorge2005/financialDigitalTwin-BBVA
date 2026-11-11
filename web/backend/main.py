@@ -48,7 +48,6 @@ from web.backend.monitoring import (
     MonitorInteracciones,
 )
 
-
 logger = logging.getLogger(__name__)
 validar_configuracion()
 
@@ -60,7 +59,9 @@ class SolicitudLogin(BaseModel):
 
 class SolicitudConsulta(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    request_id: str | None = Field(default=None, min_length=16, max_length=64, pattern=r"^[A-Za-z0-9-]+$")
+    request_id: str | None = Field(
+        default=None, min_length=16, max_length=64, pattern=r"^[A-Za-z0-9-]+$"
+    )
     pregunta: Annotated[
         str,
         StringConstraints(
@@ -125,10 +126,7 @@ def resultado_monitoreo(status, marca):
 
 @app.middleware("http")
 async def configurar_respuesta(request: Request, call_next):
-    es_chat = (
-        request.method == "POST"
-        and request.url.path.rstrip("/") == "/api/chat"
-    )
+    es_chat = request.method == "POST" and request.url.path.rstrip("/") == "/api/chat"
     metricas = None
     status = None
 
@@ -178,8 +176,7 @@ async def manejar_error_datos(request, exc):
         status_code=503,
         content={
             "detail": (
-                "Tu información no está disponible temporalmente. "
-                "Intenta más tarde."
+                "Tu información no está disponible temporalmente. " "Intenta más tarde."
             )
         },
     )
@@ -215,9 +212,7 @@ async def manejar_error_general(request, exc):
     logger.error("Error no controlado: %s", type(exc).__name__)
     return JSONResponse(
         status_code=500,
-        content={
-            "detail": "No se pudo completar la solicitud. Intenta más tarde."
-        },
+        content={"detail": "No se pudo completar la solicitud. Intenta más tarde."},
     )
 
 
@@ -225,11 +220,7 @@ def obtener_sesion(request):
     cliente = request.session.get("cliente_id")
     sid = request.session.get("sid")
 
-    if (
-        type(cliente) is not int
-        or cliente < 0
-        or not isinstance(sid, str)
-    ):
+    if type(cliente) is not int or cliente < 0 or not isinstance(sid, str):
         raise SesionExpirada()
 
     return cliente, sid
@@ -332,10 +323,7 @@ async def consultar_asistente(body: SolicitudConsulta, request: Request):
             raise SesionExpirada()
 
         # Identificar la respuesta de bloqueo existente sin cambiar el asistente.
-        if (
-            resultado.get("texto_usuario")
-            == "[Solicitud fuera de alcance]"
-        ):
+        if resultado.get("texto_usuario") == "[Solicitud fuera de alcance]":
             request.state.resultado_monitor = "bloqueo_entrada"
         elif resultado.get("respuesta") == RECHAZO:
             request.state.resultado_monitor = "respuesta_restringida"
@@ -369,7 +357,9 @@ async def consultar_asistente(body: SolicitudConsulta, request: Request):
         }
 
     except (TimeoutError, APITimeoutError) as exc:
-        logger.warning("Turno agotado; se descarta su resultado tardío y se libera la conversación.")
+        logger.warning(
+            "Turno agotado; se descarta su resultado tardío y se libera la conversación."
+        )
         raise HTTPException(
             504,
             "No se completó la respuesta a tiempo. Tu conversación se conserva; puedes volver a intentar.",

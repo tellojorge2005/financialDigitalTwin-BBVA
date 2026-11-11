@@ -42,7 +42,9 @@ def inicializar_historial():
                 ocupado_hasta REAL NOT NULL DEFAULT 0
             )
         """)
-        columnas = {fila[1] for fila in con.execute("PRAGMA table_info(conversaciones)")}
+        columnas = {
+            fila[1] for fila in con.execute("PRAGMA table_info(conversaciones)")
+        }
         if "ultimo_turno" not in columnas:
             con.execute("ALTER TABLE conversaciones ADD COLUMN ultimo_turno TEXT")
         con.execute("DELETE FROM conversaciones WHERE expira <= ?", (time.time(),))
@@ -56,7 +58,7 @@ def crear_conversacion(cliente_id):
         con.execute(
             "INSERT INTO conversaciones (sid, cliente_id, expira, mensajes, meta) "
             "VALUES (?, ?, ?, '[]', '{}')",
-            (sid, cliente_id, time.time() + SESSION_SECONDS)
+            (sid, cliente_id, time.time() + SESSION_SECONDS),
         )
         con.commit()
     return sid
@@ -75,7 +77,8 @@ def leer_conversacion(sid, cliente_id):
         con.commit()
         row = con.execute(
             "SELECT * FROM conversaciones WHERE sid = ? AND cliente_id = ? "
-            "AND expira > ?", (sid, cliente_id, time.time())
+            "AND expira > ?",
+            (sid, cliente_id, time.time()),
         ).fetchone()
     if row is None:
         raise SesionExpirada()
@@ -89,7 +92,8 @@ def reservar_conversacion(sid, cliente_id):
         con.execute("BEGIN IMMEDIATE")
         row = con.execute(
             "SELECT * FROM conversaciones WHERE sid = ? AND cliente_id = ? "
-            "AND expira > ?", (sid, cliente_id, ahora)
+            "AND expira > ?",
+            (sid, cliente_id, ahora),
         ).fetchone()
         if row is None:
             raise SesionExpirada()
@@ -97,11 +101,12 @@ def reservar_conversacion(sid, cliente_id):
             raise ConversacionOcupada()
         con.execute(
             "UPDATE conversaciones SET lease = ?, ocupado_hasta = ? WHERE sid = ?",
-            (token, ahora + LIMITE_RESERVA, sid)
+            (token, ahora + LIMITE_RESERVA, sid),
         )
         con.commit()
     return token, {
-        "mensajes": json.loads(row["mensajes"]), "meta": json.loads(row["meta"])
+        "mensajes": json.loads(row["mensajes"]),
+        "meta": json.loads(row["meta"]),
     }
 
 
@@ -112,10 +117,17 @@ def guardar_turno(sid, cliente_id, token, mensajes, meta, request_id=None):
             "ocupado_hasta = 0, ultimo_turno = ? WHERE sid = ? AND cliente_id = ? AND lease = ? "
             "AND expira > ? AND ocupado_hasta > ?",
             (
-                json.dumps(mensajes[-MAX_CHAT_MESSAGES:], ensure_ascii=False, allow_nan=False),
+                json.dumps(
+                    mensajes[-MAX_CHAT_MESSAGES:], ensure_ascii=False, allow_nan=False
+                ),
                 json.dumps(meta, ensure_ascii=False, allow_nan=False),
-                request_id, sid, cliente_id, token, time.time(), time.time()
-            )
+                request_id,
+                sid,
+                cliente_id,
+                token,
+                time.time(),
+                time.time(),
+            ),
         )
         con.commit()
         if result.rowcount != 1:
@@ -126,10 +138,10 @@ def liberar_conversacion(sid, token):
     with conectar() as con:
         con.execute(
             "UPDATE conversaciones SET lease = NULL, ocupado_hasta = 0 "
-            "WHERE sid = ? AND lease = ?", (sid, token)
+            "WHERE sid = ? AND lease = ?",
+            (sid, token),
         )
         con.commit()
-
 
 
 def estado_conversacion(sid, cliente_id):

@@ -22,7 +22,9 @@ class CambioMeta(BaseModel):
     pagos: Decimal | None = Field(default=None, ge=0, le=1000000000, decimal_places=2)
     evaluar_presupuesto: bool | None = Field(default=None, strict=True)
 
-    @field_validator("monto", "ahorro", "margen", "ingreso", "gastos", "pagos", mode="before")
+    @field_validator(
+        "monto", "ahorro", "margen", "ingreso", "gastos", "pagos", mode="before"
+    )
     @classmethod
     def normalizar_importe(cls, valor):
         return normalizar_monto(valor)
@@ -36,8 +38,14 @@ class CambioMeta(BaseModel):
 class Decision(BaseModel):
     model_config = ConfigDict(extra="forbid")
     accion: Literal[
-        "consulta", "meta", "nueva_meta", "cancelar_meta", "educacion", "rechazar",
-        "escenario", "nuevo_escenario"
+        "consulta",
+        "meta",
+        "nueva_meta",
+        "cancelar_meta",
+        "educacion",
+        "rechazar",
+        "escenario",
+        "nuevo_escenario",
     ]
     cambios: CambioMeta = Field(default_factory=CambioMeta)
     respuesta: str = Field(default="", max_length=2400)
@@ -56,7 +64,15 @@ def actualizar_meta(meta, cambios):
     nueva = dict(meta)
     moneda_nueva = cambios.moneda
     if moneda_nueva and nueva.get("moneda") not in (None, moneda_nueva):
-        for campo in ("monto", "ahorro", "margen", "ingreso", "gastos", "pagos", "usar_historial"):
+        for campo in (
+            "monto",
+            "ahorro",
+            "margen",
+            "ingreso",
+            "gastos",
+            "pagos",
+            "usar_historial",
+        ):
             nueva.pop(campo, None)
     for campo, valor in cambios.model_dump(mode="json", exclude_unset=True).items():
         if valor is not None:
@@ -70,7 +86,7 @@ def actualizar_meta(meta, cambios):
 def referencia_historial(historial, moneda):
     filas = sorted(
         [fila for fila in historial if fila["currency"] == moneda],
-        key=lambda fila: fila["month"]
+        key=lambda fila: fila["month"],
     )[-3:]
     if len(filas) != 3:
         return None
@@ -79,14 +95,16 @@ def referencia_historial(historial, moneda):
     if periodos != list(range(periodos[0], periodos[0] + 3)):
         return None
     campos = [
-        "monthly_income", "monthly_expenses", "monthly_debt_payments",
-        "closing_balance", "outstanding_due"
+        "monthly_income",
+        "monthly_expenses",
+        "monthly_debt_payments",
+        "closing_balance",
+        "outstanding_due",
     ]
     if any(f.get(c) is None for f in filas for c in campos):
         return None
     promedios = {
-        campo: sum(importe(f[campo]) for f in filas) / 3
-        for campo in campos[:3]
+        campo: sum(importe(f[campo]) for f in filas) / 3 for campo in campos[:3]
     }
     return {
         "ingreso": promedios["monthly_income"],
@@ -95,7 +113,7 @@ def referencia_historial(historial, moneda):
         "saldo": importe(filas[-1]["closing_balance"]),
         "vencido": importe(filas[-1]["outstanding_due"]),
         "desde": filas[0]["month"][:7],
-        "hasta": filas[-1]["month"][:7]
+        "hasta": filas[-1]["month"][:7],
     }
 
 
@@ -105,8 +123,14 @@ def siguiente_pregunta(meta, perfil, historial):
         ("monto", "¿Cuánto dinero necesitas reunir en total?"),
         ("moneda", "¿En qué moneda quieres definir la meta?"),
         ("plazo", "¿En cuántos meses te gustaría reunirlo?"),
-        ("ahorro", "¿Cuánto tienes ya apartado exclusivamente para esta meta? Puede ser cero."),
-        ("margen", "Además de tus gastos habituales, ¿cuánto deseas reservar cada mes para imprevistos? Puede ser cero.")
+        (
+            "ahorro",
+            "¿Cuánto tienes ya apartado exclusivamente para esta meta? Puede ser cero.",
+        ),
+        (
+            "margen",
+            "Además de tus gastos habituales, ¿cuánto deseas reservar cada mes para imprevistos? Puede ser cero.",
+        ),
     ]
     for campo, pregunta in preguntas:
         if meta.get(campo) is None:
@@ -138,7 +162,7 @@ def siguiente_pregunta(meta, perfil, historial):
         for campo, pregunta in [
             ("ingreso", "¿Cuánto recibes al mes, después de descuentos?"),
             ("gastos", "¿Cuánto gastas al mes, sin contar los pagos de deuda?"),
-            ("pagos", "¿Cuánto pagas al mes por tus deudas? Puede ser cero.")
+            ("pagos", "¿Cuánto pagas al mes por tus deudas? Puede ser cero."),
         ]:
             if meta.get(campo) is None:
                 return pregunta
@@ -158,17 +182,17 @@ def calcular_plan(meta, perfil, historial):
         )
         revisar = ref["saldo"] < 0 or ref["vencido"] > 0
     else:
-        ingreso, gastos, pagos = (importe(meta[c]) for c in ("ingreso", "gastos", "pagos"))
+        ingreso, gastos, pagos = (
+            importe(meta[c]) for c in ("ingreso", "gastos", "pagos")
+        )
         advertencia = meta.get(
             "_origen_presupuesto",
-            "Presupuesto mensual declarado por ti; no está verificado."
+            "Presupuesto mensual declarado por ti; no está verificado.",
         )
-        revisar = (
-            perfil.get("currency") == meta["moneda"] and (
-                (perfil.get("outstanding_due") or 0) > 0
-                or (perfil.get("account_balance") or 0) < 0
-                or (perfil.get("max_days_past_due") or 0) > 0
-            )
+        revisar = perfil.get("currency") == meta["moneda"] and (
+            (perfil.get("outstanding_due") or 0) > 0
+            or (perfil.get("account_balance") or 0) < 0
+            or (perfil.get("max_days_past_due") or 0) > 0
         )
 
     pendiente = max(importe(meta["monto"]) - importe(meta["ahorro"]), Decimal(0))
@@ -180,7 +204,8 @@ def calcular_plan(meta, perfil, historial):
     )
     meses = (
         int((pendiente / capacidad).to_integral_value(rounding=ROUND_CEILING))
-        if capacidad > 0 and not revisar else None
+        if capacidad > 0 and not revisar
+        else None
     )
     moneda = meta["moneda"]
     texto = (
@@ -205,8 +230,8 @@ def calcular_plan(meta, perfil, historial):
             "La aportación entra en el margen aritmético de referencia, pero "
             "falta completar la revisión de compromisos o la reserva para "
             "imprevistos antes de considerarla viable."
-            if meta.get("_revision_pendiente") else
-            "La aportación cabe en este presupuesto de referencia."
+            if meta.get("_revision_pendiente")
+            else "La aportación cabe en este presupuesto de referencia."
         )
     elif capacidad > 0:
         texto += (
@@ -226,6 +251,7 @@ def calcular_plan(meta, perfil, historial):
     )
     return texto
 
+
 # Interpretar magnitudes no equivale a convertir entre monedas
 def normalizar_monto(valor):
     if not isinstance(valor, str):
@@ -243,9 +269,16 @@ def normalizar_divisa(valor):
         return None
     texto = str(valor).strip().lower()
     return {
-        "dólares": "USD", "dolares": "USD", "dólar": "USD",
-        "dolar": "USD", "usd": "USD", "us$": "USD",
-        "pesos mexicanos": "MXN", "mxn": "MXN", "euros": "EUR", "eur": "EUR"
+        "dólares": "USD",
+        "dolares": "USD",
+        "dólar": "USD",
+        "dolar": "USD",
+        "usd": "USD",
+        "us$": "USD",
+        "pesos mexicanos": "MXN",
+        "mxn": "MXN",
+        "euros": "EUR",
+        "eur": "EUR",
     }.get(texto, texto.upper())
 
 
@@ -255,7 +288,9 @@ class CambioEscenario(BaseModel):
     ahorro: Decimal | None = Field(default=None, ge=0, le=1000000000, decimal_places=2)
     gastos: Decimal | None = Field(default=None, ge=0, le=1000000000, decimal_places=2)
     pagos: Decimal | None = Field(default=None, ge=0, le=1000000000, decimal_places=2)
-    ingreso_restante: Decimal | None = Field(default=None, ge=0, le=1000000000, decimal_places=2)
+    ingreso_restante: Decimal | None = Field(
+        default=None, ge=0, le=1000000000, decimal_places=2
+    )
 
     @field_validator("ahorro", "gastos", "pagos", "ingreso_restante", mode="before")
     @classmethod
@@ -336,7 +371,7 @@ def orientar_meta(meta, perfil, historial):
         ("nombre", "Cuéntame, ¿para qué te gustaría ahorrar?"),
         ("monto", "¿Cuánto costaría aproximadamente lo que quieres conseguir?"),
         ("moneda", "¿En qué moneda? Si son pesos, dime de qué país."),
-        ("plazo", "¿Para cuándo te gustaría tenerlo? Puedes decirme en cuántos meses.")
+        ("plazo", "¿Para cuándo te gustaría tenerlo? Puedes decirme en cuántos meses."),
     ]:
         if meta.get(campo) is None:
             return pregunta, False
@@ -353,10 +388,14 @@ def orientar_meta(meta, perfil, historial):
         f"{mostrar(mensual)} {meta['moneda']} al mes"
     )
     if meta.get("ahorro") is None:
-        return texto + (
-            " si empiezas desde cero. ¿Ya tienes algo apartado? "
-            "Con eso puedo ajustar la cantidad."
-        ), False
+        return (
+            texto
+            + (
+                " si empiezas desde cero. ¿Ya tienes algo apartado? "
+                "Con eso puedo ajustar la cantidad."
+            ),
+            False,
+        )
 
     texto += f", contando los {mostrar(ahorro)} que ya apartaste."
 
@@ -387,6 +426,3 @@ def orientar_meta(meta, perfil, historial):
             "si quieres apartar una cantidad, puedo incorporarla."
         )
     return texto, True
-
-
-

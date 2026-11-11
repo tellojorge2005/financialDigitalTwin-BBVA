@@ -22,7 +22,6 @@ from langchain_core.callbacks import BaseCallbackHandler
 from web.backend.config import AWS_REGION, S3_BUCKET, SESSION_SECRET
 from web.backend.usage import UsoModelo, CAMPOS_USO
 
-
 logger = logging.getLogger(__name__)
 
 CONTADORES = (
@@ -145,9 +144,7 @@ class MetricasInteraccion(BaseCallbackHandler):
             return {
                 **self._base,
                 "conversacion_id": self._conversacion_id,
-                "duracion_segundos": round(
-                    time.perf_counter() - self.inicio_reloj, 3
-                ),
+                "duracion_segundos": round(time.perf_counter() - self.inicio_reloj, 3),
                 "http_status": http_status,
                 "resultado": resultado,
                 "registro_completo": 1,
@@ -168,18 +165,14 @@ class MonitorInteracciones:
         )
 
         self.bucket = S3_BUCKET
-        self.prefix = os.getenv(
-            "S3_INTERACTIONS_PREFIX", ""
-        ).strip().strip("/")
+        self.prefix = os.getenv("S3_INTERACTIONS_PREFIX", "").strip().strip("/")
 
         self.intervalo = int(os.getenv("MONITOR_EXPORT_SECONDS", "300"))
         self.retencion_dias = int(os.getenv("MONITOR_RETENTION_DAYS", "30"))
         self.tamano_lote = 500
 
         if not self.bucket or not self.prefix:
-            raise RuntimeError(
-                "Configura S3_BUCKET y S3_INTERACTIONS_PREFIX en .env."
-            )
+            raise RuntimeError("Configura S3_BUCKET y S3_INTERACTIONS_PREFIX en .env.")
         if "://" in self.prefix:
             raise RuntimeError(
                 "S3_INTERACTIONS_PREFIX debe ser un prefijo, no una URL."
@@ -318,13 +311,11 @@ class MonitorInteracciones:
             con.execute("BEGIN IMMEDIATE")
             self._recuperar_sin_cierre(con)
 
-            pendiente = con.execute(
-                """
+            pendiente = con.execute("""
                 SELECT * FROM lotes
                 WHERE exportado IS NULL
                 ORDER BY creado, id LIMIT 1
-                """
-            ).fetchone()
+                """).fetchone()
 
             if pendiente:
                 return dict(pendiente)
@@ -343,9 +334,7 @@ class MonitorInteracciones:
 
             lote_id = uuid4().hex
             ahora = datetime.now(timezone.utc)
-            objeto = (
-                f"{self.prefix}/{ahora:%Y/%m/%d}/lote_{lote_id}.csv"
-            )
+            objeto = f"{self.prefix}/{ahora:%Y/%m/%d}/lote_{lote_id}.csv"
 
             buffer = io.StringIO(newline="")
             writer = csv.DictWriter(
@@ -389,9 +378,7 @@ class MonitorInteracciones:
 
     def _subir_lote(self, lote):
         if self._s3 is None:
-            self._s3 = boto3.Session(
-                region_name=AWS_REGION
-            ).client(
+            self._s3 = boto3.Session(region_name=AWS_REGION).client(
                 "s3",
                 config=Config(
                     connect_timeout=5,
@@ -401,9 +388,7 @@ class MonitorInteracciones:
             )
 
         contenido = bytes(lote["contenido"])
-        checksum = base64.b64encode(
-            hashlib.md5(contenido).digest()
-        ).decode("ascii")
+        checksum = base64.b64encode(hashlib.md5(contenido).digest()).decode("ascii")
 
         self._s3.put_object(
             Bucket=lote["bucket"],

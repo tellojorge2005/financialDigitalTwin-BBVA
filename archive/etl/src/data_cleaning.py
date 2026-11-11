@@ -2,33 +2,26 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count, when
 from pyspark.ml.feature import Imputer
 
+
 def clean_users_data(users_spark):
 
     # Imputar current_age utilizando la mediana
     imputer = Imputer(
-        inputCols=["current_age"],
-        outputCols=["current_age"]
+        inputCols=["current_age"], outputCols=["current_age"]
     ).setStrategy("median")
 
-    users_spark = (
-        imputer
-        .fit(users_spark)
-        .transform(users_spark)
-    )
+    users_spark = imputer.fit(users_spark).transform(users_spark)
 
     # Imputar gender utilizando la moda
     gender_mode = (
-        users_spark
-        .filter(col("gender").isNotNull())
+        users_spark.filter(col("gender").isNotNull())
         .groupBy("gender")
         .count()
         .orderBy(col("count").desc())
         .first()["gender"]
     )
 
-    users_spark = users_spark.fillna({
-        "gender": gender_mode
-    })
+    users_spark = users_spark.fillna({"gender": gender_mode})
 
     return users_spark
 
@@ -36,31 +29,26 @@ def clean_users_data(users_spark):
 def main():
 
     # Crear sesión de Spark
-    spark = (
-        SparkSession.builder
-        .appName("FinancialDigitalTwin_DataCleaning")
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.appName(
+        "FinancialDigitalTwin_DataCleaning"
+    ).getOrCreate()
 
     # Cargar datasets
 
     cards_spark = (
-        spark.read
-        .option("header", True)
+        spark.read.option("header", True)
         .option("inferSchema", True)
         .csv("../data/modified/cards_data.csv")
     )
 
     transactions_spark = (
-        spark.read
-        .option("header", True)
+        spark.read.option("header", True)
         .option("inferSchema", True)
         .csv("../data/modified/transactions_data.csv")
     )
 
     users_spark = (
-        spark.read
-        .option("header", True)
+        spark.read.option("header", True)
         .option("inferSchema", True)
         .csv("../data/modified/users_data.csv")
     )
@@ -71,26 +59,17 @@ def main():
 
     # Verificación de valores faltantes
 
-    users_nulls = users_spark.select([
-        count(
-            when(col(c).isNull(), c)
-        ).alias(c)
-        for c in users_spark.columns
-    ])
+    users_nulls = users_spark.select(
+        [count(when(col(c).isNull(), c)).alias(c) for c in users_spark.columns]
+    )
 
-    cards_nulls = cards_spark.select([
-        count(
-            when(col(c).isNull(), c)
-        ).alias(c)
-        for c in cards_spark.columns
-    ])
+    cards_nulls = cards_spark.select(
+        [count(when(col(c).isNull(), c)).alias(c) for c in cards_spark.columns]
+    )
 
-    transactions_nulls = transactions_spark.select([
-        count(
-            when(col(c).isNull(), c)
-        ).alias(c)
-        for c in transactions_spark.columns
-    ])
+    transactions_nulls = transactions_spark.select(
+        [count(when(col(c).isNull(), c)).alias(c) for c in transactions_spark.columns]
+    )
 
     # Mostrar resultados de validación
 

@@ -15,7 +15,7 @@ from etl.src.silver_cleaning import (
     clean_transactions,
     estimate_credit_limits,
     impute_credit_limits,
-    run_pipeline
+    run_pipeline,
 )
 
 
@@ -37,9 +37,13 @@ def test_rechaza_correo_compartido(users_data):
 
 def test_categorias_generales(spark):
     df = spark.createDataFrame(
-        [(1, "expense", "viajes"), (2, "expense", "detalle específico"),
-         (3, "expense", None), (4, "income", "salario")],
-        "id long, movement_type string, category string"
+        [
+            (1, "expense", "viajes"),
+            (2, "expense", "detalle específico"),
+            (3, "expense", None),
+            (4, "income", "salario"),
+        ],
+        "id long, movement_type string, category string",
     )
     rows = {r.id: r.category for r in normalizar_categorias(df).collect()}
     assert rows == {1: "viajes", 2: "otros", 3: "otros", 4: "salario"}
@@ -54,22 +58,23 @@ def test_rechaza_moneda_incorrecta(spark, moneda):
 
 @pytest.fixture
 def users_data(spark, perfil_cliente):
-    return perfil_cliente(spark.createDataFrame(
-        [
-            (
-                1, 30.0, " Male ", " Ciudad de México ",
-                30000.0, 60000.0, 10000.0, 750
-            ),
-            (
-                2, 40.0, " Female ", " Puebla ",
-                40000.0, 80000.0, 20000.0, 720
-            ),
-            (
-                3, 50.0, " Male ", " Monterrey ",
-                25000.0, 50000.0, 15000.0, 700
-            )
-        ],
-        """
+    return perfil_cliente(
+        spark.createDataFrame(
+            [
+                (
+                    1,
+                    30.0,
+                    " Male ",
+                    " Ciudad de México ",
+                    30000.0,
+                    60000.0,
+                    10000.0,
+                    750,
+                ),
+                (2, 40.0, " Female ", " Puebla ", 40000.0, 80000.0, 20000.0, 720),
+                (3, 50.0, " Male ", " Monterrey ", 25000.0, 50000.0, 15000.0, 700),
+            ],
+            """
         id long,
         current_age double,
         gender string,
@@ -78,8 +83,9 @@ def users_data(spark, perfil_cliente):
         yearly_income double,
         total_debt double,
         credit_score long
-        """
-    ))
+        """,
+        )
+    )
 
 
 @pytest.fixture
@@ -101,40 +107,24 @@ def test_clean_users(users_data):
     duplicated = users_data.unionByName(users_data)
     cleaned = clean_users(duplicated)
 
-    rows = {
-        row.id: row
-        for row in cleaned.collect()
-    }
+    rows = {row.id: row for row in cleaned.collect()}
 
     assert len(rows) == 3
     assert rows[1].gender == "male"
     assert rows[1].address == "Ciudad de México"
 
-    for column in [
-        "yearly_income",
-        "per_capita_income",
-        "total_debt"
-    ]:
-        assert (
-            cleaned.schema[column].dataType.simpleString()
-            == "double"
-        )
+    for column in ["yearly_income", "per_capita_income", "total_debt"]:
+        assert cleaned.schema[column].dataType.simpleString() == "double"
 
 
 # Validar limpieza de tarjetas
 def test_clean_cards(spark, cards_schema):
     df = spark.createDataFrame(
         [
-            (
-                1, 1, " VISA ", " Credit ",
-                " YES ", " NO ", 1.0, 10000.0
-            ),
-            (
-                1, 1, " VISA ", " Credit ",
-                " YES ", " NO ", 1.0, 10000.0
-            )
+            (1, 1, " VISA ", " Credit ", " YES ", " NO ", 1.0, 10000.0),
+            (1, 1, " VISA ", " Credit ", " YES ", " NO ", 1.0, 10000.0),
         ],
-        cards_schema
+        cards_schema,
     )
 
     cleaned = clean_cards(df)
@@ -145,10 +135,7 @@ def test_clean_cards(spark, cards_schema):
     assert rows[0].card_type == "credit"
     assert rows[0].has_chip == "yes"
     assert rows[0].card_on_dark_web == "no"
-    assert (
-        cleaned.schema["credit_limit"].dataType.simpleString()
-        == "double"
-    )
+    assert cleaned.schema["credit_limit"].dataType.simpleString() == "double"
 
 
 # Validar limpieza de transacciones
@@ -162,20 +149,14 @@ def test_impute_credit_limits(spark, users_data, cards_schema):
             (2, 2, "visa", "credit", "yes", "no", 1.0, 3000.0),
             (3, 3, "visa", "credit", "yes", "no", 1.0, None),
             (4, None, "visa", "credit", "yes", "no", 1.0, None),
-            (None, 3, "visa", "credit", "yes", "no", 1.0, None)
+            (None, 3, "visa", "credit", "yes", "no", 1.0, None),
         ],
-        cards_schema
+        cards_schema,
     )
 
-    cleaned = impute_credit_limits(
-        clean_cards(df),
-        clean_users(users_data)
-    )
+    cleaned = impute_credit_limits(clean_cards(df), clean_users(users_data))
 
-    rows = {
-        row.id: row
-        for row in cleaned.collect()
-    }
+    rows = {row.id: row for row in cleaned.collect()}
 
     assert len(rows) == 5
 
@@ -195,44 +176,24 @@ def test_impute_credit_limits(spark, users_data, cards_schema):
     assert rows[None].credit_limit_imputed is False
 
 
-def test_imputation_without_missing_limits(
-    spark,
-    users_data,
-    cards_schema
-):
+def test_imputation_without_missing_limits(spark, users_data, cards_schema):
     df = spark.createDataFrame(
-        [
-            (1, 1, "visa", "credit", "yes", "no", 1.0, 1000.0)
-        ],
-        cards_schema
+        [(1, 1, "visa", "credit", "yes", "no", 1.0, 1000.0)], cards_schema
     )
 
-    row = impute_credit_limits(
-        clean_cards(df),
-        clean_users(users_data)
-    ).first()
+    row = impute_credit_limits(clean_cards(df), clean_users(users_data)).first()
 
     assert row.credit_limit == 1000.0
     assert row.credit_limit_imputed is False
     assert row.credit_limit_imputation_method is None
 
 
-def test_imputation_without_known_limits(
-    spark,
-    users_data,
-    cards_schema
-):
+def test_imputation_without_known_limits(spark, users_data, cards_schema):
     df = spark.createDataFrame(
-        [
-            (1, 1, "visa", "credit", "yes", "no", 1.0, None)
-        ],
-        cards_schema
+        [(1, 1, "visa", "credit", "yes", "no", 1.0, None)], cards_schema
     )
 
-    row = impute_credit_limits(
-        clean_cards(df),
-        clean_users(users_data)
-    ).first()
+    row = impute_credit_limits(clean_cards(df), clean_users(users_data)).first()
 
     assert row.credit_limit is None
     assert row.credit_limit_imputed is False
@@ -241,91 +202,81 @@ def test_imputation_without_known_limits(
 
 # Validar selección del modelo
 def test_estimate_credit_limits_knn():
-    known_cards = pd.DataFrame([
-        {
-            "client_id": index,
-            "num_cards_issued": 1.0,
-            "current_age": 30.0 if index % 2 == 0 else 60.0,
-            "yearly_income": (
-                20000.0 if index % 2 == 0 else 100000.0
-            ),
-            "total_debt": (
-                1000.0 if index % 2 == 0 else 10000.0
-            ),
-            "credit_score": 600.0 if index % 2 == 0 else 800.0,
-            "card_brand": "visa",
-            "card_type": "credit",
-            "has_chip": "yes",
-            "credit_limit": 1000.0 if index % 2 == 0 else 9000.0
-        }
-        for index in range(40)
-    ])
+    known_cards = pd.DataFrame(
+        [
+            {
+                "client_id": index,
+                "num_cards_issued": 1.0,
+                "current_age": 30.0 if index % 2 == 0 else 60.0,
+                "yearly_income": (20000.0 if index % 2 == 0 else 100000.0),
+                "total_debt": (1000.0 if index % 2 == 0 else 10000.0),
+                "credit_score": 600.0 if index % 2 == 0 else 800.0,
+                "card_brand": "visa",
+                "card_type": "credit",
+                "has_chip": "yes",
+                "credit_limit": 1000.0 if index % 2 == 0 else 9000.0,
+            }
+            for index in range(40)
+        ]
+    )
 
     missing_cards = known_cards.iloc[[0, 1]].copy()
     missing_cards["credit_limit"] = np.nan
 
-    method, predictions = estimate_credit_limits(
-        known_cards,
-        missing_cards
-    )
+    method, predictions = estimate_credit_limits(known_cards, missing_cards)
 
     assert method == "knn"
-    np.testing.assert_allclose(
-        predictions,
-        [1000.0, 9000.0]
-    )
+    np.testing.assert_allclose(predictions, [1000.0, 9000.0])
 
 
 def test_estimate_credit_limits_median():
-    known_cards = pd.DataFrame([
-        {
-            "client_id": index,
-            "num_cards_issued": 1.0,
-            "current_age": 30.0,
-            "yearly_income": 60000.0,
-            "total_debt": 10000.0,
-            "credit_score": 750.0,
-            "card_brand": "visa",
-            "card_type": "credit",
-            "has_chip": "yes",
-            "credit_limit": 2000.0
-        }
-        for index in range(20)
-    ])
+    known_cards = pd.DataFrame(
+        [
+            {
+                "client_id": index,
+                "num_cards_issued": 1.0,
+                "current_age": 30.0,
+                "yearly_income": 60000.0,
+                "total_debt": 10000.0,
+                "credit_score": 750.0,
+                "card_brand": "visa",
+                "card_type": "credit",
+                "has_chip": "yes",
+                "credit_limit": 2000.0,
+            }
+            for index in range(20)
+        ]
+    )
 
     missing_cards = known_cards.iloc[[0]].copy()
     missing_cards["credit_limit"] = np.nan
 
-    method, predictions = estimate_credit_limits(
-        known_cards,
-        missing_cards
-    )
+    method, predictions = estimate_credit_limits(known_cards, missing_cards)
 
     assert method == "mediana"
     np.testing.assert_allclose(predictions, [2000.0])
 
 
 def test_estimate_credit_limits_single_client():
-    known_cards = pd.DataFrame({
-        "client_id": [1, 1],
-        "num_cards_issued": [1.0, 2.0],
-        "current_age": [30.0, 30.0],
-        "yearly_income": [60000.0, 60000.0],
-        "total_debt": [10000.0, 10000.0],
-        "credit_score": [750.0, 750.0],
-        "card_brand": ["visa", "visa"],
-        "card_type": ["credit", "credit"],
-        "has_chip": ["yes", "yes"],
-        "credit_limit": [1000.0, 3000.0]
-    })
+    known_cards = pd.DataFrame(
+        {
+            "client_id": [1, 1],
+            "num_cards_issued": [1.0, 2.0],
+            "current_age": [30.0, 30.0],
+            "yearly_income": [60000.0, 60000.0],
+            "total_debt": [10000.0, 10000.0],
+            "credit_score": [750.0, 750.0],
+            "card_brand": ["visa", "visa"],
+            "card_type": ["credit", "credit"],
+            "has_chip": ["yes", "yes"],
+            "credit_limit": [1000.0, 3000.0],
+        }
+    )
 
     missing_cards = known_cards.iloc[[0]].copy()
     missing_cards["credit_limit"] = np.nan
 
-    method, predictions = estimate_credit_limits(
-        known_cards,
-        missing_cards
-    )
+    method, predictions = estimate_credit_limits(known_cards, missing_cards)
 
     assert method == "mediana"
     np.testing.assert_allclose(predictions, [2000.0])
@@ -341,9 +292,12 @@ def test_clean_transactions(bronze_bundle):
     cleaned = clean_transactions(df)
     # Comparar la fecha en Spark antes de convertirla a objetos de Python.
     # collect() convierte TimestampType a la zona local del sistema.
-    rows = {r.id: r for r in cleaned.withColumn(
-        "date", F.date_format("date", "yyyy-MM-dd HH:mm:ss")
-    ).collect()}
+    rows = {
+        r.id: r
+        for r in cleaned.withColumn(
+            "date", F.date_format("date", "yyyy-MM-dd HH:mm:ss")
+        ).collect()
+    }
 
     assert len(rows) == 14
     assert rows[1].date == "2025-12-15 10:00:00"
@@ -356,15 +310,20 @@ def test_clean_transactions(bronze_bundle):
 
 @pytest.mark.parametrize(
     "texto,esperado",
-    [("01/20/2026 10:00", "2026-01-20 10:00:00"),
-     ("02/03/2026 12:00", "2026-03-02 12:00:00")]
+    [
+        ("01/20/2026 10:00", "2026-01-20 10:00:00"),
+        ("02/03/2026 12:00", "2026-03-02 12:00:00"),
+    ],
 )
 def test_date_formats(bronze_bundle, texto, esperado):
     df = bronze_bundle["transactions"].filter(F.col("id") == 1)
     df = df.withColumn("date", F.lit(texto))
-    fecha = clean_transactions(df).select(
-        F.date_format("date", "yyyy-MM-dd HH:mm:ss").alias("fecha")
-    ).first().fecha
+    fecha = (
+        clean_transactions(df)
+        .select(F.date_format("date", "yyyy-MM-dd HH:mm:ss").alias("fecha"))
+        .first()
+        .fecha
+    )
     assert fecha == esperado
 
 
@@ -379,7 +338,9 @@ def test_rejects_conflicting_movement_ids(bronze_bundle):
 
 def test_rejects_id_shared_between_conventions(bronze_bundle):
     original = bronze_bundle["transactions"]
-    conflict = original.filter(F.col("id") == 1).withColumn("id", F.lit(10).cast("long"))
+    conflict = original.filter(F.col("id") == 1).withColumn(
+        "id", F.lit(10).cast("long")
+    )
     with pytest.raises(ValueError, match="dos convenciones"):
         clean_transactions(original.unionByName(conflict))
 
@@ -397,7 +358,7 @@ def financial_arguments(bronze_bundle):
         "obligations_spark": bronze_bundle["obligations_payments"],
         "transactions_silver": aceptados,
         "transactions_rejected": rechazados,
-        "clientes": clientes
+        "clientes": clientes,
     }
 
 
@@ -417,11 +378,13 @@ def test_prepare_financial_data(financial_arguments):
 # Introducir inconsistencias conservando los demás campos
 @pytest.mark.parametrize(
     "caso,mensaje",
-    [("saldo", "Continuidad de saldos"),
-     ("cuenta", "referencias inválidas"),
-     ("fecha", "Movements"),
-     ("transferencia", "Transferencias"),
-     ("pago", "Pagos de obligaciones")]
+    [
+        ("saldo", "Continuidad de saldos"),
+        ("cuenta", "referencias inválidas"),
+        ("fecha", "Movements"),
+        ("transferencia", "Transferencias"),
+        ("pago", "Pagos de obligaciones"),
+    ],
 )
 def test_financial_validation_rejects_errors(financial_arguments, caso, mensaje):
     args = dict(financial_arguments)
@@ -430,27 +393,38 @@ def test_financial_validation_rejects_errors(financial_arguments, caso, mensaje)
         args["accounts_spark"] = args["accounts_spark"].withColumn(
             "closing_balance",
             F.when(F.col("account_id") == "A-1", F.lit(2101))
-            .otherwise(F.col("closing_balance")).cast("decimal(18,2)")
+            .otherwise(F.col("closing_balance"))
+            .cast("decimal(18,2)"),
         )
     elif caso == "cuenta":
         args["transactions_silver"] = tx.withColumn(
-            "account_id", F.when(F.col("id") == 10, "A-999").otherwise(F.col("account_id"))
+            "account_id",
+            F.when(F.col("id") == 10, "A-999").otherwise(F.col("account_id")),
         )
     elif caso == "fecha":
         args["transactions_silver"] = tx.withColumn(
-            "date", F.when(F.col("id") == 10, F.lit(None).cast("timestamp"))
-            .otherwise(F.col("date"))
+            "date",
+            F.when(F.col("id") == 10, F.lit(None).cast("timestamp")).otherwise(
+                F.col("date")
+            ),
         )
     elif caso == "transferencia":
         args["transactions_silver"] = tx.withColumn(
-            "transfer_id", F.when(F.col("id") == 12, "T-incorrecta").otherwise(F.col("transfer_id"))
+            "transfer_id",
+            F.when(F.col("id") == 12, "T-incorrecta").otherwise(F.col("transfer_id")),
         )
     elif caso == "pago":
         args["obligations_spark"] = (
             args["obligations_spark"]
-            .withColumn("amount_paid", F.when(F.col("obligation_id") == "O-1", F.lit(99))
-                        .otherwise(F.col("amount_paid")).cast("decimal(18,2)"))
-            .withColumn("outstanding_amount", F.col("amount_due") - F.col("amount_paid"))
+            .withColumn(
+                "amount_paid",
+                F.when(F.col("obligation_id") == "O-1", F.lit(99))
+                .otherwise(F.col("amount_paid"))
+                .cast("decimal(18,2)"),
+            )
+            .withColumn(
+                "outstanding_amount", F.col("amount_due") - F.col("amount_paid")
+            )
         )
 
     with pytest.raises(ValueError, match=mensaje):
@@ -472,7 +446,9 @@ def test_pipeline_separa_rechazados(spark, tmp_path, bronze_bundle, escribir_par
     assert leer("obligations_payments").count() == 3
     assert {r.id for r in leer("rejected/cards").collect()} == {None, 3}
     assert {r.id for r in leer("rejected/transactions").collect()} == {3, 4}
-    assert leer("accounts").filter(F.col("account_id") == "A-1").first().closing_balance == Decimal("2100.00")
+    assert leer("accounts").filter(
+        F.col("account_id") == "A-1"
+    ).first().closing_balance == Decimal("2100.00")
 
 
 def test_pipeline_does_not_drop_orphan_account_movements(
@@ -480,8 +456,10 @@ def test_pipeline_does_not_drop_orphan_account_movements(
 ):
     datos = dict(bronze_bundle)
     datos["transactions"] = datos["transactions"].withColumn(
-        "client_id", F.when(F.col("id") == 10, F.lit(999).cast("long"))
-        .otherwise(F.col("client_id"))
+        "client_id",
+        F.when(F.col("id") == 10, F.lit(999).cast("long")).otherwise(
+            F.col("client_id")
+        ),
     )
     entrada = escribir_parquet(datos, tmp_path / "bronze")
     salida = tmp_path / "silver"

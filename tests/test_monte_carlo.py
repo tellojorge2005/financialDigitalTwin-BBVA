@@ -7,15 +7,17 @@ from etl.src.monte_carlo import simular_historial
 
 @pytest.fixture
 def historial():
-    return pd.DataFrame({
-        "client_id": [1] * 6,
-        "currency": ["MXN"] * 6,
-        "month": pd.date_range("2026-01-01", periods=6, freq="MS"),
-        "monthly_income": [1000.0] * 6,
-        "monthly_expenses": [600.0] * 6,
-        "monthly_debt_payments": [100.0] * 6,
-        "closing_balance": [200.0] * 6
-    })
+    return pd.DataFrame(
+        {
+            "client_id": [1] * 6,
+            "currency": ["MXN"] * 6,
+            "month": pd.date_range("2026-01-01", periods=6, freq="MS"),
+            "monthly_income": [1000.0] * 6,
+            "monthly_expenses": [600.0] * 6,
+            "monthly_debt_payments": [100.0] * 6,
+            "closing_balance": [200.0] * 6,
+        }
+    )
 
 
 # Sin variación, los resultados deben coincidir con el cálculo directo
@@ -26,7 +28,9 @@ def test_saldos_dos_y_tres_meses(historial):
     np.testing.assert_allclose(resultado["income_p50"], [1000] * 3)
     np.testing.assert_allclose(resultado["expenses_p50"], [600] * 3)
     assert resultado["prediction_month"].astype(str).tolist() == [
-        "2026-07-01", "2026-08-01", "2026-09-01"
+        "2026-07-01",
+        "2026-08-01",
+        "2026-09-01",
     ]
     assert resultado["prob_negative_balance"].eq(0).all()
 

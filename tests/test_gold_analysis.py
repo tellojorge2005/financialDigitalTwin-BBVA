@@ -16,32 +16,21 @@ from etl.src.gold_analysis import (
     validar_salida_gold,
     create_customer_model_summary,
     run_prediction_pipeline,
-    run_pipeline
+    run_pipeline,
 )
 
 
 @pytest.fixture
 def users_data(spark, perfil_cliente):
-    return perfil_cliente(spark.createDataFrame(
-        [
-            (
-                1, 30, 65, "male",
-                60000.0, 30000.0, 10000.0, 750, 3
-            ),
-            (
-                2, 40, 67, "female",
-                0.0, 40000.0, 20000.0, 720, 4
-            ),
-            (
-                3, 50, 68, "male",
-                50000.0, 25000.0, 15000.0, 700, 2
-            ),
-            (
-                4, 35, 65, "female",
-                None, 20000.0, 5000.0, 710, 1
-            )
-        ],
-        """
+    return perfil_cliente(
+        spark.createDataFrame(
+            [
+                (1, 30, 65, "male", 60000.0, 30000.0, 10000.0, 750, 3),
+                (2, 40, 67, "female", 0.0, 40000.0, 20000.0, 720, 4),
+                (3, 50, 68, "male", 50000.0, 25000.0, 15000.0, 700, 2),
+                (4, 35, 65, "female", None, 20000.0, 5000.0, 710, 1),
+            ],
+            """
         id long,
         current_age long,
         retirement_age long,
@@ -51,8 +40,9 @@ def users_data(spark, perfil_cliente):
         total_debt double,
         credit_score long,
         num_credit_cards long
-        """
-    ))
+        """,
+        )
+    )
 
 
 @pytest.fixture
@@ -61,7 +51,7 @@ def cards_data(spark):
         [
             (1, 1, "visa", "credit", 10000.0, False),
             (None, 1, "mastercard", "debit", 20000.0, True),
-            (3, 2, "visa", "credit", None, False)
+            (3, 2, "visa", "credit", None, False),
         ],
         """
         id long,
@@ -70,7 +60,7 @@ def cards_data(spark):
         card_type string,
         credit_limit double,
         credit_limit_imputed boolean
-        """
+        """,
     )
 
 
@@ -82,39 +72,26 @@ def transactions_data(spark):
             (2, 1, 100.0, "Guadalajara"),
             (3, 1, 150.0, "Ciudad de México"),
             (4, 2, -20.0, "Monterrey"),
-            (5, 2, 100.0, "Monterrey")
+            (5, 2, 100.0, "Monterrey"),
         ],
         """
         id long,
         client_id long,
         amount double,
         merchant_city string
-        """
+        """,
     )
 
 
 # Preparar datos válidos para el pipeline completo
 @pytest.fixture
-def valid_pipeline_data(
-    users_data,
-    cards_data,
-    transactions_data
-):
-    cards_valid = (
-        cards_data
-        .withColumn(
-            "id",
-            F.when(
-                F.col("id").isNull(),
-                F.lit(2).cast("long")
-            ).otherwise(F.col("id"))
-        )
-        .fillna({"credit_limit": 1000.0})
-    )
+def valid_pipeline_data(users_data, cards_data, transactions_data):
+    cards_valid = cards_data.withColumn(
+        "id", F.when(F.col("id").isNull(), F.lit(2).cast("long")).otherwise(F.col("id"))
+    ).fillna({"credit_limit": 1000.0})
 
     transactions_valid = transactions_data.withColumn(
-        "date",
-        F.lit("2026-09-01 10:00:00").cast("timestamp")
+        "date", F.lit("2026-09-01 10:00:00").cast("timestamp")
     )
 
     return users_data, cards_valid, transactions_valid
@@ -122,10 +99,7 @@ def valid_pipeline_data(
 
 # Validar resumen de tarjetas
 def test_cards_summary(cards_data):
-    rows = {
-        row.client_id: row
-        for row in create_cards_summary(cards_data).collect()
-    }
+    rows = {row.client_id: row for row in create_cards_summary(cards_data).collect()}
 
     assert rows[1].total_cards == 2
     assert rows[1].total_cards_with_id == 1
@@ -146,9 +120,7 @@ def test_cards_summary(cards_data):
 
 def test_cards_summary_without_imputation_information(spark):
     df = spark.createDataFrame(
-        [
-            (1, 1, "visa", "credit", 1000.0, None)
-        ],
+        [(1, 1, "visa", "credit", 1000.0, None)],
         """
         id long,
         client_id long,
@@ -156,7 +128,7 @@ def test_cards_summary_without_imputation_information(spark):
         card_type string,
         credit_limit double,
         credit_limit_imputed boolean
-        """
+        """,
     )
 
     row = create_cards_summary(df).first()
@@ -169,9 +141,7 @@ def test_cards_summary_without_imputation_information(spark):
 def test_transactions_summary(transactions_data):
     rows = {
         row.client_id: row
-        for row in create_transactions_summary(
-            transactions_data
-        ).collect()
+        for row in create_transactions_summary(transactions_data).collect()
     }
 
     assert rows[1].total_transactions == 3
@@ -208,26 +178,19 @@ def test_users_summary(users_data):
         "total_debt",
         "credit_score",
         "num_credit_cards",
-        "profile_currency"
+        "profile_currency",
     ]
 
 
 # Validar unión y métricas financieras
-def test_customer_summary(
-    users_data,
-    cards_data,
-    transactions_data
-):
+def test_customer_summary(users_data, cards_data, transactions_data):
     customer_gold = create_customer_summary(
         create_users_summary(users_data),
         create_cards_summary(cards_data),
-        create_transactions_summary(transactions_data)
+        create_transactions_summary(transactions_data),
     )
 
-    rows = {
-        row.id: row
-        for row in customer_gold.collect()
-    }
+    rows = {row.id: row for row in customer_gold.collect()}
 
     assert len(rows) == 4
     assert "client_id" not in customer_gold.columns
@@ -238,12 +201,8 @@ def test_customer_summary(
     assert rows[1].has_card_records is True
     assert rows[1].has_transaction_records is True
     assert rows[1].has_imputed_credit_limit is True
-    assert rows[1].spending_to_income_ratio == pytest.approx(
-        0.005
-    )
-    assert rows[1].debt_to_income_ratio == pytest.approx(
-        0.1667
-    )
+    assert rows[1].spending_to_income_ratio == pytest.approx(0.005)
+    assert rows[1].debt_to_income_ratio == pytest.approx(0.1667)
 
     assert rows[2].spending_to_income_ratio is None
     assert rows[2].debt_to_income_ratio is None
@@ -254,9 +213,7 @@ def test_customer_summary(
     assert rows[3].total_spent is None
     assert rows[3].has_imputed_credit_limit is None
     assert rows[3].spending_to_income_ratio is None
-    assert rows[3].debt_to_income_ratio == pytest.approx(
-        0.3
-    )
+    assert rows[3].debt_to_income_ratio == pytest.approx(0.3)
 
     assert rows[4].spending_to_income_ratio is None
     assert rows[4].debt_to_income_ratio is None
@@ -269,33 +226,25 @@ def test_customer_summary(
 
 
 # Validar coherencia del resumen final
-def test_gold_rechaza_conteos_inconsistentes(
-    valid_pipeline_data
-):
+def test_gold_rechaza_conteos_inconsistentes(valid_pipeline_data):
     users, cards, transactions = valid_pipeline_data
 
     customer_gold = create_customer_summary(
         create_users_summary(users),
         create_cards_summary(cards),
-        create_transactions_summary(transactions)
+        create_transactions_summary(transactions),
     )
 
     customer_gold = customer_gold.withColumn(
         "total_cards",
-        F.when(
-            F.col("id") == 1,
-            F.col("total_cards") + 1
-        ).otherwise(F.col("total_cards"))
+        F.when(F.col("id") == 1, F.col("total_cards") + 1).otherwise(
+            F.col("total_cards")
+        ),
     )
 
-    with pytest.raises(
-        ErrorCalidadDatos,
-        match="conteos inconsistentes"
-    ):
-        validar_salida_gold(
-            customer_gold,
-            users.count()
-        )
+    with pytest.raises(ErrorCalidadDatos, match="conteos inconsistentes"):
+        validar_salida_gold(customer_gold, users.count())
+
 
 # Validar importes mensuales contra resultados calculados a mano
 def test_monthly_summaries(silver_bundle):
@@ -370,12 +319,15 @@ def test_incomplete_last_month_is_excluded(silver_bundle):
     accounts = silver_bundle["accounts"].withColumn(
         "balance_as_of", F.lit("2026-03-15 23:59:00").cast("timestamp")
     )
-    movements = silver_bundle["transactions"].filter(F.col("amount_convention") == "signed_cashflow")
+    movements = silver_bundle["transactions"].filter(
+        F.col("amount_convention") == "signed_cashflow"
+    )
     _, monthly, latest = create_monthly_summaries(
         accounts, silver_bundle["obligations_payments"], movements
     )
     assert {r.month for r in monthly.select("month").distinct().collect()} == {
-        date(2026, 1, 1), date(2026, 2, 1)
+        date(2026, 1, 1),
+        date(2026, 2, 1),
     }
     assert latest.filter(F.col("id") == 1).first().account_balance == Decimal("1450")
 
@@ -386,7 +338,9 @@ def test_partial_opening_month_requires_explicit_handling(silver_bundle):
     )
     with pytest.raises(ValueError, match="mitad de mes"):
         create_monthly_summaries(
-            accounts, silver_bundle["obligations_payments"], silver_bundle["transactions"]
+            accounts,
+            silver_bundle["obligations_payments"],
+            silver_bundle["transactions"],
         )
 
 
@@ -396,23 +350,34 @@ def test_run_pipeline(spark, tmp_path, silver_bundle, escribir_parquet):
     run_pipeline(spark, input_path=entrada, output_path=salida.as_uri())
 
     expected = {
-        "customer_financial_summary": 3, "transactions_summary": 2,
-        "cards_summary": 2, "customer_monthly_summary": 6,
-        "account_monthly_summary": 6, "accounts": 2,
-        "obligations_payments": 3, "movements": 10
+        "customer_financial_summary": 3,
+        "transactions_summary": 2,
+        "cards_summary": 2,
+        "customer_monthly_summary": 6,
+        "account_monthly_summary": 6,
+        "accounts": 2,
+        "obligations_payments": 3,
+        "movements": 10,
     }
     expected["customer_model_summary"] = 3
-    expected.update({
-        "customer_recent_months": 6,
-        "customer_expenses_by_category": 3,
-        "customer_recent_expenses_by_category": 1,
-        "customer_financial_health": 2,
-        "income_model_validation": 1
-    })
+    expected.update(
+        {
+            "customer_recent_months": 6,
+            "customer_expenses_by_category": 3,
+            "customer_recent_expenses_by_category": 1,
+            "customer_financial_health": 2,
+            "income_model_validation": 1,
+        }
+    )
     for nombre, cantidad in expected.items():
-        assert spark.read.parquet((salida / f"{nombre}.parquet").as_uri()).count() == cantidad
+        assert (
+            spark.read.parquet((salida / f"{nombre}.parquet").as_uri()).count()
+            == cantidad
+        )
 
-    customer = spark.read.parquet((salida / "customer_financial_summary.parquet").as_uri())
+    customer = spark.read.parquet(
+        (salida / "customer_financial_summary.parquet").as_uri()
+    )
     rows = {r.id: r for r in customer.collect()}
     assert rows[1].total_spent == Decimal("50")
     assert rows[1].total_transactions == 1
@@ -475,20 +440,20 @@ def test_run_pipeline(spark, tmp_path, silver_bundle, escribir_parquet):
     assert control.status == "PENDIENTE"
     assert control.expected_rows == 2
 
-    model = spark.read.parquet(
-        (salida / "customer_model_summary.parquet").as_uri()
-    )
+    model = spark.read.parquet((salida / "customer_model_summary.parquet").as_uri())
     assert model.filter(F.col("has_income_prediction")).count() == 0
     assert model.filter(F.col("predicted_income").isNotNull()).count() == 0
 
 
 @pytest.mark.parametrize(
     "caso,mensaje",
-    [("id_nulo", "id: nulo o negativo"),
-     ("duplicados", "duplicados adicionales"),
-     ("tipo_incorrecto", "esquema incorrecto"),
-     ("cliente_inexistente", "sin un cliente existente"),
-     ("fechas_nulas", "date: nula")]
+    [
+        ("id_nulo", "id: nulo o negativo"),
+        ("duplicados", "duplicados adicionales"),
+        ("tipo_incorrecto", "esquema incorrecto"),
+        ("cliente_inexistente", "sin un cliente existente"),
+        ("fechas_nulas", "date: nula"),
+    ],
 )
 def test_pipeline_rechaza_datos_invalidos(
     spark, tmp_path, silver_bundle, escribir_parquet, caso, mensaje
@@ -504,7 +469,9 @@ def test_pipeline_rechaza_datos_invalidos(
     elif caso == "cliente_inexistente":
         datos["cards"] = cards.withColumn("client_id", F.lit(999).cast("long"))
     elif caso == "fechas_nulas":
-        datos["transactions"] = datos["transactions"].withColumn("date", F.lit(None).cast("timestamp"))
+        datos["transactions"] = datos["transactions"].withColumn(
+            "date", F.lit(None).cast("timestamp")
+        )
 
     entrada = escribir_parquet(datos, tmp_path / "silver")
     salida = tmp_path / "gold"
@@ -520,12 +487,12 @@ def model_customer_data(spark):
         [
             (1, "MXN", date(2026, 3, 31), 900.0),
             (2, "MXN", date(2026, 3, 31), 0.0),
-            (3, None, None, None)
+            (3, None, None, None),
         ],
         """
         id long, currency string, financial_cutoff_date date,
         monthly_income double
-        """
+        """,
     )
 
 
@@ -534,20 +501,18 @@ def income_predictions_data(spark):
     return spark.createDataFrame(
         [
             (1, "MXN", date(2026, 3, 1), date(2026, 4, 1), 950.0, "xgboost"),
-            (2, "MXN", date(2026, 3, 1), date(2026, 4, 1), 0.0, "last_month")
+            (2, "MXN", date(2026, 3, 1), date(2026, 4, 1), 0.0, "last_month"),
         ],
         """
         client_id long, currency string, feature_month date,
         prediction_month date, predicted_income double, method string
-        """
+        """,
     )
 
 
 # Conservar el ingreso observado, la moneda y el método de cada estimación
 def test_customer_model_summary(model_customer_data, income_predictions_data):
-    result = create_customer_model_summary(
-        model_customer_data, income_predictions_data
-    )
+    result = create_customer_model_summary(model_customer_data, income_predictions_data)
     rows = {row.id: row for row in result.collect()}
 
     assert len(rows) == 3
@@ -568,8 +533,7 @@ def test_customer_model_summary(model_customer_data, income_predictions_data):
 # Reconstruir GOLD no debe conservar pronósticos anteriores
 def test_base_invalidates_predictions(model_customer_data):
     previous = (
-        model_customer_data
-        .withColumn("predicted_income", F.lit(9999.0))
+        model_customer_data.withColumn("predicted_income", F.lit(9999.0))
         .withColumn("income_prediction_method", F.lit("xgboost"))
         .withColumn("has_income_prediction", F.lit(True))
     )
@@ -595,8 +559,8 @@ def test_base_invalidates_predictions(model_customer_data):
         ("infinito", "valores inválidos"),
         ("nan", "valores inválidos"),
         ("metodo", "valores inválidos"),
-        ("columna", "falta la columna")
-    ]
+        ("columna", "falta la columna"),
+    ],
 )
 def test_rejects_invalid_predictions(
     model_customer_data, income_predictions_data, caso, mensaje
@@ -607,17 +571,13 @@ def test_rejects_invalid_predictions(
     elif caso == "faltante":
         predictions = predictions.filter(F.col("client_id") == 1)
     elif caso == "cliente":
-        predictions = predictions.withColumn(
-            "client_id", F.col("client_id") + 100
-        )
+        predictions = predictions.withColumn("client_id", F.col("client_id") + 100)
     elif caso == "moneda":
         predictions = predictions.withColumn("currency", F.lit("USD"))
     elif caso == "corte":
-        predictions = (
-            predictions
-            .withColumn("feature_month", F.lit(date(2026, 2, 1)))
-            .withColumn("prediction_month", F.lit(date(2026, 3, 1)))
-        )
+        predictions = predictions.withColumn(
+            "feature_month", F.lit(date(2026, 2, 1))
+        ).withColumn("prediction_month", F.lit(date(2026, 3, 1)))
     elif caso == "horizonte":
         predictions = predictions.withColumn(
             "prediction_month", F.lit(date(2026, 5, 1))
@@ -627,7 +587,7 @@ def test_rejects_invalid_predictions(
             "negativo": -1.0,
             "nulo": None,
             "infinito": float("inf"),
-            "nan": float("nan")
+            "nan": float("nan"),
         }[caso]
         predictions = predictions.withColumn(
             "predicted_income", F.lit(valor).cast("double")
@@ -655,9 +615,7 @@ def test_run_prediction_pipeline(
 
     run_prediction_pipeline(spark, gold_path=root.as_uri())
 
-    result = spark.read.parquet(
-        (root / "customer_model_summary.parquet").as_uri()
-    )
+    result = spark.read.parquet((root / "customer_model_summary.parquet").as_uri())
     rows = {row.id: row for row in result.collect()}
     assert len(rows) == 3
     assert rows[1].predicted_income == 950.0
@@ -698,6 +656,8 @@ def test_invalid_predictions_do_not_write(
     base = spark.read.parquet((root / "customer_model_summary.parquet").as_uri())
     assert base.filter(F.col("has_income_prediction")).count() == 0
     assert {r.prediction_validation_status for r in base.collect()} == {"RECHAZADO"}
-    control = spark.read.parquet((root / "income_model_validation.parquet").as_uri()).first()
+    control = spark.read.parquet(
+        (root / "income_model_validation.parquet").as_uri()
+    ).first()
     assert control.status == "RECHAZADO"
     assert control.missing_rows == 1

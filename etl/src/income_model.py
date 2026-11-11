@@ -27,27 +27,19 @@ load_dotenv(PROJECT_PATH / ".env", override=False)
 # El modelo se ejecuta en el driver; Spark lee y escribe los Parquet de S3.
 def entrenar_ingresos(mensual):
     mensual = mensual.copy()
-    mensual["month"] = pd.to_datetime(
-        mensual["month"]
-    )
+    mensual["month"] = pd.to_datetime(mensual["month"])
 
-    mensual = mensual.sort_values(
-        ["client_id", "currency", "month"]
-    ).reset_index(drop=True)
+    mensual = mensual.sort_values(["client_id", "currency", "month"]).reset_index(
+        drop=True
+    )
 
     # Validar claves
 
-    if mensual.duplicated(
-            ["client_id", "currency", "month"]
-    ).any():
-        raise ValueError(
-            "Existen resúmenes mensuales duplicados."
-        )
+    if mensual.duplicated(["client_id", "currency", "month"]).any():
+        raise ValueError("Existen resúmenes mensuales duplicados.")
 
     if mensual["currency"].isna().any() or set(mensual["currency"]) != {"MXN"}:
-        raise ValueError(
-            "Se esperaba historial en MXN."
-        )
+        raise ValueError("Se esperaba historial en MXN.")
 
     # Definir variables predictoras
 
@@ -68,16 +60,13 @@ def entrenar_ingresos(mensual):
         "negative_balance_months_3",
         "outstanding_due",
         "max_days_past_due",
-        "month_number"
+        "month_number",
     ]
 
     mensual["month_number"] = mensual["month"].dt.month
 
     for columna in variables_ingreso:
-        mensual[columna] = pd.to_numeric(
-            mensual[columna],
-            errors="coerce"
-        )
+        mensual[columna] = pd.to_numeric(mensual[columna], errors="coerce")
 
     # Validar valores necesarios para entrenar y comparar con el último ingreso
     if mensual[["client_id", "currency", "month", "monthly_income"]].isna().any().any():
@@ -91,10 +80,7 @@ def entrenar_ingresos(mensual):
 
     # Crear objetivo del siguiente mes
 
-    grupos = mensual.groupby(
-        ["client_id", "currency"],
-        sort=False
-    )
+    grupos = mensual.groupby(["client_id", "currency"], sort=False)
 
     mensual["target_month"] = grupos["month"].shift(-1)
     mensual["next_month_income"] = grupos["monthly_income"].shift(-1)
@@ -105,13 +91,11 @@ def entrenar_ingresos(mensual):
         (mensual["history_months"] >= 4)
         & mensual["target_month"].eq(siguiente_mes)
         & mensual["next_month_income"].notna()
-        ].copy()
+    ].copy()
 
     # Separar períodos
 
-    periodos = sorted(
-        entrenamiento["target_month"].unique()
-    )
+    periodos = sorted(entrenamiento["target_month"].unique())
 
     if len(periodos) < 10:
         raise ValueError(
@@ -122,21 +106,21 @@ def entrenar_ingresos(mensual):
     inicio_validacion = periodos[-6]
     inicio_prueba = periodos[-3]
 
-    train = entrenamiento.loc[
-        entrenamiento["target_month"] < inicio_validacion
-        ]
+    train = entrenamiento.loc[entrenamiento["target_month"] < inicio_validacion]
 
     validacion = entrenamiento.loc[
         (entrenamiento["target_month"] >= inicio_validacion)
         & (entrenamiento["target_month"] < inicio_prueba)
-        ]
+    ]
 
-    prueba = entrenamiento.loc[
-        entrenamiento["target_month"] >= inicio_prueba
-        ]
+    prueba = entrenamiento.loc[entrenamiento["target_month"] >= inicio_prueba]
 
     # Comprobar que los conjuntos permiten calcular las métricas
-    for nombre, tabla in [("train", train), ("validacion", validacion), ("prueba", prueba)]:
+    for nombre, tabla in [
+        ("train", train),
+        ("validacion", validacion),
+        ("prueba", prueba),
+    ]:
         if len(tabla) < 2:
             raise ValueError(f"Datos insuficientes en {nombre}.")
 
@@ -155,49 +139,38 @@ def entrenar_ingresos(mensual):
         tree_method="hist",
         early_stopping_rounds=30,
         random_state=42,
-        n_jobs=2
+        n_jobs=2,
     )
 
     modelo_ingreso.fit(
         train[variables_ingreso],
         train["next_month_income"],
-        eval_set=[
-            (
-                validacion[variables_ingreso],
-                validacion["next_month_income"]
-            )
-        ],
-        verbose=False
+        eval_set=[(validacion[variables_ingreso], validacion["next_month_income"])],
+        verbose=False,
     )
 
     # Comparar modelos
 
     resultados_ingreso = []
 
-    for periodo, tabla in [
-        ("Validación", validacion),
-        ("Prueba", prueba)
-    ]:
+    for periodo, tabla in [("Validación", validacion), ("Prueba", prueba)]:
         real = tabla["next_month_income"]
 
         predicciones = {
             "Último ingreso": tabla["monthly_income"].to_numpy(),
-            "XGBoost": np.maximum(
-                modelo_ingreso.predict(tabla[variables_ingreso]),
-                0
-            )
+            "XGBoost": np.maximum(modelo_ingreso.predict(tabla[variables_ingreso]), 0),
         }
 
         for nombre, pred in predicciones.items():
-            resultados_ingreso.append({
-                "periodo": periodo,
-                "modelo": nombre,
-                "MAE": float(mean_absolute_error(real, pred)),
-                "RMSE": float(
-                    np.sqrt(mean_squared_error(real, pred))
-                ),
-                "R2": float(r2_score(real, pred))
-            })
+            resultados_ingreso.append(
+                {
+                    "periodo": periodo,
+                    "modelo": nombre,
+                    "MAE": float(mean_absolute_error(real, pred)),
+                    "RMSE": float(np.sqrt(mean_squared_error(real, pred))),
+                    "R2": float(r2_score(real, pred)),
+                }
+            )
 
     metricas_ingreso = pd.DataFrame(resultados_ingreso)
 
@@ -207,18 +180,17 @@ def entrenar_ingresos(mensual):
 
     validacion_metricas = metricas_ingreso.loc[
         metricas_ingreso["periodo"] == "Validación"
-        ].set_index("modelo")
+    ].set_index("modelo")
 
     usar_xgboost = (
-            validacion_metricas.loc["XGBoost", "MAE"]
-            < validacion_metricas.loc["Último ingreso", "MAE"]
+        validacion_metricas.loc["XGBoost", "MAE"]
+        < validacion_metricas.loc["Último ingreso", "MAE"]
     )
 
     # Preparar último mes disponible
 
     ultimos = (
-        mensual
-        .sort_values("month")
+        mensual.sort_values("month")
         .groupby(["client_id", "currency"], as_index=False)
         .tail(1)
         .copy()
@@ -229,25 +201,21 @@ def entrenar_ingresos(mensual):
     if usar_xgboost:
         parametros_finales = modelo_ingreso.get_params()
 
-        parametros_finales.update({
-            "n_estimators": int(modelo_ingreso.best_iteration) + 1,
-            "early_stopping_rounds": None
-        })
-
-        modelo_ingreso_final = XGBRegressor(
-            **parametros_finales
+        parametros_finales.update(
+            {
+                "n_estimators": int(modelo_ingreso.best_iteration) + 1,
+                "early_stopping_rounds": None,
+            }
         )
 
+        modelo_ingreso_final = XGBRegressor(**parametros_finales)
+
         modelo_ingreso_final.fit(
-            entrenamiento[variables_ingreso],
-            entrenamiento["next_month_income"]
+            entrenamiento[variables_ingreso], entrenamiento["next_month_income"]
         )
 
         ingreso_estimado = np.maximum(
-            modelo_ingreso_final.predict(
-                ultimos[variables_ingreso]
-            ),
-            0
+            modelo_ingreso_final.predict(ultimos[variables_ingreso]), 0
         )
 
     else:
@@ -255,24 +223,19 @@ def entrenar_ingresos(mensual):
 
     # Guardar predicciones
 
-    predicciones_ingreso = ultimos[
-        ["client_id", "currency", "month"]
-    ].copy()
+    predicciones_ingreso = ultimos[["client_id", "currency", "month"]].copy()
 
     predicciones_ingreso = predicciones_ingreso.rename(
         columns={"month": "feature_month"}
     )
 
-    predicciones_ingreso["prediction_month"] = (
-            predicciones_ingreso["feature_month"]
-            + pd.offsets.MonthBegin(1)
-    )
+    predicciones_ingreso["prediction_month"] = predicciones_ingreso[
+        "feature_month"
+    ] + pd.offsets.MonthBegin(1)
 
     predicciones_ingreso["predicted_income"] = ingreso_estimado
 
-    predicciones_ingreso["method"] = (
-        "xgboost" if usar_xgboost else "last_month"
-    )
+    predicciones_ingreso["method"] = "xgboost" if usar_xgboost else "last_month"
 
     # Devolver resultados para guardarlos mediante Spark
     return predicciones_ingreso, metricas_ingreso
@@ -281,13 +244,27 @@ def entrenar_ingresos(mensual):
 def run_pipeline(spark, gold_path):
     # Leer únicamente la información necesaria para el modelaje
     columnas = [
-        "client_id", "currency", "month", "history_months",
-        "monthly_income", "monthly_expenses", "monthly_debt_payments",
-        "monthly_savings", "monthly_transactions", "transfers_in",
-        "transfers_out", "closing_balance", "income_lag_1",
-        "income_lag_3", "income_mean_3", "income_std_3",
-        "expenses_mean_3", "negative_balance_months_3",
-        "outstanding_due", "max_days_past_due", "month_number"
+        "client_id",
+        "currency",
+        "month",
+        "history_months",
+        "monthly_income",
+        "monthly_expenses",
+        "monthly_debt_payments",
+        "monthly_savings",
+        "monthly_transactions",
+        "transfers_in",
+        "transfers_out",
+        "closing_balance",
+        "income_lag_1",
+        "income_lag_3",
+        "income_mean_3",
+        "income_std_3",
+        "expenses_mean_3",
+        "negative_balance_months_3",
+        "outstanding_due",
+        "max_days_past_due",
+        "month_number",
     ]
     mensual = (
         spark.read.parquet(f"{gold_path}/customer_monthly_summary.parquet")
@@ -305,7 +282,7 @@ def run_pipeline(spark, gold_path):
             fila.feature_month.date(),
             fila.prediction_month.date(),
             float(fila.predicted_income),
-            str(fila.method)
+            str(fila.method),
         )
         for fila in predicciones.itertuples(index=False)
     ]
@@ -315,20 +292,23 @@ def run_pipeline(spark, gold_path):
         """
         client_id long, currency string, feature_month date,
         prediction_month date, predicted_income double, method string
-        """
+        """,
     )
 
     # Conservar las métricas en S3; no usar la base de metadatos de Airflow
     filas_metricas = [
         (
-            str(fila.periodo), str(fila.modelo),
-            float(fila.MAE), float(fila.RMSE), float(fila.R2)
+            str(fila.periodo),
+            str(fila.modelo),
+            float(fila.MAE),
+            float(fila.RMSE),
+            float(fila.R2),
         )
         for fila in metricas.itertuples(index=False)
     ]
     metrics_spark = spark.createDataFrame(
         filas_metricas,
-        "periodo string, modelo string, MAE double, RMSE double, R2 double"
+        "periodo string, modelo string, MAE double, RMSE double, R2 double",
     )
     metrics_spark.write.mode("overwrite").parquet(
         f"{gold_path}/income_model_metrics.parquet"
@@ -354,11 +334,7 @@ def main():
             raise RuntimeError("Configura S3_BUCKET.")
         gold_path = f"s3a://{bucket}/data/gold"
 
-    spark = (
-        SparkSession.builder
-        .appName("FinancialDigitalTwin_Income")
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.appName("FinancialDigitalTwin_Income").getOrCreate()
     try:
         run_pipeline(spark, gold_path)
     finally:

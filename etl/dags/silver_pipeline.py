@@ -1,13 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.standard.operators.trigger_dagrun import (
-    TriggerDagRunOperator
-)
-from airflow.providers.apache.spark.operators.spark_submit import (
-    SparkSubmitOperator
-)
-
+from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 
 DEFAULT_ARGS = {
     "owner": "jorge_tello",
