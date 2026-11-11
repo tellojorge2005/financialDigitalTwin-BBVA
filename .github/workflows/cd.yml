@@ -56,7 +56,7 @@ jobs:
           S3_INTERACTIONS_PREFIX=data/monitoring/interactions
           MONITOR_EXPORT_SECONDS=300
           MONITOR_RETENTION_DAYS=30
-          SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+          SESSION_SECRET=${{ secrets.SESSION_SECRET || 'prisma_bbva_secreto_produccion_oci_2026_seguro_987654321' }}
           COOKIE_SECURE=false
           EOF
 
@@ -119,23 +119,23 @@ jobs:
               python3 -m venv .venv
             fi
 
-            # Instalar dependencias exclusivas de web
+            # Instalar versiones exactas de web probadas en environment.yml
             ./.venv/bin/pip install --upgrade pip
             ./.venv/bin/pip install --no-cache-dir \
-              fastapi \
-              "uvicorn[standard]" \
-              "pydantic[email]" \
-              email-validator \
-              itsdangerous \
-              python-dotenv \
-              boto3 \
-              pyarrow \
-              numpy \
-              openai \
-              langchain \
-              langchain-core \
-              langchain-openai \
-              langgraph
+              "fastapi==0.135.1" \
+              "uvicorn[standard]==0.41.0" \
+              "pydantic[email]==2.12.5" \
+              "email-validator==2.3.0" \
+              "itsdangerous==2.2.0" \
+              "python-dotenv==1.2.2" \
+              "boto3==1.42.63" \
+              "pyarrow==23.0.1" \
+              "numpy==2.4.2" \
+              "openai==2.26.0" \
+              "langchain==1.2.12" \
+              "langchain-core==1.2.18" \
+              "langchain-openai==1.1.11" \
+              "langgraph==1.1.2"
 
             # Crear o actualizar servicio systemd automaticamente
             sudo tee /etc/systemd/system/prisma-web.service > /dev/null << EOF
@@ -161,6 +161,16 @@ jobs:
             sudo systemctl enable prisma-web
             sudo systemctl restart prisma-web
 
-            # Verificar que el servidor respondio correctamente
-            sleep 3
-            curl -fsS http://127.0.0.1:8000/login.html > /dev/null
+            # Esperar hasta 30 segundos a que Uvicorn levante el puerto 8000
+            for i in $(seq 1 15); do
+              if curl -fsS http://127.0.0.1:8000/login.html > /dev/null 2>&1; then
+                echo "Servidor levantado correctamente en el intento $i"
+                exit 0
+              fi
+              sleep 2
+            done
+
+            # Mostrar logs exactos de Python si no levanto
+            echo "El servidor no respondio a tiempo. Logs de prisma-web:"
+            sudo journalctl -u prisma-web -n 50 --no-pager
+            exit 1
