@@ -1,122 +1,301 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es-MX">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#001391">
-  <meta name="description" content="BBVA Prisma, prototipo de asistente financiero inteligente">
-  <title>Dashboard · BBVA Prisma</title>
-  <link rel="icon" href="assets/icons/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-  <link rel="manifest" href="assets/icons/site.webmanifest">
-  <link rel="stylesheet" href="css/styles.css">
-  <script type="module" src="js/app.js"></script>
-</head>
-<body>
-<div id="prisma-v3" class="pr3">
-<header class="top">
-  <div class="branding">
-    <span class="bank" aria-label="BBVA"><img class="banklogo" src="assets/logos/bbva_logo.webp" alt="BBVA" width="82" height="36"><strong data-logo-fallback hidden>BBVA</strong></span>
-    <span class="divider" aria-hidden="true"></span>
-    <div><div class="appname">Prisma</div><div class="tagline">Inteligencia para tus finanzas</div></div>
-  </div>
-  <div class="topright">
-    <span class="demobadge">DEMO</span>
-    <div class="profilearea" data-profile-area hidden>
-      <button class="profiletrigger" type="button" data-profile aria-expanded="false" aria-haspopup="true" aria-label="Abrir perfil">
-        <span class="photo" data-initials></span><span aria-hidden="true">⌄</span>
-      </button>
-      <div class="profilemenu" data-menu hidden>
-        <div class="menuidentity"><strong data-fullname></strong><span data-email></span></div>
-        <button type="button" class="logout" data-logout>↪ &nbsp; Cerrar sesión</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#001391" />
+    <meta
+      name="description"
+      content="BBVA Prisma, prototipo de asistente financiero inteligente"
+    />
+    <title>Dashboard · BBVA Prisma</title>
+    <link rel="icon" href="assets/icons/favicon.ico" sizes="any" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="assets/icons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="assets/icons/favicon-16x16.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="assets/icons/apple-touch-icon.png"
+    />
+    <link rel="manifest" href="assets/icons/site.webmanifest" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script type="module" src="js/app.js"></script>
+  </head>
+  <body>
+    <div id="prisma-v3" class="pr3">
+      <header class="top">
+        <div class="branding">
+          <span class="bank" aria-label="BBVA"
+            ><img
+              class="banklogo"
+              src="assets/logos/bbva_logo.webp"
+              alt="BBVA"
+              width="82"
+              height="36"
+            /><strong data-logo-fallback hidden>BBVA</strong></span
+          >
+          <span class="divider" aria-hidden="true"></span>
+          <div>
+            <div class="appname">Prisma</div>
+            <div class="tagline">Inteligencia para tus finanzas</div>
+          </div>
+        </div>
+        <div class="topright">
+          <span class="demobadge">DEMO</span>
+          <div class="profilearea" data-profile-area hidden>
+            <button
+              class="profiletrigger"
+              type="button"
+              data-profile
+              aria-expanded="false"
+              aria-haspopup="true"
+              aria-label="Abrir perfil"
+            >
+              <span class="photo" data-initials></span
+              ><span aria-hidden="true">⌄</span>
+            </button>
+            <div class="profilemenu" data-menu hidden>
+              <div class="menuidentity">
+                <strong data-fullname></strong><span data-email></span>
+              </div>
+              <button type="button" class="logout" data-logout>
+                ↪ &nbsp; Cerrar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <p class="feedback" data-loading role="status">Recuperando tu sesión…</p>
+      <div class="workspace" data-app hidden>
+        <aside class="sidebar" aria-label="Panorama financiero">
+          <div class="eyebrow">TU PANORAMA FINANCIERO</div>
+          <h1 class="greeting" data-greeting>Hola.</h1>
+          <p class="subheading">
+            Entiende tus movimientos y descubre hacia dónde van tus finanzas.
+          </p>
+          <div class="tabs" role="tablist" aria-label="Tu panorama financiero">
+            <button
+              type="button"
+              class="tab"
+              data-tab="resumen"
+              role="tab"
+              aria-selected="true"
+              aria-controls="pr3-resumen"
+              id="tab-resumen"
+              tabindex="0"
+            >
+              Resumen
+            </button>
+            <button
+              type="button"
+              class="tab"
+              data-tab="proyeccion"
+              role="tab"
+              aria-selected="false"
+              aria-controls="pr3-proyeccion"
+              id="tab-proyeccion"
+              tabindex="-1"
+            >
+              Proyección
+            </button>
+          </div>
+
+          <p class="feedback error" data-session-error role="alert"></p>
+          <div class="panelspace">
+            <section
+              id="pr3-resumen"
+              data-pane="resumen"
+              role="tabpanel"
+              aria-labelledby="tab-resumen"
+            >
+              <div class="bigcard">
+                <span class="kicker">Balance neto · últimos 3 meses</span
+                ><strong data-net>—</strong
+                ><small>MXN · Ingresos menos gastos</small>
+              </div>
+              <div class="twocards">
+                <div class="metric">
+                  <span>Ingresos totales</span><strong data-income>—</strong
+                  ><small>Últimos 3 meses</small>
+                </div>
+                <div class="metric">
+                  <span>Gastos totales</span><strong data-expenses>—</strong
+                  ><small>Últimos 3 meses</small>
+                </div>
+              </div>
+              <div class="whitecard">
+                <div class="cardtitle">Ingresos vs. gastos</div>
+                <div class="cardcaption" data-period>Últimos 3 meses · MXN</div>
+                <div class="legend">
+                  <span><i class="square inc"></i>Ingresos</span
+                  ><span><i class="square exp"></i>Gastos</span>
+                </div>
+                <div
+                  class="histogram"
+                  data-chart
+                  aria-hidden="true"
+                  hidden
+                ></div>
+                <div data-history-table></div>
+                <p class="empty-state" data-history-empty role="status">
+                  Tu historial mensual aún no está disponible.
+                </p>
+              </div>
+              <button class="askhealth" data-health type="button">
+                <span
+                  ><strong>¿Cómo está mi salud financiera?</strong>Pregúntale a
+                  Prisma</span
+                ><span aria-hidden="true">↗</span>
+              </button>
+              <p class="quiet">
+                El balance corresponde a ingresos menos gastos del período
+                disponible. No es el saldo de tu cuenta.
+              </p>
+            </section>
+
+            <section
+              id="pr3-proyeccion"
+              data-pane="proyeccion"
+              role="tabpanel"
+              aria-labelledby="tab-proyeccion"
+              hidden
+            >
+              <div class="bigcard">
+                <span class="kicker">Balance previsto · próximo mes</span
+                ><strong data-forecast-net>—</strong
+                ><small>MXN · Resultado mensual estimado</small>
+              </div>
+              <div class="whitecard">
+                <div class="cardtitle">Tu futuro financiero</div>
+                <div class="cardcaption">
+                  Así podrían comportarse tus ingresos y gastos durante los
+                  próximos tres meses.
+                </div>
+                <div class="legend">
+                  <span><i class="square inc"></i>Ingresos previstos</span
+                  ><span><i class="square exp"></i>Gastos previstos</span>
+                </div>
+                <div data-forecast-list></div>
+                <p class="empty-state" data-forecast-empty role="status">
+                  Todavía no hay proyecciones disponibles para tu perfil.
+                </p>
+              </div>
+              <div class="subsection">
+                <span data-forecast-period
+                  >Panorama de los próximos 3 meses</span
+                >
+              </div>
+              <div class="scenariobox">
+                <div class="scenario">
+                  <span>Ingresos previstos</span
+                  ><strong data-forecast-income>—</strong><span>MXN</span>
+                </div>
+                <div class="scenario">
+                  <span>Gastos previstos</span
+                  ><strong data-forecast-expenses>—</strong><span>MXN</span>
+                </div>
+              </div>
+              <p class="quiet">
+                Estas cifras son estimaciones y pueden cambiar. No representan
+                cantidades garantizadas.
+              </p>
+            </section>
+          </div>
+        </aside>
+
+        <section class="assistantchat" aria-labelledby="pr3-assistant-title">
+          <div class="chathead">
+            <div class="agent">
+              <div class="agenticon">
+                <svg class="gem" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M6 3h12l4 6-10 12L2 9l4-6Z M2 9h20 M6 3l4 6 2 12 2-12 4-6"
+                  />
+                </svg>
+              </div>
+              <div>
+                <div class="agentname" id="pr3-assistant-title">Prisma</div>
+                <div class="agentdesc">Tu asistente financiero con IA</div>
+              </div>
+            </div>
+            <button class="clear" data-clear type="button">Limpiar chat</button>
+          </div>
+          <div class="notice">Consulta tu información y resuelve tus dudas</div>
+          <div
+            class="messages"
+            data-messages
+            role="log"
+            aria-live="polite"
+            aria-label="Conversación con Prisma"
+          ></div>
+          <div class="suggestions">
+            <div class="caption">También puedes empezar por aquí</div>
+            <div class="chips">
+              <button
+                class="chip"
+                type="button"
+                data-question="¿Cómo está mi salud financiera?"
+              >
+                Mi salud financiera ↗
+              </button>
+              <button
+                class="chip"
+                type="button"
+                data-question="¿Cuánto gasté estos meses?"
+              >
+                Mis gastos ↗
+              </button>
+              <button
+                class="chip"
+                type="button"
+                data-question="¿Cómo se comportarán mis finanzas?"
+              >
+                Mis proyecciones ↗
+              </button>
+            </div>
+          </div>
+          <p class="feedback" data-chat-status role="status"></p>
+          <p class="feedback error" data-chat-error role="alert"></p>
+          <form class="composer" data-form>
+            <label for="pr3-input">Escribe tu pregunta</label>
+            <div class="inputrow">
+              <textarea
+                id="pr3-input"
+                data-input
+                disabled
+                rows="2"
+                maxlength="2000"
+                placeholder="¿Qué deseas saber sobre tus finanzas?"
+              ></textarea
+              ><button type="submit" class="send" data-send disabled>
+                Enviar ↑
+              </button>
+            </div>
+            <div class="inputfoot">
+              <span>Enter para enviar · Shift + Enter para salto</span
+              ><span data-count>0 / 2000</span>
+            </div>
+          </form>
+        </section>
       </div>
-    </div>
-  </div>
-</header>
 
-<p class="feedback" data-loading role="status">Recuperando tu sesión…</p>
-<div class="workspace" data-app hidden>
-  <aside class="sidebar" aria-label="Panorama financiero">
-    <div class="eyebrow">TU PANORAMA FINANCIERO</div>
-    <h1 class="greeting" data-greeting>Hola.</h1>
-    <p class="subheading">Entiende tus movimientos y descubre hacia dónde van tus finanzas.</p>
-    <div class="tabs" role="tablist" aria-label="Tu panorama financiero">
-      <button type="button" class="tab" data-tab="resumen" role="tab" aria-selected="true" aria-controls="pr3-resumen" id="tab-resumen" tabindex="0">Resumen</button>
-      <button type="button" class="tab" data-tab="proyeccion" role="tab" aria-selected="false" aria-controls="pr3-proyeccion" id="tab-proyeccion" tabindex="-1">Proyección</button>
+      <noscript
+        ><p class="feedback">
+          Activa JavaScript para iniciar sesión y consultar tu información.
+        </p></noscript
+      >
+      <div class="footer">BBVA Prisma · Prototipo</div>
     </div>
-
-    <p class="feedback error" data-session-error role="alert"></p>
-    <div class="panelspace">
-      <section id="pr3-resumen" data-pane="resumen" role="tabpanel" aria-labelledby="tab-resumen">
-        <div class="bigcard"><span class="kicker">Balance neto · últimos 3 meses</span><strong data-net>—</strong><small>MXN · Ingresos menos gastos</small></div>
-        <div class="twocards">
-          <div class="metric"><span>Ingresos totales</span><strong data-income>—</strong><small>Últimos 3 meses</small></div>
-          <div class="metric"><span>Gastos totales</span><strong data-expenses>—</strong><small>Últimos 3 meses</small></div>
-        </div>
-        <div class="whitecard">
-          <div class="cardtitle">Ingresos vs. gastos</div>
-          <div class="cardcaption" data-period>Últimos 3 meses · MXN</div>
-          <div class="legend"><span><i class="square inc"></i>Ingresos</span><span><i class="square exp"></i>Gastos</span></div>
-          <div class="histogram" data-chart aria-hidden="true" hidden></div>
-          <div data-history-table></div>
-          <p class="empty-state" data-history-empty role="status">Tu historial mensual aún no está disponible.</p>
-        </div>
-        <button class="askhealth" data-health type="button"><span><strong>¿Cómo está mi salud financiera?</strong>Pregúntale a Prisma</span><span aria-hidden="true">↗</span></button>
-        <p class="quiet">El balance corresponde a ingresos menos gastos del período disponible. No es el saldo de tu cuenta.</p>
-      </section>
-
-      <section id="pr3-proyeccion" data-pane="proyeccion" role="tabpanel" aria-labelledby="tab-proyeccion" hidden>
-        <div class="bigcard"><span class="kicker">Balance previsto · próximo mes</span><strong data-forecast-net>—</strong><small>MXN · Resultado mensual estimado</small></div>
-        <div class="whitecard">
-          <div class="cardtitle">Tu futuro financiero</div>
-          <div class="cardcaption">Así podrían comportarse tus ingresos y gastos durante los próximos tres meses.</div>
-          <div class="legend"><span><i class="square inc"></i>Ingresos previstos</span><span><i class="square exp"></i>Gastos previstos</span></div>
-          <div data-forecast-list></div>
-          <p class="empty-state" data-forecast-empty role="status">Todavía no hay proyecciones disponibles para tu perfil.</p>
-        </div>
-        <div class="subsection"><span data-forecast-period>Panorama de los próximos 3 meses</span></div>
-        <div class="scenariobox">
-          <div class="scenario"><span>Ingresos previstos</span><strong data-forecast-income>—</strong><span>MXN</span></div>
-          <div class="scenario"><span>Gastos previstos</span><strong data-forecast-expenses>—</strong><span>MXN</span></div>
-        </div>
-        <p class="quiet">Estas cifras son estimaciones y pueden cambiar. No representan cantidades garantizadas.</p>
-      </section>
-    </div>
-  </aside>
-
-  <section class="assistantchat" aria-labelledby="pr3-assistant-title">
-    <div class="chathead">
-      <div class="agent">
-        <div class="agenticon"><svg class="gem" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l4 6-10 12L2 9l4-6Z M2 9h20 M6 3l4 6 2 12 2-12 4-6"/></svg></div>
-        <div><div class="agentname" id="pr3-assistant-title">Prisma</div><div class="agentdesc">Tu asistente financiero con IA</div></div>
-      </div>
-      <button class="clear" data-clear type="button">Limpiar chat</button>
-    </div>
-    <div class="notice">Consulta tu información y resuelve tus dudas</div>
-    <div class="messages" data-messages role="log" aria-live="polite" aria-label="Conversación con Prisma">
-    </div>
-    <div class="suggestions">
-      <div class="caption">También puedes empezar por aquí</div>
-      <div class="chips">
-        <button class="chip" type="button" data-question="¿Cómo está mi salud financiera?">Mi salud financiera ↗</button>
-        <button class="chip" type="button" data-question="¿Cuánto gasté estos meses?">Mis gastos ↗</button>
-        <button class="chip" type="button" data-question="¿Cómo se comportarán mis finanzas?">Mis proyecciones ↗</button>
-      </div>
-    </div>
-    <p class="feedback" data-chat-status role="status"></p>
-    <p class="feedback error" data-chat-error role="alert"></p>
-    <form class="composer" data-form>
-      <label for="pr3-input">Escribe tu pregunta</label>
-      <div class="inputrow"><textarea id="pr3-input" data-input disabled rows="2" maxlength="2000" placeholder="¿Qué deseas saber sobre tus finanzas?"></textarea><button type="submit" class="send" data-send disabled>Enviar ↑</button></div>
-      <div class="inputfoot"><span>Enter para enviar · Shift + Enter para salto</span><span data-count>0 / 2000</span></div>
-    </form>
-  </section>
-</div>
-
-<noscript><p class="feedback">Activa JavaScript para iniciar sesión y consultar tu información.</p></noscript>
-<div class="footer">BBVA Prisma · Prototipo</div>
-</div>
-</body>
+  </body>
 </html>
