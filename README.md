@@ -16,20 +16,20 @@ La aplicación reúne un panorama financiero y un chat con historial temporal. E
 
 ## 🚀 Componentes principales
 
-- **ETL:** limpieza, validación, separación de rechazados y consolidación de clientes, tarjetas, transacciones, cuentas y pagos en capas Bronze, Silver y Gold.
+- **ETL:** limpieza, validación, separación de rechazados y consolidación de clientes, tarjetas, transacciones, cuentas y pagos en capas Bronze, Silver y Gold, incluyendo promedios, desviaciones estándar, ratios y variaciones de los últimos tres meses.
 - **Automatización:** Airflow encadena Bronze → Silver → Gold. Gold genera los datos base, ejecuta el modelo de ingresos junto con Monte Carlo e integra las predicciones validadas. Monte Carlo se invoca desde `income_model.py`; no necesita un DAG separado.
 - **Modelaje y simulación:** XGBoost para estimar ingresos del siguiente mes y Monte Carlo para generar escenarios de ingresos, gastos y saldo a uno, dos y tres meses. El asistente puede consultar la estimación de ingresos cuando está disponible y aprobada por las validaciones del pipeline.
 - **Aplicación web:** panorama del cliente, asistente conversacional, metas y escenarios financieros.
 - **Monitoreo:** registro de tiempos, errores, uso de herramientas, tokens y costos estimados del asistente, con persistencia local y exportación de lotes CSV a S3.
-- **Power BI:** reporte y modelo semántico, con monitoreo de las interacciones del asistente.
+- **BI y asistente del dashboard:** reporte y modelo semántico en Power BI (`bi/dashboard/`) con métricas de monitoreo del asistente y comportamiento transaccional de los clientes en Gold, acompañado de un asistente analítico local (`bi/chat/`) con guardrails y visualizaciones integradas.
 
 ## 🛠️ Tecnologías
 
 - **Datos:** Python, PySpark, pandas, NumPy, Amazon S3 y Parquet.
 - **Aplicación:** FastAPI, Pydantic, Uvicorn, HTML, CSS y JavaScript.
 - **IA y modelaje:** LangGraph, LangChain, OpenAI API, scikit-learn y XGBoost.
-- **Infraestructura:** Airflow, Docker, Docker Compose y PostgreSQL.
-- **Análisis y seguimiento:** Power BI, Jupyter, SQLite, pytest y GitHub Actions.
+- **Infraestructura:** Airflow, Docker, Docker Compose, PostgreSQL y Oracle Cloud Infrastructure (OCI).
+- **Análisis y seguimiento:** Power BI, Jupyter, SQLite, pytest y GitHub Actions (CI/CD).
 
 ## 👩‍💻 Ejecución
 
@@ -44,7 +44,7 @@ conda activate financialDigitalTwin-BBVA
 
 Crear `.env` en la raíz tomando [.env.example](.env.example) como referencia. Completar de forma local la configuración de los servicios, la sesión y el monitoreo con los valores del entorno de ejecución. No publicar credenciales ni detalles internos de conexión.
 
-El entorno incluye dependencias de Windows. La ejecución local de PySpark requiere Java; las imágenes Docker incluyen su propio entorno.
+La ejecución local de PySpark requiere Java; las imágenes Docker incluyen su propio entorno.
 
 ### 2. Ejecutar el ETL
 
@@ -70,9 +70,15 @@ uvicorn web.backend.main:app --reload
 
 Abrir [PRISMA](http://localhost:8000) e ingresar el correo registrado de un cliente. Este acceso es demostrativo y no constituye autenticación bancaria.
 
-### 4. Consultar Power BI
+### 4. Consultar Power BI y el asistente del dashboard
 
-Abrir [financialDigitalTwin.pbip](bi/financialDigitalTwin.pbip) en Power BI Desktop. Configurar las conexiones de forma local para consultar los datos y las métricas de interacciones del prototipo.
+Para iniciar el asistente analítico local del dashboard en [http://127.0.0.1:8001](http://127.0.0.1:8001):
+
+```bash
+python bi/chat/backend/main.py
+```
+
+Abrir [financialDigitalTwin.pbip](bi/dashboard/financialDigitalTwin.pbip) en Power BI Desktop. Configurar las conexiones de forma local para consultar el comportamiento transaccional de los clientes en Gold, las métricas de monitoreo de interacciones y el chat embebido del dashboard.
 
 ## 📓 Notebooks y experimentación
 
@@ -80,7 +86,7 @@ Los [notebooks](notebooks/) conservan la evolución del proyecto: exploración, 
 
 La estimación exploratoria de `credit_score` del notebook de modelaje es distinta del modelo de ingresos integrado en el ETL.
 
-## 🧪 Pruebas y CI
+## 🧪 Pruebas, CI y CD
 
 Con las dependencias y Java disponibles, ejecutar las pruebas indicando explícitamente el orden Bronze → Silver → Gold → Monte Carlo:
 
@@ -88,7 +94,8 @@ Con las dependencias y Java disponibles, ejecutar las pruebas indicando explíci
 python -m pytest tests/test_bronze_cleaning.py tests/test_silver_cleaning.py tests/test_gold_analysis.py tests/test_monte_carlo.py -v
 ```
 
-El [workflow de CI](.github/workflows/ci.yml) ejecuta esos mismos cuatro archivos, en ese orden, en pull requests dirigidos a `main` o mediante ejecución manual. Utiliza Python 3.11 y Java 17 en Ubuntu.
+- **Integración continua (CI):** el [workflow de CI](.github/workflows/ci.yml) ejecuta esos mismos cuatro archivos, en ese orden, en pull requests dirigidos a `main` o mediante ejecución manual. Utiliza Python 3.11 y Java 17 en Ubuntu.
+- **Despliegue continuo (CD):** el [workflow de CD](.github/workflows/cd.yml) empaqueta y despliega automáticamente la aplicación web (`web/`) en una instancia de Oracle Cloud Infrastructure (OCI) al integrar cambios en `main` o mediante ejecución manual, gestionando el servicio con `systemd`.
 
 Las pruebas usan datos de prueba y rutas temporales. Cubren procesamiento e integración de predicciones en Gold, además de casos de simulación Monte Carlo; no ejecutan el entrenamiento completo de XGBoost ni validan el asistente web, Airflow o el acceso al S3 real.
 
