@@ -3,7 +3,6 @@ import unicodedata
 
 from bi.chat.backend.config import OPENAI_API_KEY, S3_BUCKET
 
-
 RECHAZO_BI = (
     "Solo puedo responder consultas sobre las métricas de monitoreo del asistente "
     "y el comportamiento transaccional agregado del dashboard. "
@@ -34,7 +33,8 @@ PATRON_ATAQUE = re.compile(
 # Normalizar texto de entrada o salida
 def normalizar(texto):
     return "".join(
-        c for c in unicodedata.normalize("NFKC", str(texto or ""))
+        c
+        for c in unicodedata.normalize("NFKC", str(texto or ""))
         if unicodedata.category(c) != "Cf"
     )
 
@@ -45,10 +45,7 @@ def contiene_dato_sensible(texto):
     if PATRON_SENSIBLE.search(normal) or PATRON_ATAQUE.search(normal):
         return True
     secretos = [OPENAI_API_KEY, S3_BUCKET]
-    return any(
-        s and len(s) >= 8 and s.lower() in normal.lower()
-        for s in secretos
-    )
+    return any(s and len(s) >= 8 and s.lower() in normal.lower() for s in secretos)
 
 
 # Validar pregunta del usuario antes de consultar el modelo

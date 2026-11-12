@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-
 # Ubicar raiz del proyecto y cargar variables de entorno
 PROJECT_PATH = Path(__file__).resolve().parents[3]
 FRONTEND_PATH = Path(__file__).resolve().parents[1] / "frontend"

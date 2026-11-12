@@ -20,7 +20,6 @@ from bi.chat.backend.config import (
     S3_MONTHLY_PATH,
 )
 
-
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logger = logging.getLogger(__name__)
 
@@ -132,11 +131,13 @@ def leer_interacciones_s3():
 # Calcular exactamente las mismas medidas DAX del modelo Power BI (Interacciones.tmdl)
 def calcular_metricas_monitoreo(filas):
     total_interacciones = len(filas)
-    conversaciones = len({
-        (f.get("conversacion_id") or "").strip()
-        for f in filas
-        if (f.get("conversacion_id") or "").strip()
-    })
+    conversaciones = len(
+        {
+            (f.get("conversacion_id") or "").strip()
+            for f in filas
+            if (f.get("conversacion_id") or "").strip()
+        }
+    )
 
     tiempos = []
     statuses = []
@@ -224,16 +225,20 @@ def calcular_metricas_monitoreo(filas):
     for fecha in sorted(por_fecha.keys()):
         item = por_fecha[fecha]
         t_lista = item["tiempos"]
-        serie_fechas.append({
-            "fecha_local": fecha,
-            "interacciones": item["interacciones"],
-            "tiempo_promedio_s": round(sum(t_lista) / len(t_lista), 2) if t_lista else 0.0,
-            "errores": item["errores"],
-            "usos_meta": item["usos_meta"],
-            "usos_escenario": item["usos_escenario"],
-            "usos_historial": item["usos_historial"],
-            "usos_cancelacion": item["usos_cancelacion"],
-        })
+        serie_fechas.append(
+            {
+                "fecha_local": fecha,
+                "interacciones": item["interacciones"],
+                "tiempo_promedio_s": (
+                    round(sum(t_lista) / len(t_lista), 2) if t_lista else 0.0
+                ),
+                "errores": item["errores"],
+                "usos_meta": item["usos_meta"],
+                "usos_escenario": item["usos_escenario"],
+                "usos_historial": item["usos_historial"],
+                "usos_cancelacion": item["usos_cancelacion"],
+            }
+        )
 
     resultados_ordenados = dict(
         sorted(por_resultado.items(), key=lambda x: x[1], reverse=True)
@@ -244,10 +249,18 @@ def calcular_metricas_monitoreo(filas):
         "conversaciones": conversaciones,
         "tiempo_promedio_s": round(sum(tiempos) / len(tiempos), 2) if tiempos else 0.0,
         "errores_http": errores_http,
-        "porcentaje_errores": round((errores_http / len(statuses)) * 100, 2) if statuses else 0.0,
-        "tokens_entrada_promedio": round(sum(tokens_in) / len(tokens_in), 2) if tokens_in else 0.0,
-        "tokens_salida_promedio": round(sum(tokens_out) / len(tokens_out), 2) if tokens_out else 0.0,
-        "costo_promedio_consulta_usd": round(sum(costos) / len(costos), 6) if costos else 0.0,
+        "porcentaje_errores": (
+            round((errores_http / len(statuses)) * 100, 2) if statuses else 0.0
+        ),
+        "tokens_entrada_promedio": (
+            round(sum(tokens_in) / len(tokens_in), 2) if tokens_in else 0.0
+        ),
+        "tokens_salida_promedio": (
+            round(sum(tokens_out) / len(tokens_out), 2) if tokens_out else 0.0
+        ),
+        "costo_promedio_consulta_usd": (
+            round(sum(costos) / len(costos), 6) if costos else 0.0
+        ),
         "costo_acumulado_usd": round(sum(costos), 6) if costos else 0.0,
         "interacciones_por_resultado": resultados_ordenados,
         "uso_herramientas_total": herramientas,
@@ -286,7 +299,8 @@ def promedio_columnas(filas, campos, decimales=2):
         campos = [campos]
     for campo in campos:
         valores = [
-            float(f[campo]) for f in filas
+            float(f[campo])
+            for f in filas
             if f.get(campo) is not None and a_flotante(f.get(campo)) is not None
         ]
         if valores:
@@ -324,14 +338,32 @@ def calcular_resumen_gold():
     }
 
     resumen_3m = {
-        "ingreso_promedio_3m": promedio_columnas(clientes, ["avg_monthly_income_3m", "average_income_3m"]),
-        "desviacion_estandar_ingreso_3m": promedio_columnas(clientes, ["std_monthly_income_3m"]),
-        "gasto_promedio_3m": promedio_columnas(clientes, ["avg_monthly_expenses_3m", "average_expenses_3m"]),
+        "ingreso_promedio_3m": promedio_columnas(
+            clientes, ["avg_monthly_income_3m", "average_income_3m"]
+        ),
+        "desviacion_estandar_ingreso_3m": promedio_columnas(
+            clientes, ["std_monthly_income_3m"]
+        ),
+        "gasto_promedio_3m": promedio_columnas(
+            clientes, ["avg_monthly_expenses_3m", "average_expenses_3m"]
+        ),
         "ahorro_acumulado_3m": promedio_columnas(clientes, ["savings_3m"]),
         "ratio_ahorro_3m": promedio_columnas(clientes, ["savings_rate_3m"], 4),
-        "ratio_gasto_ingreso_3m": promedio_columnas(clientes, ["expense_to_income_ratio_3m", "spending_to_income_ratio"], 4),
-        "ratio_deuda_ingreso_3m": promedio_columnas(clientes, ["debt_to_income_ratio_3m", "debt_payment_ratio_3m", "debt_to_income_ratio"], 4),
-        "variacion_ingreso_3m_pct": promedio_columnas(clientes, ["income_change_pct_3m"]),
+        "ratio_gasto_ingreso_3m": promedio_columnas(
+            clientes, ["expense_to_income_ratio_3m", "spending_to_income_ratio"], 4
+        ),
+        "ratio_deuda_ingreso_3m": promedio_columnas(
+            clientes,
+            [
+                "debt_to_income_ratio_3m",
+                "debt_payment_ratio_3m",
+                "debt_to_income_ratio",
+            ],
+            4,
+        ),
+        "variacion_ingreso_3m_pct": promedio_columnas(
+            clientes, ["income_change_pct_3m"]
+        ),
     }
 
     # Calcular desviacion estandar y variacion de 3 meses desde customer_monthly_summary si aun no estan en el Parquet
@@ -340,45 +372,73 @@ def calcular_resumen_gold():
         if mensual:
             por_cliente = {}
             for m in mensual:
-                cid = m.get("client_id") if m.get("client_id") is not None else m.get("customer_id")
+                cid = (
+                    m.get("client_id")
+                    if m.get("client_id") is not None
+                    else m.get("customer_id")
+                )
                 if cid is not None:
                     por_cliente.setdefault(cid, []).append(m)
             ing_3m, std_3m, gas_ratio_3m, var_3m = [], [], [], []
             for lista in por_cliente.values():
                 ultimos = sorted(lista, key=lambda x: str(x.get("month") or ""))[-3:]
-                ingresos = [a_flotante(x.get("monthly_income"), 0.0) or 0.0 for x in ultimos]
-                gastos = [a_flotante(x.get("monthly_expenses"), 0.0) or 0.0 for x in ultimos]
+                ingresos = [
+                    a_flotante(x.get("monthly_income"), 0.0) or 0.0 for x in ultimos
+                ]
+                gastos = [
+                    a_flotante(x.get("monthly_expenses"), 0.0) or 0.0 for x in ultimos
+                ]
                 if ingresos:
                     prom_i = sum(ingresos) / len(ingresos)
                     prom_g = sum(gastos) / len(gastos)
                     ing_3m.append(prom_i)
                     if len(ingresos) > 1:
-                        varianza = sum((x - prom_i) ** 2 for x in ingresos) / (len(ingresos) - 1)
-                        std_3m.append(varianza ** 0.5)
+                        varianza = sum((x - prom_i) ** 2 for x in ingresos) / (
+                            len(ingresos) - 1
+                        )
+                        std_3m.append(varianza**0.5)
                         if ingresos[0] > 0:
-                            var_3m.append(((ingresos[-1] - ingresos[0]) / ingresos[0]) * 100.0)
+                            var_3m.append(
+                                ((ingresos[-1] - ingresos[0]) / ingresos[0]) * 100.0
+                            )
                     if prom_i > 0:
                         gas_ratio_3m.append(prom_g / prom_i)
             if resumen_3m["ingreso_promedio_3m"] is None and ing_3m:
                 resumen_3m["ingreso_promedio_3m"] = round(sum(ing_3m) / len(ing_3m), 2)
             if std_3m:
-                resumen_3m["desviacion_estandar_ingreso_3m"] = round(sum(std_3m) / len(std_3m), 2)
+                resumen_3m["desviacion_estandar_ingreso_3m"] = round(
+                    sum(std_3m) / len(std_3m), 2
+                )
             if resumen_3m["ratio_gasto_ingreso_3m"] is None and gas_ratio_3m:
-                resumen_3m["ratio_gasto_ingreso_3m"] = round(sum(gas_ratio_3m) / len(gas_ratio_3m), 4)
+                resumen_3m["ratio_gasto_ingreso_3m"] = round(
+                    sum(gas_ratio_3m) / len(gas_ratio_3m), 4
+                )
             if resumen_3m["variacion_ingreso_3m_pct"] is None and var_3m:
-                resumen_3m["variacion_ingreso_3m_pct"] = round(sum(var_3m) / len(var_3m), 2)
+                resumen_3m["variacion_ingreso_3m_pct"] = round(
+                    sum(var_3m) / len(var_3m), 2
+                )
 
     return {
         "disponible": True,
         "total_clientes": len(clientes),
-        "ingreso_mensual_promedio_general": promedio_columnas(clientes, ["monthly_income", "avg_monthly_income"]),
-        "gasto_mensual_promedio_general": promedio_columnas(clientes, ["monthly_expenses", "avg_monthly_expenses"]),
+        "ingreso_mensual_promedio_general": promedio_columnas(
+            clientes, ["monthly_income", "avg_monthly_income"]
+        ),
+        "gasto_mensual_promedio_general": promedio_columnas(
+            clientes, ["monthly_expenses", "avg_monthly_expenses"]
+        ),
         "gasto_total_historico_promedio": promedio_columnas(clientes, ["total_spent"]),
-        "transacciones_promedio_por_cliente": promedio_columnas(clientes, ["total_transactions"]),
+        "transacciones_promedio_por_cliente": promedio_columnas(
+            clientes, ["total_transactions"]
+        ),
         "deuda_total_promedio": promedio_columnas(clientes, ["total_debt"]),
         "score_crediticio_promedio": promedio_columnas(clientes, ["credit_score"]),
-        "ratio_gasto_ingreso_general": promedio_columnas(clientes, ["spending_to_income_ratio"], 4),
-        "ratio_deuda_ingreso_general": promedio_columnas(clientes, ["debt_to_income_ratio"], 4),
+        "ratio_gasto_ingreso_general": promedio_columnas(
+            clientes, ["spending_to_income_ratio"], 4
+        ),
+        "ratio_deuda_ingreso_general": promedio_columnas(
+            clientes, ["debt_to_income_ratio"], 4
+        ),
         "metricas_ultimos_3_meses": resumen_3m,
         "clientes_por_salud_financiera": por_salud,
         "top_gastos_por_categoria": top_categorias,
@@ -426,12 +486,34 @@ def construir_visuales(monitoreo, gold):
             "titulo": "Comportamiento transaccional y métricas 3M (Gold)",
             "tipo": "tarjetas_gold",
             "datos": [
-                {"etiqueta": "Clientes analizados", "valor": gold.get("total_clientes", 0)},
-                {"etiqueta": "Ingreso prom. 3M (MXN)", "valor": m3.get("ingreso_promedio_3m") or gold.get("ingreso_mensual_promedio_general") or 0},
-                {"etiqueta": "Desv. estándar 3M (MXN)", "valor": m3.get("desviacion_estandar_ingreso_3m") or 0},
-                {"etiqueta": "Ratio ahorro 3M", "valor": m3.get("ratio_ahorro_3m") or 0},
-                {"etiqueta": "Ratio deuda/ingreso 3M", "valor": m3.get("ratio_deuda_ingreso_3m") or gold.get("ratio_deuda_ingreso_general") or 0},
-                {"etiqueta": "Variación ingreso 3M (%)", "valor": m3.get("variacion_ingreso_3m_pct") or 0},
+                {
+                    "etiqueta": "Clientes analizados",
+                    "valor": gold.get("total_clientes", 0),
+                },
+                {
+                    "etiqueta": "Ingreso prom. 3M (MXN)",
+                    "valor": m3.get("ingreso_promedio_3m")
+                    or gold.get("ingreso_mensual_promedio_general")
+                    or 0,
+                },
+                {
+                    "etiqueta": "Desv. estándar 3M (MXN)",
+                    "valor": m3.get("desviacion_estandar_ingreso_3m") or 0,
+                },
+                {
+                    "etiqueta": "Ratio ahorro 3M",
+                    "valor": m3.get("ratio_ahorro_3m") or 0,
+                },
+                {
+                    "etiqueta": "Ratio deuda/ingreso 3M",
+                    "valor": m3.get("ratio_deuda_ingreso_3m")
+                    or gold.get("ratio_deuda_ingreso_general")
+                    or 0,
+                },
+                {
+                    "etiqueta": "Variación ingreso 3M (%)",
+                    "valor": m3.get("variacion_ingreso_3m_pct") or 0,
+                },
             ],
         },
         "categorias": {

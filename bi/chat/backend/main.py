@@ -31,7 +31,6 @@ from bi.chat.backend.guardrails import (
     proteger_respuesta_bi,
 )
 
-
 logger = logging.getLogger(__name__)
 validar_configuracion_bi()
 
@@ -100,7 +99,9 @@ def crear_modelo_bi(verificar_ssl=True):
 modelo_bi = crear_modelo_bi(verificar_ssl=True)
 modelo_bi_sin_ssl = crear_modelo_bi(verificar_ssl=False)
 
-app = FastAPI(title="BBVA PRISMA - Asistente Dashboard BI", docs_url=None, redoc_url=None)
+app = FastAPI(
+    title="BBVA PRISMA - Asistente Dashboard BI", docs_url=None, redoc_url=None
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -144,13 +145,20 @@ def consultar_dashboard(body: SolicitudChatBI):
         "comportamiento_clientes_gold": contexto["gold"],
     }
 
-    salida = invocar_modelo_bi([
-        SystemMessage(content=INSTRUCCIONES_BI),
-        HumanMessage(content=json.dumps({
-            "datos_actuales_dashboard": datos_prompt,
-            "pregunta_usuario": pregunta,
-        }, ensure_ascii=False)),
-    ])
+    salida = invocar_modelo_bi(
+        [
+            SystemMessage(content=INSTRUCCIONES_BI),
+            HumanMessage(
+                content=json.dumps(
+                    {
+                        "datos_actuales_dashboard": datos_prompt,
+                        "pregunta_usuario": pregunta,
+                    },
+                    ensure_ascii=False,
+                )
+            ),
+        ]
+    )
 
     texto = proteger_respuesta_bi(salida.respuesta if salida else "")
     clave_visual = salida.componente_visual if salida else "ninguno"
