@@ -2,7 +2,7 @@
 <p align="center">
   <img src="docs/images/bbva_prisma.svg" alt="Logo PRISMA" width="100">
 </p>
-<p align="center"><strong>💵Inteligencia para tus finanzas💵</strong><br>🏦 Gemelo Digital Financiero · Data Experience🏦</p>
+<p align="center"><strong>Inteligencia para tus finanzas 💵 </strong><br>Gemelo Digital Financiero · Data Experience 🏦</p>
 
 Proyecto desarrollado en el contexto del reto Data Experience de BBVA. Integra datos financieros, procesamiento automatizado y una aplicación web para consultar el panorama de un cliente y explorar sus decisiones mediante el asistente **PRISMA**.
 
@@ -75,7 +75,7 @@ Abrir [PRISMA](http://localhost:8000) e ingresar el correo registrado de un clie
 Para iniciar el asistente analítico local del dashboard en [http://127.0.0.1:8001](http://127.0.0.1:8001):
 
 ```bash
-python bi/chat/backend/main.py
+uvicorn bi.chat.backend.main:app --port 8001
 ```
 
 Abrir [financialDigitalTwin.pbip](bi/dashboard/financialDigitalTwin.pbip) en Power BI Desktop. Configurar las conexiones de forma local para consultar el comportamiento transaccional de los clientes en Gold, las métricas de monitoreo de interacciones y el chat embebido del dashboard.
