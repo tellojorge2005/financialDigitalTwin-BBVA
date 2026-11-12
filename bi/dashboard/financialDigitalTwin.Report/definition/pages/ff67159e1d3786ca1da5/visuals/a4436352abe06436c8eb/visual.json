@@ -2,8 +2,8 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "a4436352abe06436c8eb",
   "position": {
-    "x": 391.2952619345611,
-    "y": 226.55691042374417,
+    "x": 354.15240479170365,
+    "y": 222.27119613802992,
     "z": 1000,
     "height": 94.832826747720361,
     "width": 157.56838905775075,
@@ -52,23 +52,5 @@
       }
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "8155c17d2c149c563816",
-        "field": {
-          "Measure": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Interacciones"
-              }
-            },
-            "Property": "Conversaciones"
-          }
-        },
-        "type": "Advanced"
-      }
-    ]
   }
 }

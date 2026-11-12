@@ -1,26 +1,28 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-MX">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asistente de Datos — Dashboard PRISMA</title>
+  <meta name="theme-color" content="#001391" />
+  <title>Asistente de Datos · Dashboard BBVA PRISMA</title>
   <style>
     :root {
-      --bbva-navy: #072146;
-      --bbva-blue: #1973b8;
-      --bbva-aqua: #028484;
-      --bg-light: #f4f6f9;
+      --bbva-blue: #001391;
+      --bbva-deep: #000d68;
+      --bbva-cyan: #42a9e4;
+      --bbva-pale: #edf1ff;
+      --bg-light: #f4f6fa;
       --card-bg: #ffffff;
-      --border: #dde3ea;
-      --text-main: #121212;
-      --text-muted: #5a6877;
+      --border: #e0e5ef;
+      --text-main: #18243d;
+      --text-muted: #626d80;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      font-family: Arial, Helvetica, "Segoe UI", sans-serif;
     }
 
     body {
@@ -32,45 +34,90 @@
       overflow: hidden;
     }
 
-    /* Encabezado compacto estilo Power BI / BBVA */
+    /* Encabezado compacto con identidad BBVA (#001391) */
     .header {
-      background: var(--bbva-navy);
-      color: #fff;
+      background: var(--bbva-blue);
+      color: #ffffff;
       padding: 10px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 2px solid var(--bbva-blue);
+      gap: 10px;
+    }
+
+    .branding {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    /* Ajustar el espacio transparente del logo cuadrado sin modificar la imagen */
+    .bank {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 68px;
+      height: 28px;
+      overflow: hidden;
+      flex-shrink: 0;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .banklogo {
+      position: absolute;
+      width: 68px;
+      height: 68px;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      object-fit: contain;
+      display: block;
+    }
+
+    .divider {
+      width: 1px;
+      height: 22px;
+      background: #8091dd;
+      flex-shrink: 0;
     }
 
     .header-title {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .badge {
-      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid #a5b4e9;
       padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 500;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
     }
 
     .refresh-btn {
       background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      color: #fff;
-      border-radius: 4px;
-      padding: 4px 8px;
+      border: 1px solid #a5b4e9;
+      color: #ffffff;
+      border-radius: 6px;
+      padding: 4px 9px;
       font-size: 11px;
+      font-weight: 700;
       cursor: pointer;
+      white-space: nowrap;
     }
 
     .refresh-btn:hover {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.14);
     }
 
     /* Barra rapida de KPIs sincronizados con S3 */
@@ -79,14 +126,14 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
       padding: 8px 12px;
-      background: #e9eef5;
+      background: var(--bbva-pale);
       border-bottom: 1px solid var(--border);
     }
 
     .kpi-mini {
       background: var(--card-bg);
       padding: 6px 8px;
-      border-radius: 4px;
+      border-radius: 6px;
       border: 1px solid var(--border);
       text-align: center;
     }
@@ -101,8 +148,8 @@
 
     .kpi-mini .val {
       font-size: 13px;
-      font-weight: 700;
-      color: var(--bbva-navy);
+      font-weight: 800;
+      color: var(--bbva-blue);
       margin-top: 2px;
     }
 
@@ -119,23 +166,24 @@
     .msg {
       max-width: 92%;
       padding: 10px 12px;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 13px;
-      line-height: 1.45;
+      line-height: 1.5;
       white-space: pre-wrap;
     }
 
     .msg.assistant {
       align-self: flex-start;
+      border-top-left-radius: 3px;
       background: var(--card-bg);
       border: 1px solid var(--border);
-      box-shadow: 0 1px 2px rgba(7, 33, 70, 0.05);
     }
 
     .msg.user {
       align-self: flex-end;
+      border-top-right-radius: 3px;
       background: var(--bbva-blue);
-      color: #fff;
+      color: #ffffff;
     }
 
     /* Componente visual embebido en la respuesta */
@@ -147,8 +195,8 @@
 
     .visual-title {
       font-size: 11px;
-      font-weight: 700;
-      color: var(--bbva-navy);
+      font-weight: 800;
+      color: var(--bbva-blue);
       margin-bottom: 6px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
@@ -173,23 +221,23 @@
 
     .bar-track {
       flex: 1;
-      height: 10px;
-      background: #edf1f7;
-      border-radius: 3px;
+      height: 9px;
+      background: #edf0f7;
+      border-radius: 4px;
       overflow: hidden;
     }
 
     .bar-fill {
       height: 100%;
       background: var(--bbva-blue);
-      border-radius: 3px;
+      border-radius: 4px;
     }
 
     .bar-val {
       width: 55px;
       text-align: right;
-      font-weight: 600;
-      color: var(--bbva-navy);
+      font-weight: 700;
+      color: var(--bbva-blue);
       flex-shrink: 0;
     }
 
@@ -200,21 +248,21 @@
     }
 
     .gold-item {
-      background: var(--bg-light);
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      background: var(--bbva-pale);
+      border: 1px solid #cad5fc;
+      border-radius: 6px;
       padding: 6px 8px;
     }
 
     .gold-item .g-label {
       font-size: 10px;
-      color: var(--text-muted);
+      color: #43548a;
     }
 
     .gold-item .g-val {
       font-size: 12px;
-      font-weight: 700;
-      color: var(--bbva-navy);
+      font-weight: 800;
+      color: var(--bbva-blue);
       margin-top: 2px;
     }
 
@@ -230,18 +278,19 @@
 
     .chip {
       background: var(--card-bg);
-      border: 1px solid var(--bbva-blue);
+      border: 1px solid var(--border);
       color: var(--bbva-blue);
-      padding: 4px 9px;
-      border-radius: 14px;
+      padding: 5px 10px;
+      border-radius: 16px;
       font-size: 11px;
+      font-weight: 600;
       white-space: nowrap;
       cursor: pointer;
     }
 
     .chip:hover {
-      background: var(--bbva-blue);
-      color: #fff;
+      border-color: var(--bbva-blue);
+      background: var(--bbva-pale);
     }
 
     /* Barra de entrada */
@@ -257,8 +306,9 @@
       flex: 1;
       padding: 8px 10px;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 13px;
+      color: var(--text-main);
       outline: none;
     }
 
@@ -267,30 +317,48 @@
     }
 
     .input-bar button {
-      background: var(--bbva-navy);
-      color: #fff;
+      background: var(--bbva-blue);
+      color: #ffffff;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       padding: 0 14px;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 700;
       cursor: pointer;
     }
 
+    .input-bar button:hover {
+      background: var(--bbva-deep);
+    }
+
     .input-bar button:disabled {
-      opacity: 0.6;
+      opacity: 0.55;
       cursor: not-allowed;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-title">
-      <span>Asistente del Dashboard</span>
-      <span class="badge">Monitoreo + Gold</span>
+  <header class="header">
+    <div class="branding">
+      <span class="bank" aria-label="BBVA">
+        <img
+          class="banklogo"
+          src="assets/bbva_logo.webp"
+          alt="BBVA"
+          width="68"
+          height="28"
+          onerror="this.style.display='none';this.nextElementSibling.hidden=false;"
+        />
+        <strong hidden>BBVA</strong>
+      </span>
+      <span class="divider" aria-hidden="true"></span>
+      <div class="header-title">
+        <span>Prisma · Asistente BI</span>
+        <span class="badge">S3</span>
+      </div>
     </div>
     <button class="refresh-btn" id="btnRefresh" title="Recargar datos de S3">Actualizar S3</button>
-  </div>
+  </header>
 
   <div class="kpi-strip">
     <div class="kpi-mini">

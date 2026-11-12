@@ -2,8 +2,8 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "6b9cbf9f003ac54bdc47",
   "position": {
-    "x": 799.8059002324336,
-    "y": 226.55691042374417,
+    "x": 762.66304308957615,
+    "y": 222.27119613802992,
     "z": 3000,
     "height": 94.832826747720361,
     "width": 173.61702127659575,
@@ -56,20 +56,6 @@
   },
   "filterConfig": {
     "filters": [
-      {
-        "name": "e79c1734230e437453ea",
-        "field": {
-          "Measure": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Interacciones"
-              }
-            },
-            "Property": "Porcentaje errores"
-          }
-        },
-        "type": "Advanced"
-      },
       {
         "name": "8108efe4e885e7058093",
         "field": {

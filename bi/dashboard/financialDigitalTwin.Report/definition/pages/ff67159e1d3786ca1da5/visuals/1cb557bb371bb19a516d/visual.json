@@ -2,8 +2,8 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "1cb557bb371bb19a516d",
   "position": {
-    "x": 194.39999999999998,
-    "y": 226.16470588235293,
+    "x": 157.25714285714307,
+    "y": 221.87899159663868,
     "z": 0,
     "height": 94.832826747720361,
     "width": 173.61702127659575,
@@ -52,23 +52,5 @@
       }
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "27fb21f590c0ed2c2874",
-        "field": {
-          "Measure": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Interacciones"
-              }
-            },
-            "Property": "Total interacciones"
-          }
-        },
-        "type": "Advanced"
-      }
-    ]
   }
 }

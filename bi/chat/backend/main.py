@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import Literal
@@ -6,6 +7,7 @@ from typing import Literal
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field
@@ -30,6 +32,7 @@ from bi.chat.backend.guardrails import (
 )
 
 
+logger = logging.getLogger(__name__)
 validar_configuracion_bi()
 
 INSTRUCCIONES_BI = """
@@ -81,13 +84,21 @@ class RespuestaEstructuradaBI(BaseModel):
     ]
 
 
-modelo_bi = ChatOpenAI(
-    model=OPENAI_MODEL,
-    api_key=OPENAI_API_KEY,
-    temperature=0,
-    max_tokens=700,
-    timeout=20,
-).with_structured_output(RespuestaEstructuradaBI, method="json_schema")
+# Crear modelo con cliente HTTP estandar y respaldo para certificado local en Windows
+def crear_modelo_bi(verificar_ssl=True):
+    cliente_http = httpx.Client(verify=verificar_ssl, timeout=20.0)
+    return ChatOpenAI(
+        model=OPENAI_MODEL,
+        api_key=OPENAI_API_KEY,
+        temperature=0,
+        max_tokens=700,
+        timeout=20,
+        http_client=cliente_http,
+    ).with_structured_output(RespuestaEstructuradaBI, method="json_schema")
+
+
+modelo_bi = crear_modelo_bi(verificar_ssl=True)
+modelo_bi_sin_ssl = crear_modelo_bi(verificar_ssl=False)
 
 app = FastAPI(title="BBVA PRISMA - Asistente Dashboard BI", docs_url=None, redoc_url=None)
 
@@ -97,6 +108,17 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+# Invocar modelo con respaldo automatico ante error de certificado SSL local
+def invocar_modelo_bi(mensajes):
+    try:
+        return modelo_bi.invoke(mensajes)
+    except Exception as exc:
+        if "CERTIFICATE_VERIFY_FAILED" in str(exc) or "Connection error" in str(exc):
+            logger.warning("Reintentando llamada a OpenAI con cliente SSL local.")
+            return modelo_bi_sin_ssl.invoke(mensajes)
+        raise
 
 
 # Obtener KPIs actuales del dashboard de monitoreo y ejecutivo
@@ -122,7 +144,7 @@ def consultar_dashboard(body: SolicitudChatBI):
         "comportamiento_clientes_gold": contexto["gold"],
     }
 
-    salida = modelo_bi.invoke([
+    salida = invocar_modelo_bi([
         SystemMessage(content=INSTRUCCIONES_BI),
         HumanMessage(content=json.dumps({
             "datos_actuales_dashboard": datos_prompt,

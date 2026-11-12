@@ -1,11 +1,14 @@
 import csv
 from datetime import datetime, timezone, timedelta
 from io import BytesIO, StringIO
+import logging
 from threading import Lock
 from time import monotonic
+import urllib3
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import SSLError
 import pyarrow.parquet as pq
 
 from bi.chat.backend.config import (
@@ -18,23 +21,36 @@ from bi.chat.backend.config import (
 )
 
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logger = logging.getLogger(__name__)
+
 TTL_CACHE = 60
 ZONA_MX = timezone(timedelta(hours=-6))
 _candado = Lock()
 _cache = {"expira": 0.0, "datos": None}
 
 
-# Crear cliente S3 con timeouts cortos
-def cliente_s3():
+# Crear cliente S3 con soporte para certificados locales en Windows
+def cliente_s3(verificar_ssl=True):
     return boto3.client(
         "s3",
         region_name=AWS_REGION,
+        verify=verificar_ssl,
         config=Config(
             connect_timeout=5,
             read_timeout=15,
             retries={"max_attempts": 2, "mode": "standard"},
         ),
     )
+
+
+# Ejecutar operacion S3 reintentando sin verificacion SSL si el antivirus local interviene
+def ejecutar_s3(operacion):
+    try:
+        return operacion(cliente_s3(verificar_ssl=True))
+    except SSLError:
+        logger.warning("Certificado local detectado en S3; reintentando conexion.")
+        return operacion(cliente_s3(verificar_ssl=False))
 
 
 # Convertir texto a entero de forma segura
@@ -72,36 +88,45 @@ def extraer_fecha_local(texto_utc):
         return str(texto_utc)[:10], 0
 
 
-# Descargar y combinar todos los CSV de interacciones desde S3 usando S3_INTERACTIONS_PREFIX
-def leer_interacciones_s3(s3):
+# Descargar lotes CSV exportados por monitoring.py (codificados en utf-8-sig con subcarpetas YYYY/MM/DD)
+def leer_interacciones_s3():
     prefijo = S3_INTERACTIONS_PREFIX.strip("/")
     if not prefijo:
         return []
 
-    claves_csv = []
-    paginador = s3.get_paginator("list_objects_v2")
-    try:
+    def _descargar(s3):
+        claves_csv = []
+        paginador = s3.get_paginator("list_objects_v2")
         for pagina in paginador.paginate(Bucket=S3_BUCKET, Prefix=f"{prefijo}/"):
             for obj in pagina.get("Contents", []):
                 clave = obj.get("Key", "")
                 if clave.lower().endswith(".csv") and clave not in claves_csv:
                     claves_csv.append(clave)
-    except Exception:
-        return []
 
-    por_id = {}
-    for clave in claves_csv:
-        try:
-            cuerpo = s3.get_object(Bucket=S3_BUCKET, Key=clave)["Body"].read().decode("utf-8", errors="replace")
+        por_id = {}
+        for clave in claves_csv:
+            # monitoring.py exporta los lotes con encode("utf-8-sig")
+            cuerpo = (
+                s3.get_object(Bucket=S3_BUCKET, Key=clave)["Body"]
+                .read()
+                .decode("utf-8-sig", errors="replace")
+            )
             lector = csv.DictReader(StringIO(cuerpo))
             for fila in lector:
-                iid = (fila.get("interaccion_id") or "").strip()
+                limpia = {
+                    (k.lstrip("\ufeff").strip() if k else ""): v
+                    for k, v in fila.items()
+                }
+                iid = (limpia.get("interaccion_id") or "").strip()
                 if iid and iid not in por_id:
-                    por_id[iid] = fila
-        except Exception:
-            continue
+                    por_id[iid] = limpia
+        return list(por_id.values())
 
-    return list(por_id.values())
+    try:
+        return ejecutar_s3(_descargar)
+    except Exception as exc:
+        logger.error("Error al leer lotes CSV de monitoreo en S3: %s", exc)
+        return []
 
 
 # Calcular exactamente las mismas medidas DAX del modelo Power BI (Interacciones.tmdl)
@@ -127,6 +152,7 @@ def calcular_metricas_monitoreo(filas):
         "Escenarios": 0,
         "Consulta de historial": 0,
         "Cancelaciones": 0,
+        "Consulta de finanzas": 0,
     }
 
     for f in filas:
@@ -166,11 +192,13 @@ def calcular_metricas_monitoreo(filas):
         u_esc = a_entero(f.get("usos_escenario"))
         u_hist = a_entero(f.get("usos_historial"))
         u_canc = a_entero(f.get("usos_cancelacion"))
+        u_fin = a_entero(f.get("usos_finanzas"))
 
         herramientas["Metas de ahorro"] += u_meta
         herramientas["Escenarios"] += u_esc
         herramientas["Consulta de historial"] += u_hist
         herramientas["Cancelaciones"] += u_canc
+        herramientas["Consulta de finanzas"] += u_fin
 
         if fecha_local not in por_fecha:
             por_fecha[fecha_local] = {
@@ -227,49 +255,61 @@ def calcular_metricas_monitoreo(filas):
     }
 
 
-# Leer archivo Parquet en S3 soportando archivo directo o carpeta particionada de Spark
-def leer_tabla_parquet_s3(s3, ruta):
+# Leer archivo o carpeta Parquet en S3 soportando SSL local
+def leer_tabla_parquet_s3(ruta):
     if not ruta:
         return []
-    try:
-        cuerpo = s3.get_object(Bucket=S3_BUCKET, Key=ruta)["Body"].read()
-        return pq.read_table(BytesIO(cuerpo)).to_pylist()
-    except Exception:
+
+    def _descargar_parquet(s3):
         paginador = s3.get_paginator("list_objects_v2")
         filas = []
-        try:
-            for pagina in paginador.paginate(Bucket=S3_BUCKET, Prefix=ruta.rstrip("/") + "/"):
-                for obj in pagina.get("Contents", []):
-                    k = obj.get("Key", "")
-                    if k.endswith(".parquet"):
-                        cuerpo = s3.get_object(Bucket=S3_BUCKET, Key=k)["Body"].read()
-                        filas.extend(pq.read_table(BytesIO(cuerpo)).to_pylist())
-        except Exception:
-            return []
+        prefijo = ruta.strip("/")
+        for pagina in paginador.paginate(Bucket=S3_BUCKET, Prefix=prefijo):
+            for obj in pagina.get("Contents", []):
+                k = obj.get("Key", "")
+                nombre = k.rsplit("/", 1)[-1]
+                if k.endswith(".parquet") and not nombre.startswith((".", "_")):
+                    cuerpo = s3.get_object(Bucket=S3_BUCKET, Key=k)["Body"].read()
+                    filas.extend(pq.read_table(BytesIO(cuerpo)).to_pylist())
         return filas
 
-
-# Calcular promedio de una columna numerica ignorando nulos
-def promedio_columna(filas, campo, decimales=2):
-    valores = [
-        float(f[campo]) for f in filas
-        if f.get(campo) is not None and a_flotante(f.get(campo)) is not None
-    ]
-    return round(sum(valores) / len(valores), decimales) if valores else None
+    try:
+        return ejecutar_s3(_descargar_parquet)
+    except Exception as exc:
+        logger.error("Error al leer Parquet %s en S3: %s", ruta, exc)
+        return []
 
 
-# Calcular resumen agregado de las tablas Gold sin exponer PII ni tarjetas individuales
-def calcular_resumen_gold(s3):
-    clientes = leer_tabla_parquet_s3(s3, S3_CUSTOMER_PATH)
-    categorias = leer_tabla_parquet_s3(s3, S3_CATEGORIES_PATH)
+# Calcular promedio de la primera columna disponible en la lista de nombres
+def promedio_columnas(filas, campos, decimales=2):
+    if isinstance(campos, str):
+        campos = [campos]
+    for campo in campos:
+        valores = [
+            float(f[campo]) for f in filas
+            if f.get(campo) is not None and a_flotante(f.get(campo)) is not None
+        ]
+        if valores:
+            return round(sum(valores) / len(valores), decimales)
+    return None
+
+
+# Calcular resumen agregado de las tablas Gold respetando las columnas de customer_model_summary
+def calcular_resumen_gold():
+    clientes = leer_tabla_parquet_s3(S3_CUSTOMER_PATH)
+    categorias = leer_tabla_parquet_s3(S3_CATEGORIES_PATH)
 
     if not clientes:
         return {"disponible": False}
 
-    por_segmento = {}
+    por_salud = {}
     for c in clientes:
-        seg = str(c.get("debt_risk_segment") or c.get("financial_segment") or "SIN_SEGMENTO")
-        por_segmento[seg] = por_segmento.get(seg, 0) + 1
+        estado = str(
+            c.get("financial_health_status")
+            or c.get("debt_risk_segment")
+            or "SIN_CLASIFICAR"
+        )
+        por_salud[estado] = por_salud.get(estado, 0) + 1
 
     gasto_cat = {}
     for fila in categorias:
@@ -284,24 +324,26 @@ def calcular_resumen_gold(s3):
     }
 
     resumen_3m = {
-        "ingreso_promedio_3m": promedio_columna(clientes, "avg_monthly_income_3m"),
-        "desviacion_estandar_ingreso_3m": promedio_columna(clientes, "std_monthly_income_3m"),
-        "gasto_promedio_3m": promedio_columna(clientes, "avg_monthly_expenses_3m"),
-        "ratio_ahorro_3m": promedio_columna(clientes, "savings_rate_3m", 4),
-        "ratio_gasto_ingreso_3m": promedio_columna(clientes, "expense_to_income_ratio_3m", 4),
-        "ratio_deuda_ingreso_3m": promedio_columna(clientes, "debt_to_income_ratio_3m", 4),
-        "variacion_ingreso_3m_pct": promedio_columna(clientes, "income_change_pct_3m"),
+        "ingreso_promedio_3m": promedio_columnas(clientes, ["avg_monthly_income_3m", "average_income_3m"]),
+        "desviacion_estandar_ingreso_3m": promedio_columnas(clientes, ["std_monthly_income_3m"]),
+        "gasto_promedio_3m": promedio_columnas(clientes, ["avg_monthly_expenses_3m", "average_expenses_3m"]),
+        "ahorro_acumulado_3m": promedio_columnas(clientes, ["savings_3m"]),
+        "ratio_ahorro_3m": promedio_columnas(clientes, ["savings_rate_3m"], 4),
+        "ratio_gasto_ingreso_3m": promedio_columnas(clientes, ["expense_to_income_ratio_3m", "spending_to_income_ratio"], 4),
+        "ratio_deuda_ingreso_3m": promedio_columnas(clientes, ["debt_to_income_ratio_3m", "debt_payment_ratio_3m", "debt_to_income_ratio"], 4),
+        "variacion_ingreso_3m_pct": promedio_columnas(clientes, ["income_change_pct_3m"]),
     }
 
-    if resumen_3m["ingreso_promedio_3m"] is None:
-        mensual = leer_tabla_parquet_s3(s3, S3_MONTHLY_PATH)
+    # Calcular desviacion estandar y variacion de 3 meses desde customer_monthly_summary si aun no estan en el Parquet
+    if resumen_3m["desviacion_estandar_ingreso_3m"] is None:
+        mensual = leer_tabla_parquet_s3(S3_MONTHLY_PATH)
         if mensual:
             por_cliente = {}
             for m in mensual:
-                cid = m.get("customer_id")
+                cid = m.get("client_id") if m.get("client_id") is not None else m.get("customer_id")
                 if cid is not None:
                     por_cliente.setdefault(cid, []).append(m)
-            ing_3m, std_3m, aho_3m, gas_ratio_3m = [], [], [], []
+            ing_3m, std_3m, gas_ratio_3m, var_3m = [], [], [], []
             for lista in por_cliente.values():
                 ultimos = sorted(lista, key=lambda x: str(x.get("month") or ""))[-3:]
                 ingresos = [a_flotante(x.get("monthly_income"), 0.0) or 0.0 for x in ultimos]
@@ -313,24 +355,32 @@ def calcular_resumen_gold(s3):
                     if len(ingresos) > 1:
                         varianza = sum((x - prom_i) ** 2 for x in ingresos) / (len(ingresos) - 1)
                         std_3m.append(varianza ** 0.5)
+                        if ingresos[0] > 0:
+                            var_3m.append(((ingresos[-1] - ingresos[0]) / ingresos[0]) * 100.0)
                     if prom_i > 0:
-                        aho_3m.append((prom_i - prom_g) / prom_i)
                         gas_ratio_3m.append(prom_g / prom_i)
-            resumen_3m["ingreso_promedio_3m"] = round(sum(ing_3m) / len(ing_3m), 2) if ing_3m else None
-            resumen_3m["desviacion_estandar_ingreso_3m"] = round(sum(std_3m) / len(std_3m), 2) if std_3m else None
-            resumen_3m["ratio_ahorro_3m"] = round(sum(aho_3m) / len(aho_3m), 4) if aho_3m else None
-            resumen_3m["ratio_gasto_ingreso_3m"] = round(sum(gas_ratio_3m) / len(gas_ratio_3m), 4) if gas_ratio_3m else None
+            if resumen_3m["ingreso_promedio_3m"] is None and ing_3m:
+                resumen_3m["ingreso_promedio_3m"] = round(sum(ing_3m) / len(ing_3m), 2)
+            if std_3m:
+                resumen_3m["desviacion_estandar_ingreso_3m"] = round(sum(std_3m) / len(std_3m), 2)
+            if resumen_3m["ratio_gasto_ingreso_3m"] is None and gas_ratio_3m:
+                resumen_3m["ratio_gasto_ingreso_3m"] = round(sum(gas_ratio_3m) / len(gas_ratio_3m), 4)
+            if resumen_3m["variacion_ingreso_3m_pct"] is None and var_3m:
+                resumen_3m["variacion_ingreso_3m_pct"] = round(sum(var_3m) / len(var_3m), 2)
 
     return {
         "disponible": True,
         "total_clientes": len(clientes),
-        "ingreso_mensual_promedio_general": promedio_columna(clientes, "avg_monthly_income"),
-        "gasto_mensual_promedio_general": promedio_columna(clientes, "avg_monthly_expenses"),
-        "deuda_total_promedio": promedio_columna(clientes, "total_debt"),
-        "ratio_ahorro_general": promedio_columna(clientes, "savings_rate", 4),
-        "ratio_deuda_ingreso_general": promedio_columna(clientes, "debt_to_income_ratio", 4),
+        "ingreso_mensual_promedio_general": promedio_columnas(clientes, ["monthly_income", "avg_monthly_income"]),
+        "gasto_mensual_promedio_general": promedio_columnas(clientes, ["monthly_expenses", "avg_monthly_expenses"]),
+        "gasto_total_historico_promedio": promedio_columnas(clientes, ["total_spent"]),
+        "transacciones_promedio_por_cliente": promedio_columnas(clientes, ["total_transactions"]),
+        "deuda_total_promedio": promedio_columnas(clientes, ["total_debt"]),
+        "score_crediticio_promedio": promedio_columnas(clientes, ["credit_score"]),
+        "ratio_gasto_ingreso_general": promedio_columnas(clientes, ["spending_to_income_ratio"], 4),
+        "ratio_deuda_ingreso_general": promedio_columnas(clientes, ["debt_to_income_ratio"], 4),
         "metricas_ultimos_3_meses": resumen_3m,
-        "clientes_por_segmento": por_segmento,
+        "clientes_por_salud_financiera": por_salud,
         "top_gastos_por_categoria": top_categorias,
     }
 
@@ -338,6 +388,7 @@ def calcular_resumen_gold(s3):
 # Construir componentes visuales listos para renderizar en el chat
 def construir_visuales(monitoreo, gold):
     fechas = monitoreo.get("serie_por_fecha_local", [])
+    m3 = gold.get("metricas_ultimos_3_meses") or {}
     return {
         "resultados": {
             "titulo": "Total interacciones por resultado",
@@ -376,11 +427,11 @@ def construir_visuales(monitoreo, gold):
             "tipo": "tarjetas_gold",
             "datos": [
                 {"etiqueta": "Clientes analizados", "valor": gold.get("total_clientes", 0)},
-                {"etiqueta": "Ingreso prom. 3M (MXN)", "valor": (gold.get("metricas_ultimos_3_meses") or {}).get("ingreso_promedio_3m") or gold.get("ingreso_mensual_promedio_general") or 0},
-                {"etiqueta": "Desv. estándar 3M (MXN)", "valor": (gold.get("metricas_ultimos_3_meses") or {}).get("desviacion_estandar_ingreso_3m") or 0},
-                {"etiqueta": "Ratio ahorro 3M", "valor": (gold.get("metricas_ultimos_3_meses") or {}).get("ratio_ahorro_3m") or gold.get("ratio_ahorro_general") or 0},
-                {"etiqueta": "Ratio gasto/ingreso 3M", "valor": (gold.get("metricas_ultimos_3_meses") or {}).get("ratio_gasto_ingreso_3m") or 0},
-                {"etiqueta": "Deuda prom. (MXN)", "valor": gold.get("deuda_total_promedio") or 0},
+                {"etiqueta": "Ingreso prom. 3M (MXN)", "valor": m3.get("ingreso_promedio_3m") or gold.get("ingreso_mensual_promedio_general") or 0},
+                {"etiqueta": "Desv. estándar 3M (MXN)", "valor": m3.get("desviacion_estandar_ingreso_3m") or 0},
+                {"etiqueta": "Ratio ahorro 3M", "valor": m3.get("ratio_ahorro_3m") or 0},
+                {"etiqueta": "Ratio deuda/ingreso 3M", "valor": m3.get("ratio_deuda_ingreso_3m") or gold.get("ratio_deuda_ingreso_general") or 0},
+                {"etiqueta": "Variación ingreso 3M (%)", "valor": m3.get("variacion_ingreso_3m_pct") or 0},
             ],
         },
         "categorias": {
@@ -401,10 +452,9 @@ def obtener_contexto_bi(forzar=False):
         if not forzar and _cache["datos"] is not None and ahora < _cache["expira"]:
             return _cache["datos"]
 
-    s3 = cliente_s3()
-    filas_interacciones = leer_interacciones_s3(s3)
+    filas_interacciones = leer_interacciones_s3()
     monitoreo = calcular_metricas_monitoreo(filas_interacciones)
-    gold = calcular_resumen_gold(s3)
+    gold = calcular_resumen_gold()
     visuales = construir_visuales(monitoreo, gold)
 
     datos = {

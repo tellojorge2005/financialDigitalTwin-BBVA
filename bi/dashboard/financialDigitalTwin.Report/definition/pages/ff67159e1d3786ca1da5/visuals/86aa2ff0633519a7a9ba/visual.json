@@ -71,37 +71,5 @@
       }
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "c015c8e1314de7d25de5",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Interacciones"
-              }
-            },
-            "Property": "fecha_local"
-          }
-        },
-        "type": "Categorical"
-      },
-      {
-        "name": "993079404976a77166e2",
-        "field": {
-          "Measure": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Interacciones"
-              }
-            },
-            "Property": "Total interacciones"
-          }
-        },
-        "type": "Advanced"
-      }
-    ]
   }
 }

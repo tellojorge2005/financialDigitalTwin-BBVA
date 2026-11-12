@@ -148,23 +148,5 @@
       ]
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "421b1d5d5e726802720e",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Interacciones"
-              }
-            },
-            "Property": "fecha_local"
-          }
-        },
-        "type": "Categorical"
-      }
-    ]
   }
 }

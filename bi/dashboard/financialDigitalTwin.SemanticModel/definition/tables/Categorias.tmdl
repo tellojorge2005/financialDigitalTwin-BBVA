@@ -1,0 +1,95 @@
+table Categorias
+	lineageTag: 23583701-cdaa-4ef0-8f05-31a58823dcb8
+
+	column client_id
+		dataType: int64
+		formatString: 0
+		lineageTag: fd190ec0-541d-40ea-bba8-421ea534757a
+		summarizeBy: none
+		sourceColumn: client_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column currency
+		dataType: string
+		lineageTag: e40b3cf4-d843-4acb-84e6-9577fe7ab4cc
+		summarizeBy: none
+		sourceColumn: currency
+
+		annotation SummarizationSetBy = Automatic
+
+	column category
+		dataType: string
+		lineageTag: 83e4268c-534a-4488-8bea-413c8856d849
+		summarizeBy: none
+		sourceColumn: category
+
+		annotation SummarizationSetBy = Automatic
+
+	column expense_transactions
+		dataType: int64
+		formatString: 0
+		lineageTag: 342209f0-18cb-4d7a-8081-e3b84901f9ad
+		summarizeBy: sum
+		sourceColumn: expense_transactions
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_expenses
+		dataType: double
+		lineageTag: 8cdc3df8-c1e2-410c-b3ca-c778eaac56be
+		summarizeBy: sum
+		sourceColumn: total_expenses
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Categorias = m
+		mode: import
+		source =
+				let
+				    BaseUrl = "https://financial-digital-twin-bbva-022950218031-us-east-2-an.s3.us-east-2.amazonaws.com/",
+				    // Cambia solo este Prefijo para cada tabla Gold que quieras cargar:
+				    Prefijo = "data/gold/customer_recent_expenses_by_category.parquet/",
+				
+				    // 1. Listar el contenido actual de la carpeta en S3
+				    Documento = Xml.Tables(
+				        Web.Contents(
+				            BaseUrl,
+				            [
+				                Query = [
+				                    #"list-type" = "2",
+				                    prefix = Prefijo
+				                ]
+				            ]
+				        )
+				    ),
+				    Raiz = Documento{0},
+				    Archivos = Record.FieldOrDefault(Raiz, "Contents", #table({"Key"}, {})),
+				
+				    // 2. Filtrar solo los archivos .parquet (ignora _SUCCESS y carpetas)
+				    SoloParquet = Table.SelectRows(
+				        Archivos,
+				        each [Key] <> null and Text.EndsWith(Text.Lower(Text.From([Key])), ".parquet")
+				    ),
+				
+				    // 3. Descargar en memoria cada part-*.parquet y convertirlo en tabla
+				    LeerParquet = (Clave as text) as table =>
+				        Parquet.Document(
+				            Binary.Buffer(
+				                Web.Contents(BaseUrl, [RelativePath = Clave])
+				            )
+				        ),
+				
+				    Tablas = List.Transform(
+				        SoloParquet[Key],
+				        each LeerParquet(Text.From(_))
+				    ),
+				
+				    Resultado = Table.Combine(Tablas)
+				in
+				    Resultado
+
+	annotation PBI_ResultType = Table
+

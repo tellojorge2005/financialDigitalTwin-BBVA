@@ -87,6 +87,11 @@ table Interacciones
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	measure 'Chat Dashboard HTML' =
+			
+			"<iframe src='http://127.0.0.1:8001' style='width:100%; height:920px; border:none; border-radius:10px;'></iframe>"
+		lineageTag: cbbd8e89-a480-4597-8609-c4e8e37e5b65
+
 	column interaccion_id
 		dataType: string
 		lineageTag: 5f594b18-5b19-4614-ac4e-49271331e8e2

@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "724db6460d7c680011d9",
   "position": {
-    "x": 1011.3560522081177,
-    "y": 226.55691042374417,
-    "z": 10001,
+    "x": 974.21319506526027,
+    "y": 222.27119613802992,
+    "z": 11000,
     "height": 94.832826747720361,
     "width": 221.76291793313069,
-    "tabOrder": 10001
+    "tabOrder": 11000
   },
   "visual": {
     "visualType": "cardVisual",
@@ -52,23 +52,5 @@
       }
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "2de6e264bc60dbc7b508",
-        "field": {
-          "Measure": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Interacciones"
-              }
-            },
-            "Property": "Tokens entrada promedio"
-          }
-        },
-        "type": "Advanced"
-      }
-    ]
   }
 }
