@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#001391" />
+    <meta
+      name="description"
+      content="BBVA Prisma, prototipo de asistente financiero inteligente"
+    />
+    <title>Iniciar sesión · BBVA Prisma</title>
+    <link rel="icon" href="assets/icons/favicon.ico" sizes="any" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="assets/icons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="assets/icons/favicon-16x16.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="assets/icons/apple-touch-icon.png"
+    />
+    <link rel="manifest" href="assets/icons/site.webmanifest" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script type="module" src="js/login.js"></script>
+  </head>
+  <body>
+    <div id="prisma-v3" class="pr3">
+      <header class="top">
+        <div class="branding">
+          <span class="bank" aria-label="BBVA"
+            ><img
+              class="banklogo"
+              src="assets/logos/bbva_logo.webp"
+              alt="BBVA"
+              width="82"
+              height="36"
+            /><strong data-logo-fallback hidden>BBVA</strong></span
+          >
+          <span class="divider" aria-hidden="true"></span>
+          <div>
+            <div class="appname">Prisma</div>
+            <div class="tagline">Inteligencia para tus finanzas</div>
+          </div>
+        </div>
+        <div class="topright">
+          <span class="demobadge">DEMO</span>
+        </div>
+      </header>
+
+      <div class="login" data-login>
+        <div class="logincard">
+          <div class="eyebrow">BIENVENIDO A BBVA PRISMA</div>
+          <h2>Conoce tus datos.<br />Resuelve tus dudas.</h2>
+          <p>Ingresa el correo electrónico asociado a tu perfil de cliente.</p>
+          <form data-loginform>
+            <label for="pr3-email">Correo electrónico</label>
+            <input
+              id="pr3-email"
+              data-logininput
+              required
+              type="email"
+              placeholder="cliente@ejemplo.com"
+              autocomplete="email"
+              name="email"
+              maxlength="254"
+              spellcheck="false"
+              autocapitalize="none"
+            />
+            <p class="feedback error" data-login-error role="alert"></p>
+            <button class="send" data-login-button type="submit">
+              Iniciar sesión
+            </button>
+          </form>
+          <div class="loginhint">
+            Acceso de demostración, sin contraseña ni verificación de identidad.
+          </div>
+        </div>
+      </div>
+      <noscript
+        ><p class="feedback">
+          Activa JavaScript para iniciar sesión y consultar tu información.
+        </p></noscript
+      >
+      <div class="footer">BBVA Prisma · Prototipo</div>
+    </div>
+  </body>
+</html>

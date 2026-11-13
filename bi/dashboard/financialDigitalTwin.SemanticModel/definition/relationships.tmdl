@@ -1,0 +1,53 @@
+relationship 49f89f9f-705d-4a71-b10d-7f0082feebd5
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Interacciones.fecha_hora_utc
+	toColumn: LocalDateTable_c9316a39-1e80-4aa1-bd68-00e3d933e09d.Date
+
+relationship 80c950e7-c459-427a-8def-6d8538ec49c0
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Interacciones.fecha_utc
+	toColumn: LocalDateTable_5866195a-5bbf-4998-b7f9-c473756198c6.Date
+
+relationship e1999d76-7eba-4fa9-9216-7e20c5a34a65
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Interacciones.fecha_hora_local
+	toColumn: LocalDateTable_43cad610-b48f-48f6-a72a-0d5f739886cb.Date
+
+relationship 3dfd5cbf-e6e0-498d-a3e6-6e5f25866fb6
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Interacciones.fecha_local
+	toColumn: LocalDateTable_ceff3122-fc2b-437e-aae3-d18b9569b5c6.Date
+
+relationship cd800656-d72d-46dc-9e73-d96d30a70215
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Clientes.financial_cutoff_date
+	toColumn: LocalDateTable_f3c945bd-2c25-41ff-b35d-f03f3ba944ec.Date
+
+relationship 18c9f708-3962-4798-a3d4-0a00920ecf37
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Clientes.period_start
+	toColumn: LocalDateTable_9e080c58-d143-4e83-ae19-bcc010d10d70.Date
+
+relationship b2e7da73-302e-4fe0-bf0a-1ff6cd759d8f
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Clientes.feature_month
+	toColumn: LocalDateTable_ec7994aa-36a0-407c-b73f-759c840ccbf4.Date
+
+relationship ad4f8afc-c96a-45d8-abf4-b376dd70bb55
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Clientes.prediction_month
+	toColumn: LocalDateTable_21000c4d-911a-43d0-96e2-97eb2c0ac9c8.Date
+
+relationship 88f1f6ea-25d3-45fb-8ca2-91d542276c5a
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Mensual.month
+	toColumn: LocalDateTable_8713199a-2f1b-4018-be4c-d9f17681c9f7.Date
+
+relationship 82de8075-1745-ac82-b539-56d94d241f97
+	fromColumn: Mensual.client_id
+	toColumn: Clientes.id
+
+relationship d986f348-1f86-06a1-e18f-eab2f1870954
+	fromColumn: Categorias.client_id
+	toColumn: Clientes.id
+

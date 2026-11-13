@@ -1,0 +1,32 @@
+model Model
+	culture: es-MX
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: es-MX
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["Interacciones","Clientes","Mensual","Categorias"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Interacciones
+ref table DateTableTemplate_c9b49be1-d3ff-49db-9d6b-d9c6a14decda
+ref table LocalDateTable_c9316a39-1e80-4aa1-bd68-00e3d933e09d
+ref table LocalDateTable_5866195a-5bbf-4998-b7f9-c473756198c6
+ref table LocalDateTable_43cad610-b48f-48f6-a72a-0d5f739886cb
+ref table LocalDateTable_ceff3122-fc2b-437e-aae3-d18b9569b5c6
+ref table Clientes
+ref table LocalDateTable_f3c945bd-2c25-41ff-b35d-f03f3ba944ec
+ref table LocalDateTable_9e080c58-d143-4e83-ae19-bcc010d10d70
+ref table LocalDateTable_ec7994aa-36a0-407c-b73f-759c840ccbf4
+ref table LocalDateTable_21000c4d-911a-43d0-96e2-97eb2c0ac9c8
+ref table Mensual
+ref table LocalDateTable_8713199a-2f1b-4018-be4c-d9f17681c9f7
+ref table Categorias
+
+ref cultureInfo es-MX
+

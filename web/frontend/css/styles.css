@@ -1,0 +1,1033 @@
+/* BBVA Prisma */
+body {
+  margin: 0;
+  background: #f4f6fa;
+}
+.pr3 {
+  --blue: #001391;
+  --deep: #000d68;
+  --pale: #edf1ff;
+  --bg: #f4f6fa;
+  --ink: #18243d;
+  --muted: #626d80;
+  --line: #e0e5ef;
+  --cyan: #42a9e4;
+  font:
+    14px/1.5 Arial,
+    Helvetica,
+    sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  min-height: 100vh;
+  overflow: hidden;
+}
+.pr3 * {
+  box-sizing: border-box;
+}
+.pr3 button,
+.pr3 textarea,
+.pr3 input {
+  font: inherit;
+}
+.pr3 button {
+  cursor: pointer;
+}
+.pr3 button:focus-visible,
+.pr3 input:focus-visible,
+.pr3 textarea:focus-visible {
+  outline: 2px solid #418aff;
+  outline-offset: 2px;
+}
+.pr3 [hidden] {
+  display: none !important;
+}
+.pr3 .top {
+  background: var(--blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 77px;
+  padding: 15px 25px;
+  gap: 12px;
+}
+.pr3 .branding {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.pr3 .bank {
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+}
+.pr3 .divider {
+  width: 1px;
+  height: 31px;
+  background: #8091dd;
+}
+.pr3 .appname {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+}
+.pr3 .tagline {
+  font-size: 10px;
+  color: #d9e3ff;
+  margin-top: 4px;
+}
+.pr3 .topright {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pr3 .demobadge {
+  border: 1px solid #a5b4e9;
+  border-radius: 30px;
+  padding: 5px 12px;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.pr3 .profilearea {
+  position: relative;
+}
+.pr3 .profiletrigger {
+  background: transparent;
+  border: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  padding: 4px;
+  border-radius: 9px;
+}
+.pr3 .profiletrigger:hover {
+  background: #ffffff1a;
+}
+.pr3 .photo {
+  height: 35px;
+  width: 35px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #ffffff26;
+  border: 1px solid #ffffff40;
+  font-size: 11px;
+  font-weight: 800;
+}
+.pr3 .profilemenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 9px);
+  width: 234px;
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 8px;
+  box-shadow: 0 15px 35px #18243d2e;
+  z-index: 50;
+}
+.pr3 .menuidentity {
+  padding: 11px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 5px;
+}
+.pr3 .menuidentity strong {
+  font-size: 13px;
+  display: block;
+}
+.pr3 .menuidentity span {
+  color: var(--muted);
+  font-size: 11px;
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.pr3 .logout {
+  width: 100%;
+  border: 0;
+  background: white;
+  color: var(--ink);
+  text-align: left;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.pr3 .logout:hover {
+  color: var(--blue);
+  background: var(--pale);
+}
+.pr3 .workspace {
+  display: grid;
+  grid-template-columns: minmax(225px, 35fr) minmax(0, 65fr);
+  gap: 24px;
+  padding: 27px 24px 24px;
+  align-items: start;
+  max-width: 1360px;
+  margin: auto;
+}
+.pr3 .sidebar {
+  min-width: 0;
+}
+.pr3 .eyebrow {
+  font-size: 10px;
+  color: var(--blue);
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+.pr3 .greeting {
+  font-size: 29px;
+  line-height: 1.13;
+  letter-spacing: -0.95px;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+.pr3 .subheading {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 20px;
+}
+.pr3 .tabs {
+  display: flex;
+  border-bottom: 1px solid #cfd7e8;
+  margin-bottom: 15px;
+  gap: 7px;
+}
+.pr3 .tab {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 11px 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 3px solid transparent;
+  text-align: center;
+}
+.pr3 .tab[aria-selected="true"] {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+.pr3 .tab:hover {
+  color: var(--blue);
+}
+.pr3 .panelspace {
+  height: 580px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 4px;
+}
+.pr3 .bigcard {
+  background: var(--blue);
+  color: white;
+  border-radius: 16px;
+  padding: 20px 21px;
+  margin-bottom: 12px;
+}
+.pr3 .bigcard .kicker {
+  display: block;
+  color: #e1e7ff;
+  font-size: 11px;
+}
+.pr3 .bigcard strong {
+  display: block;
+  font-size: 29px;
+  letter-spacing: -1px;
+  font-weight: 800;
+  margin: 8px 0 3px;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+.pr3 .bigcard small {
+  display: block;
+  color: #dae4ff;
+  font-size: 10px;
+}
+.pr3 .twocards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+.pr3 .metric {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 12px;
+  min-width: 0;
+}
+.pr3 .metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+}
+.pr3 .metric strong {
+  display: block;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.55px;
+  margin: 8px 0 3px;
+  overflow-wrap: anywhere;
+}
+.pr3 .metric small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.pr3 .whitecard {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 17px;
+  margin-bottom: 13px;
+}
+.pr3 .cardtitle {
+  font-weight: 800;
+  font-size: 13px;
+}
+.pr3 .cardcaption {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.pr3 .legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 14px 0 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.pr3 .square {
+  display: inline-block;
+  height: 9px;
+  width: 9px;
+  border-radius: 2px;
+  margin-right: 5px;
+}
+.pr3 .square.inc {
+  background: var(--blue);
+}
+.pr3 .square.exp {
+  background: var(--cyan);
+}
+.pr3 .histogram {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  height: 135px;
+  border-bottom: 1px solid var(--line);
+  padding-top: 7px;
+}
+.pr3 .barsection {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: column;
+  gap: 5px;
+}
+.pr3 .barpair {
+  width: 100%;
+  height: 104px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+}
+.pr3 .bar {
+  width: min(26px, 33%);
+  border-radius: 5px 5px 0 0;
+  min-height: 5px;
+}
+.pr3 .bar.inc {
+  background: var(--blue);
+}
+.pr3 .bar.exp {
+  background: var(--cyan);
+}
+.pr3 .monthname {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.pr3 .historyrow {
+  display: grid;
+  grid-template-columns: 35px 1fr 1fr;
+  gap: 5px;
+  padding: 9px 0;
+  border-bottom: 1px solid #edf0f6;
+  font-size: 10px;
+}
+.pr3 .historyrow span:first-child {
+  color: var(--muted);
+}
+.pr3 .historyrow span:not(:first-child) {
+  text-align: right;
+  font-weight: 700;
+}
+.pr3 .quiet {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 12px 0 0;
+}
+.pr3 .askhealth {
+  background: var(--pale);
+  color: var(--blue);
+  border: 1px solid #cad5fc;
+  border-radius: 12px;
+  width: 100%;
+  padding: 13px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  gap: 10px;
+}
+.pr3 .askhealth strong {
+  display: block;
+  font-size: 12px;
+}
+.pr3 .askhealth:hover {
+  background: #e3eaff;
+}
+.pr3 .forecastcard {
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 14px;
+  padding: 15px;
+  margin-bottom: 11px;
+}
+.pr3 .forecastheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.pr3 .forecastheader strong {
+  font-size: 12px;
+}
+.pr3 .forecastheader span {
+  font-size: 15px;
+  color: var(--blue);
+  font-weight: 800;
+}
+.pr3 .track {
+  background: #edf0f7;
+  border-radius: 7px;
+  overflow: hidden;
+  height: 8px;
+  margin: 6px 0;
+}
+.pr3 .fill {
+  height: 100%;
+  border-radius: 7px;
+  background: var(--blue);
+}
+.pr3 .fill.exp {
+  background: var(--cyan);
+}
+.pr3 .forecastfooter {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 9px;
+}
+.pr3 .subsection {
+  font-size: 12px;
+  font-weight: 800;
+  margin: 16px 0 9px;
+}
+.pr3 .scenariobox {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.pr3 .scenario {
+  background: var(--pale);
+  border-radius: 12px;
+  padding: 13px;
+}
+.pr3 .scenario span {
+  display: block;
+  font-size: 10px;
+  color: #43548a;
+}
+.pr3 .scenario strong {
+  display: block;
+  color: var(--blue);
+  font-size: 18px;
+  font-weight: 800;
+  margin: 5px 0;
+}
+.pr3 .assistantchat {
+  height: 720px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  box-shadow: 0 12px 40px #18243d08;
+}
+.pr3 .chathead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--line);
+}
+.pr3 .agent {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.pr3 .agenticon {
+  width: 45px;
+  height: 45px;
+  border-radius: 14px;
+  background: var(--pale);
+  color: var(--blue);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.pr3 .gem {
+  height: 26px;
+  width: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.pr3 .agentname {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.35px;
+}
+.pr3 .agentdesc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.pr3 .clear {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 9px 11px;
+  white-space: nowrap;
+}
+.pr3 .clear:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+.pr3 .notice {
+  background: #f9faff;
+  color: var(--muted);
+  text-align: center;
+  font-size: 10px;
+  padding: 10px 15px;
+}
+.pr3 .messages {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 26px 24px;
+  scrollbar-width: thin;
+}
+.pr3 .message {
+  max-width: 87%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pr3 .message.assistant {
+  align-self: flex-start;
+}
+.pr3 .message.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.pr3 .author {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.pr3 .bubble {
+  border-radius: 15px;
+  padding: 15px 17px;
+  background: var(--bg);
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.pr3 .assistant .bubble {
+  border-top-left-radius: 4px;
+}
+.pr3 .user .bubble {
+  border-top-right-radius: 4px;
+  color: #fff;
+  background: var(--blue);
+}
+.pr3 .suggestions {
+  padding: 13px 22px 16px;
+}
+.pr3 .suggestions .caption {
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 10px;
+}
+.pr3 .chips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.pr3 .chip {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: white;
+  color: var(--blue);
+  font-size: 10px;
+  padding: 9px 11px;
+  text-align: left;
+}
+.pr3 .chip:hover {
+  border-color: var(--blue);
+  background: var(--pale);
+}
+.pr3 .composer {
+  padding: 17px 22px;
+  border-top: 1px solid var(--line);
+}
+.pr3 .composer label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 9px;
+}
+.pr3 .inputrow {
+  display: flex;
+  gap: 9px;
+  align-items: flex-end;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 10px;
+}
+.pr3 .inputrow:focus-within {
+  border-color: var(--blue);
+}
+.pr3 textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  max-height: 140px;
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  resize: vertical;
+  padding: 6px 4px;
+  color: var(--ink);
+  font-size: 12px;
+}
+.pr3 .send {
+  background: var(--blue);
+  color: #fff;
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pr3 .send:hover {
+  background: var(--deep);
+}
+.pr3 .inputfoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 9px;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.pr3 .footer {
+  text-align: center;
+  padding: 0 20px 23px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.pr3 .login {
+  min-height: 655px;
+  display: grid;
+  place-items: center;
+  padding: 30px 18px;
+}
+.pr3 .logincard {
+  max-width: 465px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 16px 45px #18243d0a;
+  padding: 38px;
+  width: 100%;
+}
+.pr3 .logincard h2 {
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  margin: 0 0 17px;
+}
+.pr3 .logincard p {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 23px;
+}
+.pr3 .logincard label {
+  display: block;
+  font-weight: 700;
+  font-size: 12px;
+  margin-bottom: 9px;
+}
+.pr3 .logincard input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 13px;
+}
+.pr3 .logincard .send {
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px;
+}
+.pr3 .loginhint {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 14px;
+}
+@media (max-width: 850px) {
+  .pr3 .workspace {
+    grid-template-columns: minmax(205px, 38fr) minmax(0, 62fr);
+    gap: 14px;
+    padding: 20px 15px;
+  }
+  .pr3 .greeting {
+    font-size: 25px;
+  }
+  .pr3 .metric strong {
+    font-size: 16px;
+  }
+  .pr3 .whitecard {
+    padding: 13px;
+  }
+  .pr3 .chathead,
+  .pr3 .composer {
+    padding: 16px;
+  }
+  .pr3 .messages {
+    padding: 20px 16px;
+  }
+  .pr3 .suggestions {
+    padding: 12px 16px;
+  }
+  .pr3 .bubble {
+    font-size: 12px;
+  }
+}
+@media (max-width: 650px) {
+  .pr3 .top {
+    min-height: 66px;
+    padding: 12px 15px;
+  }
+  .pr3 .bank {
+    font-size: 21px;
+  }
+  .pr3 .appname {
+    font-size: 18px;
+  }
+  .pr3 .branding {
+    gap: 10px;
+  }
+  .pr3 .topright {
+    gap: 8px;
+  }
+  .pr3 .workspace {
+    grid-template-columns: 1fr;
+    gap: 17px;
+    padding: 19px 15px;
+  }
+  .pr3 .panelspace {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+  .pr3 .assistantchat {
+    height: 610px;
+  }
+  .pr3 .greeting {
+    font-size: 25px;
+  }
+  .pr3 .whitecard {
+    padding: 16px;
+  }
+}
+@media (max-width: 390px) {
+  .pr3 .tagline {
+    display: none;
+  }
+  .pr3 .appname {
+    font-size: 16px;
+  }
+  .pr3 .demobadge {
+    padding: 4px 8px;
+  }
+  .pr3 .message {
+    max-width: 95%;
+  }
+  .pr3 .inputrow {
+    flex-wrap: wrap;
+  }
+  .pr3 textarea {
+    flex-basis: 100%;
+  }
+  .pr3 .send {
+    margin-left: auto;
+  }
+}
+
+/* Preparar los estados de sesión y la información del cliente */
+:root {
+  color-scheme: light;
+}
+.pr3 .banklogo {
+  width: 82px;
+  height: 36px;
+  object-fit: contain;
+  display: block;
+}
+.pr3 button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.pr3 .feedback {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  padding: 0 22px;
+  overflow-wrap: anywhere;
+}
+.pr3 .feedback:not(:empty) {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+.pr3 .logincard .feedback,
+.pr3 .sidebar .feedback {
+  padding-left: 0;
+  padding-right: 0;
+}
+.pr3 .error {
+  color: #a12835;
+}
+.pr3 .empty-state {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 24px 0;
+  margin: 0;
+  line-height: 1.65;
+}
+.pr3 .historytable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  table-layout: fixed;
+}
+.pr3 .historytable th,
+.pr3 .historytable td {
+  padding: 9px 2px;
+  border-bottom: 1px solid #edf0f6;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.pr3 .historytable th:first-child,
+.pr3 .historytable td:first-child {
+  text-align: left;
+  color: var(--muted);
+}
+.pr3 .historytable th {
+  font-weight: 400;
+  color: var(--muted);
+}
+.pr3 .historytable td {
+  font-weight: 700;
+}
+.pr3 .bar {
+  min-height: 0;
+}
+.pr3 .profilemenu strong {
+  overflow-wrap: anywhere;
+}
+.pr3 .logincard input {
+  background: #fff;
+  color: var(--ink);
+}
+.pr3 .greeting,
+.pr3 .logincard h2,
+.pr3 .metric strong {
+  color: var(--ink);
+}
+.pr3 .chathead,
+.pr3 .notice,
+.pr3 .suggestions,
+.pr3 .composer {
+  flex-shrink: 0;
+}
+@media (max-width: 650px) {
+  .pr3 .banklogo {
+    width: 70px;
+    height: 31px;
+  }
+  .pr3 .logincard {
+    padding: 28px;
+  }
+  .pr3 .login {
+    min-height: calc(100dvh - 110px);
+  }
+}
+
+/* Ajustar el espacio transparente del logo cuadrado sin modificar la imagen */
+.pr3 .bank {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 36px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.pr3 .banklogo {
+  position: absolute;
+  width: 82px;
+  height: 82px;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  object-fit: contain;
+}
+@media (max-width: 650px) {
+  .pr3 .bank {
+    width: 70px;
+    height: 31px;
+  }
+  .pr3 .banklogo {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+/* Presentar el Markdown del asistente dentro de la burbuja existente */
+.pr3 .bubble.markdown {
+  white-space: normal;
+  min-width: 0;
+}
+.pr3 .markdown p {
+  margin: 0 0 0.75em;
+}
+.pr3 .markdown p:last-child {
+  margin-bottom: 0;
+}
+.pr3 .markdown strong {
+  font-weight: 700;
+}
+.pr3 .markdown h3,
+.pr3 .markdown h4 {
+  font-size: 1.08em;
+  line-height: 1.4;
+  margin: 0.9em 0 0.4em;
+  color: inherit;
+}
+.pr3 .markdown > :first-child {
+  margin-top: 0;
+}
+.pr3 .markdown > :last-child {
+  margin-bottom: 0;
+}
+.pr3 .markdown ul,
+.pr3 .markdown ol {
+  margin: 0.5em 0 0.8em;
+  padding-left: 1.6em;
+}
+.pr3 .markdown li {
+  margin: 0.25em 0;
+}
+.pr3 .markdown blockquote {
+  margin: 0.7em 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--blue);
+  color: var(--muted);
+}
+.pr3 .markdown code {
+  font-family: Consolas, monospace;
+  font-size: 0.93em;
+  background: #0013910a;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.pr3 .markdown pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  margin: 0.7em 0;
+  padding: 10px;
+  background: #0013910a;
+  border-radius: 8px;
+}
+.pr3 .markdown pre code {
+  padding: 0;
+  background: none;
+}
+.pr3 .markdown hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1em 0;
+}
+.pr3 .markdown .md-table {
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 0.7em 0;
+}
+.pr3 .markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95em;
+}
+.pr3 .markdown th,
+.pr3 .markdown td {
+  border: 1px solid var(--line);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+.pr3 .markdown th {
+  font-weight: 700;
+  background: #00139108;
+}

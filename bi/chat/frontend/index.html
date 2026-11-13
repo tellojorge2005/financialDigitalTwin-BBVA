@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#001391" />
+    <title>Asistente de Datos · Dashboard BBVA PRISMA</title>
+    <style>
+      :root {
+        --bbva-blue: #001391;
+        --bbva-deep: #000d68;
+        --bbva-cyan: #42a9e4;
+        --bbva-pale: #edf1ff;
+        --bg-light: #f4f6fa;
+        --card-bg: #ffffff;
+        --border: #e0e5ef;
+        --text-main: #18243d;
+        --text-muted: #626d80;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, Helvetica, "Segoe UI", sans-serif;
+      }
+
+      body {
+        background: var(--bg-light);
+        color: var(--text-main);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Encabezado compacto con identidad BBVA (#001391) */
+      .header {
+        background: var(--bbva-blue);
+        color: #ffffff;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .branding {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      /* Ajustar el espacio transparente del logo cuadrado sin modificar la imagen */
+      .bank {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 68px;
+        height: 28px;
+        overflow: hidden;
+        flex-shrink: 0;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: -1px;
+      }
+
+      .banklogo {
+        position: absolute;
+        width: 68px;
+        height: 68px;
+        top: 50%;
+        left: 0;
+        transform: translateY(-50%);
+        object-fit: contain;
+        display: block;
+      }
+
+      .divider {
+        width: 1px;
+        height: 22px;
+        background: #8091dd;
+        flex-shrink: 0;
+      }
+
+      .header-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .badge {
+        border: 1px solid #a5b4e9;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+      }
+
+      .refresh-btn {
+        background: transparent;
+        border: 1px solid #a5b4e9;
+        color: #ffffff;
+        border-radius: 6px;
+        padding: 4px 9px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .refresh-btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+      }
+
+      /* Barra rapida de KPIs sincronizados con S3 */
+      .kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 8px 12px;
+        background: var(--bbva-pale);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .kpi-mini {
+        background: var(--card-bg);
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        text-align: center;
+      }
+
+      .kpi-mini .label {
+        font-size: 10px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .kpi-mini .val {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--bbva-blue);
+        margin-top: 2px;
+      }
+
+      /* Contenedor de mensajes */
+      .chat-box {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .msg {
+        max-width: 92%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      .msg.assistant {
+        align-self: flex-start;
+        border-top-left-radius: 3px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+      }
+
+      .msg.user {
+        align-self: flex-end;
+        border-top-right-radius: 3px;
+        background: var(--bbva-blue);
+        color: #ffffff;
+      }
+
+      /* Componente visual embebido en la respuesta */
+      .visual-card {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+      }
+
+      .visual-title {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--bbva-blue);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 5px;
+        font-size: 11px;
+      }
+
+      .bar-label {
+        width: 125px;
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .bar-track {
+        flex: 1;
+        height: 9px;
+        background: #edf0f7;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        background: var(--bbva-blue);
+        border-radius: 4px;
+      }
+
+      .bar-val {
+        width: 55px;
+        text-align: right;
+        font-weight: 700;
+        color: var(--bbva-blue);
+        flex-shrink: 0;
+      }
+
+      .gold-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+
+      .gold-item {
+        background: var(--bbva-pale);
+        border: 1px solid #cad5fc;
+        border-radius: 6px;
+        padding: 6px 8px;
+      }
+
+      .gold-item .g-label {
+        font-size: 10px;
+        color: #43548a;
+      }
+
+      .gold-item .g-val {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--bbva-blue);
+        margin-top: 2px;
+      }
+
+      /* Botones de sugerencias rapidas */
+      .chips {
+        display: flex;
+        gap: 6px;
+        padding: 6px 12px;
+        overflow-x: auto;
+        background: var(--bg-light);
+        border-top: 1px solid var(--border);
+      }
+
+      .chip {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        color: var(--bbva-blue);
+        padding: 5px 10px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .chip:hover {
+        border-color: var(--bbva-blue);
+        background: var(--bbva-pale);
+      }
+
+      /* Barra de entrada */
+      .input-bar {
+        display: flex;
+        gap: 6px;
+        padding: 8px 12px;
+        background: var(--card-bg);
+        border-top: 1px solid var(--border);
+      }
+
+      .input-bar input {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 13px;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .input-bar input:focus {
+        border-color: var(--bbva-blue);
+      }
+
+      .input-bar button {
+        background: var(--bbva-blue);
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 0 14px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .input-bar button:hover {
+        background: var(--bbva-deep);
+      }
+
+      .input-bar button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="branding">
+        <span class="bank" aria-label="BBVA">
+          <img
+            class="banklogo"
+            src="assets/bbva_logo.webp"
+            alt="BBVA"
+            width="68"
+            height="28"
+            onerror="
+              this.style.display = 'none';
+              this.nextElementSibling.hidden = false;
+            "
+          />
+          <strong hidden>BBVA</strong>
+        </span>
+        <span class="divider" aria-hidden="true"></span>
+        <div class="header-title">
+          <span>Prisma · Asistente BI</span>
+          <span class="badge">S3</span>
+        </div>
+      </div>
+      <button class="refresh-btn" id="btnRefresh" title="Recargar datos de S3">
+        Actualizar S3
+      </button>
+    </header>
+
+    <div class="kpi-strip">
+      <div class="kpi-mini">
+        <div class="label">Interacciones</div>
+        <div class="val" id="kpiInteracciones">--</div>
+      </div>
+      <div class="kpi-mini">
+        <div class="label">Tiempo prom. (s)</div>
+        <div class="val" id="kpiTiempo">--</div>
+      </div>
+      <div class="kpi-mini">
+        <div class="label">% Errores</div>
+        <div class="val" id="kpiErrores">--</div>
+      </div>
+      <div class="kpi-mini">
+        <div class="label">Costo prom. USD</div>
+        <div class="val" id="kpiCosto">--</div>
+      </div>
+    </div>
+
+    <div class="chat-box" id="chatBox">
+      <div class="msg assistant">
+        Hola. Estoy conectado a los datos de monitoreo del asistente y al
+        resumen ejecutivo Gold en S3. ¿Qué métrica o componente del dashboard
+        deseas analizar?
+      </div>
+    </div>
+
+    <div class="chips">
+      <button
+        class="chip"
+        data-q="¿Cuál es el resumen de interacciones, conversaciones y porcentaje de errores?"
+      >
+        Resumen y % errores
+      </button>
+      <button
+        class="chip"
+        data-q="¿Cómo se distribuyen las interacciones por resultado?"
+      >
+        Por resultado
+      </button>
+      <button
+        class="chip"
+        data-q="¿Cuáles son los usos de herramientas (metas, escenarios, historial y cancelaciones)?"
+      >
+        Uso de herramientas
+      </button>
+      <button
+        class="chip"
+        data-q="¿Cuál es el promedio de ingresos, desviación estándar y ratios de los últimos 3 meses en Gold?"
+      >
+        Ratios y promedios 3M (Gold)
+      </button>
+    </div>
+
+    <form class="input-bar" id="chatForm">
+      <input
+        type="text"
+        id="chatInput"
+        placeholder="Pregunta sobre las interacciones, tiempos, costos o métricas Gold..."
+        autocomplete="off"
+      />
+      <button type="submit" id="btnSend">Preguntar</button>
+    </form>
+
+    <script>
+      const chatBox = document.getElementById("chatBox");
+      const chatForm = document.getElementById("chatForm");
+      const chatInput = document.getElementById("chatInput");
+      const btnSend = document.getElementById("btnSend");
+      const btnRefresh = document.getElementById("btnRefresh");
+
+      async function cargarResumen(refresh = false) {
+        try {
+          const res = await fetch(`/api/bi/summary?refresh=${refresh}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const m = data.monitoreo || {};
+          document.getElementById("kpiInteracciones").textContent =
+            m.total_interacciones ?? "--";
+          document.getElementById("kpiTiempo").textContent =
+            m.tiempo_promedio_s != null ? `${m.tiempo_promedio_s}s` : "--";
+          document.getElementById("kpiErrores").textContent =
+            m.porcentaje_errores != null ? `${m.porcentaje_errores}%` : "--";
+          document.getElementById("kpiCosto").textContent =
+            m.costo_promedio_consulta_usd != null
+              ? `$${m.costo_promedio_consulta_usd}`
+              : "--";
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function crearElementoVisual(visual) {
+        if (
+          !visual ||
+          !Array.isArray(visual.datos) ||
+          visual.datos.length === 0
+        )
+          return null;
+
+        const wrap = document.createElement("div");
+        wrap.className = "visual-card";
+
+        const title = document.createElement("div");
+        title.className = "visual-title";
+        title.textContent = visual.titulo || "Visualización del componente";
+        wrap.appendChild(title);
+
+        if (visual.tipo === "tarjetas_gold") {
+          const grid = document.createElement("div");
+          grid.className = "gold-grid";
+          visual.datos.forEach((item) => {
+            const box = document.createElement("div");
+            box.className = "gold-item";
+            box.innerHTML = `<div class="g-label">${item.etiqueta}</div><div class="g-val">${item.valor}</div>`;
+            grid.appendChild(box);
+          });
+          wrap.appendChild(grid);
+          return wrap;
+        }
+
+        const maxVal = Math.max(
+          ...visual.datos.map((d) => Number(d.valor) || 0),
+          1,
+        );
+        visual.datos.forEach((item) => {
+          const val = Number(item.valor) || 0;
+          const pct = Math.max(Math.round((val / maxVal) * 100), 2);
+          const row = document.createElement("div");
+          row.className = "bar-row";
+          row.innerHTML = `
+          <div class="bar-label" title="${item.etiqueta}">${item.etiqueta}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="bar-val">${val}</div>
+        `;
+          wrap.appendChild(row);
+        });
+        return wrap;
+      }
+
+      function agregarMensaje(texto, autor, visual = null) {
+        const div = document.createElement("div");
+        div.className = `msg ${autor}`;
+        div.textContent = texto;
+
+        if (autor === "assistant" && visual) {
+          const elVisual = crearElementoVisual(visual);
+          if (elVisual) div.appendChild(elVisual);
+        }
+
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return div;
+      }
+
+      async function enviarPregunta(pregunta) {
+        if (!pregunta.trim()) return;
+        agregarMensaje(pregunta, "user");
+        chatInput.value = "";
+        btnSend.disabled = true;
+
+        const cargando = agregarMensaje(
+          "Analizando datos del dashboard en S3...",
+          "assistant",
+        );
+
+        try {
+          const res = await fetch("/api/bi/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pregunta }),
+          });
+          const data = await res.json();
+          cargando.remove();
+          agregarMensaje(
+            data.respuesta || "Sin respuesta.",
+            "assistant",
+            data.visual,
+          );
+        } catch (e) {
+          cargando.remove();
+          agregarMensaje(
+            "No se pudo conectar con el servicio local del dashboard.",
+            "assistant",
+          );
+        } finally {
+          btnSend.disabled = false;
+          chatInput.focus();
+        }
+      }
+
+      chatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        enviarPregunta(chatInput.value);
+      });
+
+      document.querySelectorAll(".chip").forEach((btn) => {
+        btn.addEventListener("click", () => enviarPregunta(btn.dataset.q));
+      });
+
+      btnRefresh.addEventListener("click", () => cargarResumen(true));
+
+      cargarResumen(false);
+    </script>
+  </body>
+</html>

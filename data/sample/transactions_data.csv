@@ -1,0 +1,66 @@
+﻿id,date,client_id,card_id,amount,use_chip,merchant_id,merchant_city,merchant_state,zip,mcc,errors,account_id,movement_type,category,direction,currency,balance_before,balance_after,transfer_id,counterparty_account_id,obligation_id,income_source,is_recurring,amount_convention
+78151715,2026-07-01 08:00:00,2,,26635.28,,,,,,,,A-2,income,ingresos,inflow,MXN,1931716.82,1958352.10,,,,payroll,true,signed_cashflow
+78151716,2026-07-01 08:00:00,3,,31331.67,,,,,,,,A-3,income,ingresos,inflow,MXN,3291986.22,3323317.89,,,,payroll,true,signed_cashflow
+78153557,2026-07-01 18:16:00,3,,-3747.77,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,transporte,outflow,MXN,3323317.89,3319570.12,,,,,false,signed_cashflow
+78153767,2026-07-01 20:10:00,0,,-8226.13,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,alimentación,outflow,MXN,-3471389.49,-3479615.62,,,,,false,signed_cashflow
+78154417,2026-07-02 17:24:00,1,,-2520.88,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1612922.89,-1615443.77,,,,,false,signed_cashflow
+78154865,2026-07-02 21:45:00,0,,-3262.69,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,alimentación,outflow,MXN,-3479615.62,-3482878.31,,,,,false,signed_cashflow
+78154888,2026-07-03 08:00:00,0,,116625.48,,,,,,,,A-0,income,ingresos,inflow,MXN,-3482878.31,-3366252.83,,,,freelance,false,signed_cashflow
+78155029,2026-07-03 12:00:00,0,,-49238.55,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,vivienda,outflow,MXN,-3366252.83,-3415491.38,,,,,true,signed_cashflow
+78155030,2026-07-03 12:00:00,1,,-26352.79,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,vivienda,outflow,MXN,-1615443.77,-1641796.56,,,,,true,signed_cashflow
+78155031,2026-07-03 12:00:00,2,,-11728.75,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,vivienda,outflow,MXN,1958352.10,1946623.35,,,,,true,signed_cashflow
+78155032,2026-07-03 12:00:00,3,,-13720.49,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,vivienda,outflow,MXN,3319570.12,3305849.63,,,,,true,signed_cashflow
+78157166,2026-07-03 14:58:00,1,,-5966.90,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,transporte,outflow,MXN,-1641796.56,-1647763.46,,,,,false,signed_cashflow
+78157332,2026-07-03 16:42:00,1,,-1985.46,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1647763.46,-1649748.92,,,,,false,signed_cashflow
+78158356,2026-07-04 17:26:00,2,,-2596.71,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,salud,outflow,MXN,1946623.35,1944026.64,,,,,false,signed_cashflow
+78158516,2026-07-04 18:52:00,0,,-7603.43,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,compras,outflow,MXN,-3415491.38,-3423094.81,,,,,false,signed_cashflow
+78158841,2026-07-05 08:00:00,1,,85080.50,,,,,,,,A-1,income,ingresos,inflow,MXN,-1649748.92,-1564668.42,,,,freelance,false,signed_cashflow
+78159192,2026-07-05 16:05:00,2,,-2652.87,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,entretenimiento,outflow,MXN,1944026.64,1941373.77,,,,,false,signed_cashflow
+78159594,2026-07-05 20:07:00,1,,-2426.84,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1564668.42,-1567095.26,,,,,false,signed_cashflow
+78159655,2026-07-05 20:37:00,0,,-5373.70,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,alimentación,outflow,MXN,-3423094.81,-3428468.51,,,,,false,signed_cashflow
+78160190,2026-07-06 16:35:00,1,,-6771.11,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1567095.26,-1573866.37,,,,,false,signed_cashflow
+78160239,2026-07-06 17:02:00,1,,-5641.65,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1573866.37,-1579508.02,,,,,false,signed_cashflow
+78160398,2026-07-06 18:44:00,0,,-8664.08,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,alimentación,outflow,MXN,-3428468.51,-3437132.59,,,,,false,signed_cashflow
+78160430,2026-07-06 19:06:00,0,,-1999.53,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,alimentación,outflow,MXN,-3437132.59,-3439132.12,,,,,false,signed_cashflow
+78160549,2026-07-06 20:21:00,1,,-6792.43,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1579508.02,-1586300.45,,,,,false,signed_cashflow
+78161708,2026-07-08 12:00:00,0,,-12501.92,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,servicios,outflow,MXN,-3439132.12,-3451634.04,,,,,true,signed_cashflow
+78161709,2026-07-08 12:00:00,1,,-5850.66,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,servicios,outflow,MXN,-1586300.45,-1592151.11,,,,,true,signed_cashflow
+78161710,2026-07-08 12:00:00,2,,-2859.54,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,servicios,outflow,MXN,1941373.77,1938514.23,,,,,true,signed_cashflow
+78161711,2026-07-08 12:00:00,3,,-3249.59,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,servicios,outflow,MXN,3305849.63,3302600.04,,,,,true,signed_cashflow
+78163797,2026-07-08 14:31:00,2,,-2364.40,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,transporte,outflow,MXN,1938514.23,1936149.83,,,,,false,signed_cashflow
+78165587,2026-07-10 12:00:00,0,,-6491.50,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,servicios,outflow,MXN,-3451634.04,-3458125.54,,,,,true,signed_cashflow
+78165588,2026-07-10 12:00:00,1,,-3072.83,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,servicios,outflow,MXN,-1592151.11,-1595223.94,,,,,true,signed_cashflow
+78165589,2026-07-10 12:00:00,2,,-1453.90,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,servicios,outflow,MXN,1936149.83,1934695.93,,,,,true,signed_cashflow
+78165590,2026-07-10 12:00:00,3,,-1573.21,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,servicios,outflow,MXN,3302600.04,3301026.83,,,,,true,signed_cashflow
+78168576,2026-07-11 14:45:00,2,,-1781.41,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,salud,outflow,MXN,1934695.93,1932914.52,,,,,false,signed_cashflow
+78169254,2026-07-11 21:16:00,2,,-906.77,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,alimentación,outflow,MXN,1932914.52,1932007.75,,,,,false,signed_cashflow
+78169315,2026-07-11 21:52:00,0,,-8581.71,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,alimentación,outflow,MXN,-3458125.54,-3466707.25,,,,,false,signed_cashflow
+78169837,2026-07-12 17:24:00,0,,-2097.09,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,alimentación,outflow,MXN,-3466707.25,-3468804.34,,,,,false,signed_cashflow
+78170942,2026-07-13 19:50:00,1,,-5383.27,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1595223.94,-1600607.21,,,,,false,signed_cashflow
+78171019,2026-07-13 20:27:00,3,,-2011.28,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,alimentación,outflow,MXN,3301026.83,3299015.55,,,,,false,signed_cashflow
+78171500,2026-07-14 15:33:00,3,,-3584.43,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,alimentación,outflow,MXN,3299015.55,3295431.12,,,,,false,signed_cashflow
+78171704,2026-07-14 17:46:00,0,,-5933.33,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,transporte,outflow,MXN,-3468804.34,-3474737.67,,,,,false,signed_cashflow
+78172157,2026-07-15 08:00:00,2,,26635.28,,,,,,,,A-2,income,ingresos,inflow,MXN,1932007.75,1958643.03,,,,payroll,true,signed_cashflow
+78172158,2026-07-15 08:00:00,3,,31331.67,,,,,,,,A-3,income,ingresos,inflow,MXN,3295431.12,3326762.79,,,,payroll,true,signed_cashflow
+78174785,2026-07-16 15:24:00,0,,-4019.42,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,entretenimiento,outflow,MXN,-3474737.67,-3478757.09,,,,,false,signed_cashflow
+78174918,2026-07-16 16:43:00,1,,-4942.20,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1600607.21,-1605549.41,,,,,false,signed_cashflow
+78175774,2026-07-17 15:45:00,0,,-8120.50,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,salud,outflow,MXN,-3478757.09,-3486877.59,,,,,false,signed_cashflow
+78176508,2026-07-18 12:00:00,1,,-14280.30,,,,,,,,A-1,debt_payment,pago_de_deuda,outflow,MXN,-1605549.41,-1619829.71,,,O-1-201107-R7,,true,signed_cashflow
+78176509,2026-07-18 12:00:00,2,,-4263.16,,,,,,,,A-2,debt_payment,pago_de_deuda,outflow,MXN,1958643.03,1954379.87,,,O-2-201107-R7,,true,signed_cashflow
+78179265,2026-07-20 12:00:00,0,,-13809.04,,,,,,,,A-0,debt_payment,pago_de_deuda,outflow,MXN,-3486877.59,-3500686.63,,,O-0-201107-R7,,true,signed_cashflow
+78179753,2026-07-20 14:52:00,0,,-6869.58,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,alimentación,outflow,MXN,-3500686.63,-3507556.21,,,,,false,signed_cashflow
+78180635,2026-07-21 14:06:00,3,,-1825.09,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,transporte,outflow,MXN,3326762.79,3324937.70,,,,,false,signed_cashflow
+78180946,2026-07-21 17:12:00,0,,-11156.14,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,transporte,outflow,MXN,-3507556.21,-3518712.35,,,,,false,signed_cashflow
+78182659,2026-07-23 15:51:00,3,,-3711.10,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,transporte,outflow,MXN,3324937.70,3321226.60,,,,,false,signed_cashflow
+78182973,2026-07-23 19:05:00,2,,-3067.13,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,transporte,outflow,MXN,1954379.87,1951312.74,,,,,false,signed_cashflow
+78183255,2026-07-23 21:58:00,2,,-1911.78,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,alimentación,outflow,MXN,1951312.74,1949400.96,,,,,false,signed_cashflow
+78183396,2026-07-24 12:00:00,1,,-7140.15,,,,,,,,A-1,debt_payment,pago_de_deuda,outflow,MXN,-1619829.71,-1626969.86,,,O-1-201104-R7,,true,signed_cashflow
+78183664,2026-07-24 15:58:00,2,,-568.27,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,transporte,outflow,MXN,1949400.96,1948832.69,,,,,false,signed_cashflow
+78184786,2026-07-25 17:16:00,3,,-5976.83,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,entretenimiento,outflow,MXN,3321226.60,3315249.77,,,,,false,signed_cashflow
+78185076,2026-07-25 20:30:00,3,,-1165.43,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,salud,outflow,MXN,3315249.77,3314084.34,,,,,false,signed_cashflow
+78185471,2026-07-26 15:11:00,1,,-1622.78,,,Aguascalientes,Aguascalientes,20000,,,A-1,expense,alimentación,outflow,MXN,-1626969.86,-1628592.64,,,,,false,signed_cashflow
+78185621,2026-07-26 16:33:00,2,,-1335.63,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,alimentación,outflow,MXN,1948832.69,1947497.06,,,,,false,signed_cashflow
+78185903,2026-07-26 19:13:00,3,,-1996.23,,,Aguascalientes,Aguascalientes,20000,,,A-3,expense,compras,outflow,MXN,3314084.34,3312088.11,,,,,false,signed_cashflow
+78186573,2026-07-27 16:02:00,0,,-5230.21,,,San Luis Potosí,San Luis Potosí,78000,,,A-0,expense,transporte,outflow,MXN,-3518712.35,-3523942.56,,,,,false,signed_cashflow
+78187202,2026-07-28 14:35:00,2,,-591.83,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,compras,outflow,MXN,1947497.06,1946905.23,,,,,false,signed_cashflow
+78187625,2026-07-28 19:02:00,2,,-3443.05,,,Ciudad de México,Ciudad de México,06000,,,A-2,expense,transporte,outflow,MXN,1946905.23,1943462.18,,,,,false,signed_cashflow

@@ -1,0 +1,160 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-oci-web
+  cancel-in-progress: true
+
+jobs:
+  deploy-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Descargar codigo del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Generar archivo .env desde GitHub Secrets
+      - name: Generate .env file
+        run: |
+          cat << 'EOF' > .env
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}
+          S3_BUCKET=${{ secrets.S3_BUCKET }}
+          S3_CUSTOMER_PATH=${{ secrets.S3_CUSTOMER_PATH }}
+          S3_MONTHLY_PATH=${{ secrets.S3_MONTHLY_PATH }}
+          S3_SCENARIOS_PATH=${{ secrets.S3_SCENARIOS_PATH }}
+          S3_CATEGORIES_PATH=${{ secrets.S3_CATEGORIES_PATH }}
+          S3_INTERACTIONS_PREFIX=${{ secrets.S3_INTERACTIONS_PREFIX }}
+          MONITOR_EXPORT_SECONDS=300
+          MONITOR_RETENTION_DAYS=30
+          SESSION_SECRET=${{ secrets.SESSION_SECRET || 'prisma_bbva_secreto_produccion_oci_2026_seguro_987654321' }}
+          COOKIE_SECURE=false
+          EOF
+
+      # Empaquetar carpeta web junto con el .env generado
+      - name: Package web directory and .env
+        run: tar -czf web_bundle.tar.gz .env web/
+
+      # Copiar paquete al servidor OCI
+      - name: Upload web bundle to OCI
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          port: 22
+          source: "web_bundle.tar.gz"
+          target: "/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA"
+
+      # Configurar servidor, instalar dependencias y reiniciar servicio
+      - name: Configure server and restart service on OCI
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            APP_DIR="/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA"
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+
+            # Crear memoria swap de 2 GB si no existe para proteger 1 GB de RAM
+            if [ ! -f /swapfile ]; then
+              sudo fallocate -l 2G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+            fi
+
+            # Instalar python3-venv si no esta instalado
+            if ! dpkg -s python3-venv >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y python3-venv python3-pip curl
+            fi
+
+            # Abrir puerto 8000 en firewall interno de Ubuntu si no esta abierto
+            sudo iptables -C INPUT -p tcp --dport 8000 -j ACCEPT 2>/dev/null || \
+              sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8000 -j ACCEPT
+
+            # Extraer nueva version de web y archivo .env
+            rm -rf web
+            tar -xzf web_bundle.tar.gz
+            rm -f web_bundle.tar.gz
+            chmod 600 .env
+
+            # Crear entorno virtual ligero si no existe
+            if [ ! -d ".venv" ]; then
+              python3 -m venv .venv
+            fi
+
+            # Instalar versiones exactas de web probadas en environment.yml
+            ./.venv/bin/pip install --upgrade pip
+            ./.venv/bin/pip install --no-cache-dir \
+              "fastapi==0.135.1" \
+              "uvicorn[standard]==0.41.0" \
+              "pydantic[email]==2.12.5" \
+              "email-validator==2.3.0" \
+              "itsdangerous==2.2.0" \
+              "python-dotenv==1.2.2" \
+              "boto3==1.42.63" \
+              "pyarrow==23.0.1" \
+              "numpy==2.4.2" \
+              "openai==2.26.0" \
+              "langchain==1.2.12" \
+              "langchain-core==1.2.18" \
+              "langchain-openai==1.1.11" \
+              "langgraph==1.1.2"
+
+            # Crear o actualizar servicio systemd automaticamente
+            sudo tee /etc/systemd/system/prisma-web.service > /dev/null << EOF
+            [Unit]
+            Description=BBVA PRISMA Web Application
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=${{ secrets.OCI_USER }}
+            WorkingDirectory=/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA
+            EnvironmentFile=/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA/.env
+            ExecStart=/home/${{ secrets.OCI_USER }}/financialDigitalTwin-BBVA/.venv/bin/uvicorn web.backend.main:app --host 0.0.0.0 --port 8000 --workers 1
+            Restart=always
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            # Recargar systemd y reiniciar servicio de la web
+            sudo systemctl daemon-reload
+            sudo systemctl enable prisma-web
+            sudo systemctl restart prisma-web
+
+            # Esperar hasta 30 segundos a que Uvicorn levante el puerto 8000
+            for i in $(seq 1 15); do
+              if curl -fsS http://127.0.0.1:8000/login.html > /dev/null 2>&1; then
+                echo "Servidor levantado correctamente en el intento $i"
+                exit 0
+              fi
+              sleep 2
+            done
+
+            # Mostrar logs exactos de Python si no levanto
+            echo "El servidor no respondio a tiempo. Logs de prisma-web:"
+            sudo journalctl -u prisma-web -n 50 --no-pager
+            exit 1

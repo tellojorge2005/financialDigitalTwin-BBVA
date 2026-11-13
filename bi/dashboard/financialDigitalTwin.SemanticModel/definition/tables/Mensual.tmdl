@@ -1,0 +1,357 @@
+table Mensual
+	lineageTag: 52220e78-99a2-43d0-abaf-b26a795f2004
+
+	column client_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 690cdb76-93d3-4abc-b683-03ec8ff2938f
+		summarizeBy: none
+		sourceColumn: client_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column currency
+		dataType: string
+		lineageTag: 4db7ba24-5f98-4ff0-8ac3-261e466d97ce
+		summarizeBy: none
+		sourceColumn: currency
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: dafea577-d737-47be-9488-2ed376b57544
+		summarizeBy: none
+		sourceColumn: month
+
+		variation Variation
+			isDefault
+			relationship: 88f1f6ea-25d3-45fb-8ca2-91d542276c5a
+			defaultHierarchy: LocalDateTable_8713199a-2f1b-4018-be4c-d9f17681c9f7.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column monthly_transactions
+		dataType: int64
+		formatString: 0
+		lineageTag: 528c529b-7212-4c0d-aee1-fa83ac52d791
+		summarizeBy: sum
+		sourceColumn: monthly_transactions
+
+		annotation SummarizationSetBy = Automatic
+
+	column monthly_income
+		dataType: double
+		lineageTag: 801912de-b3f9-431e-ab6c-b40a29e27068
+		summarizeBy: sum
+		sourceColumn: monthly_income
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column monthly_expenses
+		dataType: double
+		lineageTag: 5d7afb1f-5c6e-4eaf-b4e7-123350ce7175
+		summarizeBy: sum
+		sourceColumn: monthly_expenses
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column monthly_debt_payments
+		dataType: double
+		lineageTag: 97fe94c9-1f2c-410c-8593-3f3d8e16a6cc
+		summarizeBy: sum
+		sourceColumn: monthly_debt_payments
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column transfers_in
+		dataType: double
+		lineageTag: 330779d6-dbd7-444f-90e8-815a0cd16da0
+		summarizeBy: sum
+		sourceColumn: transfers_in
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column transfers_out
+		dataType: double
+		lineageTag: efaedd36-4675-4172-8d8d-3792bc417b7d
+		summarizeBy: sum
+		sourceColumn: transfers_out
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column monthly_net_flow
+		dataType: double
+		lineageTag: af5e6850-8d5b-46a6-9346-1eff1f950b87
+		summarizeBy: sum
+		sourceColumn: monthly_net_flow
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column closing_balance
+		dataType: double
+		lineageTag: d320612e-702a-4387-acc5-3c7add43b0cd
+		summarizeBy: sum
+		sourceColumn: closing_balance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_accounts
+		dataType: int64
+		formatString: 0
+		lineageTag: 3d3f9241-16d6-478a-9b16-6cadcc314643
+		summarizeBy: sum
+		sourceColumn: total_accounts
+
+		annotation SummarizationSetBy = Automatic
+
+	column monthly_savings
+		dataType: double
+		lineageTag: 33d513db-19f3-4364-8f63-fa7e7536c9de
+		summarizeBy: sum
+		sourceColumn: monthly_savings
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column savings_rate
+		dataType: double
+		lineageTag: f4715bf5-500c-4892-bdf4-1582cd86babd
+		summarizeBy: sum
+		sourceColumn: savings_rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column expense_to_income_ratio
+		dataType: double
+		lineageTag: dd9e1662-fa23-4be3-9b17-2fbec52e2f0b
+		summarizeBy: sum
+		sourceColumn: expense_to_income_ratio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column debt_payment_ratio
+		dataType: double
+		lineageTag: 607f257c-12f5-4d8c-85f1-074e88c12bdb
+		summarizeBy: sum
+		sourceColumn: debt_payment_ratio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column outstanding_due
+		dataType: double
+		lineageTag: 1950976b-c984-4928-9bc9-ce0f6ccf707d
+		summarizeBy: sum
+		sourceColumn: outstanding_due
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column max_days_past_due
+		dataType: int64
+		formatString: 0
+		lineageTag: f9cfab4b-7297-492c-9957-0586a19e211c
+		summarizeBy: sum
+		sourceColumn: max_days_past_due
+
+		annotation SummarizationSetBy = Automatic
+
+	column installments_30_days_past_due
+		dataType: int64
+		formatString: 0
+		lineageTag: 7bcf76c3-cbc6-4796-96d8-d0de1672e6ba
+		summarizeBy: sum
+		sourceColumn: installments_30_days_past_due
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_number
+		dataType: int64
+		formatString: 0
+		lineageTag: 0d34b8bb-5f90-4191-badc-4642100d68ed
+		summarizeBy: sum
+		sourceColumn: month_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column history_months
+		dataType: int64
+		formatString: 0
+		lineageTag: dd70e495-6e2c-4780-813c-27d36193189a
+		summarizeBy: sum
+		sourceColumn: history_months
+
+		annotation SummarizationSetBy = Automatic
+
+	column income_lag_1
+		dataType: double
+		lineageTag: ad9241ef-6bb1-47fd-b860-c37a91734c7e
+		summarizeBy: sum
+		sourceColumn: income_lag_1
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column income_lag_3
+		dataType: double
+		lineageTag: 4678eb93-a099-46cb-9788-cec8544c2737
+		summarizeBy: sum
+		sourceColumn: income_lag_3
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column income_mean_3
+		dataType: double
+		lineageTag: 8ea555aa-425a-46e4-aafd-71d7e682f345
+		summarizeBy: sum
+		sourceColumn: income_mean_3
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column income_std_3
+		dataType: double
+		lineageTag: 5765c065-539a-40d2-8b3d-30aae36a3803
+		summarizeBy: sum
+		sourceColumn: income_std_3
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column expenses_mean_3
+		dataType: double
+		lineageTag: 870b01cd-5b5b-4547-93bc-02b3e778ebf5
+		summarizeBy: sum
+		sourceColumn: expenses_mean_3
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column expenses_std_3
+		dataType: double
+		lineageTag: 4322c86e-8815-463c-94cf-4929d715f1b8
+		summarizeBy: sum
+		sourceColumn: expenses_std_3
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column income_cv_3
+		dataType: double
+		lineageTag: a5862b46-614a-4753-b2a2-692b360f1393
+		summarizeBy: sum
+		sourceColumn: income_cv_3
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column income_to_mean_3_ratio
+		dataType: double
+		lineageTag: 7b819841-6444-4a87-ab8f-6eaa555a3033
+		summarizeBy: sum
+		sourceColumn: income_to_mean_3_ratio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column income_change_3
+		dataType: double
+		lineageTag: 0bb35ab3-31a6-43c9-ab4d-35ec81688550
+		summarizeBy: sum
+		sourceColumn: income_change_3
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column negative_balance_months_3
+		dataType: int64
+		formatString: 0
+		lineageTag: feb2f6cd-3a57-410f-9b9e-9ef5031c6304
+		summarizeBy: sum
+		sourceColumn: negative_balance_months_3
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Mensual = m
+		mode: import
+		source =
+				let
+				    BaseUrl = "https://financial-digital-twin-bbva-022950218031-us-east-2-an.s3.us-east-2.amazonaws.com/",
+				    // Cambia solo este Prefijo para cada tabla Gold que quieras cargar:
+				    Prefijo = "data/gold/customer_monthly_summary.parquet/",
+				
+				    // 1. Listar el contenido actual de la carpeta en S3
+				    Documento = Xml.Tables(
+				        Web.Contents(
+				            BaseUrl,
+				            [
+				                Query = [
+				                    #"list-type" = "2",
+				                    prefix = Prefijo
+				                ]
+				            ]
+				        )
+				    ),
+				    Raiz = Documento{0},
+				    Archivos = Record.FieldOrDefault(Raiz, "Contents", #table({"Key"}, {})),
+				
+				    // 2. Filtrar solo los archivos .parquet (ignora _SUCCESS y carpetas)
+				    SoloParquet = Table.SelectRows(
+				        Archivos,
+				        each [Key] <> null and Text.EndsWith(Text.Lower(Text.From([Key])), ".parquet")
+				    ),
+				
+				    // 3. Descargar en memoria cada part-*.parquet y convertirlo en tabla
+				    LeerParquet = (Clave as text) as table =>
+				        Parquet.Document(
+				            Binary.Buffer(
+				                Web.Contents(BaseUrl, [RelativePath = Clave])
+				            )
+				        ),
+				
+				    Tablas = List.Transform(
+				        SoloParquet[Key],
+				        each LeerParquet(Text.From(_))
+				    ),
+				
+				    Resultado = Table.Combine(Tablas)
+				in
+				    Resultado
+
+	annotation PBI_ResultType = Table
+
