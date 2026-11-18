@@ -4,10 +4,10 @@ import unicodedata
 from bi.chat.backend.config import OPENAI_API_KEY, S3_BUCKET
 
 RECHAZO_BI = (
-    "Solo puedo responder consultas sobre las métricas de monitoreo del asistente "
-    "y el comportamiento transaccional agregado del dashboard. "
-    "Por políticas de seguridad no se muestran datos sensibles como CVV, "
-    "números de tarjeta, correos individuales ni credenciales."
+    "Solo puedo responder consultas sobre las métricas agregadas de monitoreo del asistente "
+    "y el comportamiento transaccional por segmentos del dashboard. "
+    "Por políticas de privacidad y gobernanza de BBVA PRISMA no se consultan perfiles "
+    "individuales (ni por nombre, correo o ID) ni datos sensibles como CVV, tarjetas o credenciales."
 )
 
 # Bloquear datos sensibles de tarjetas, PII individual y secretos
@@ -21,11 +21,12 @@ PATRON_SENSIBLE = re.compile(
     re.IGNORECASE,
 )
 
-# Bloquear intentos de inyeccion de prompt o extraccion de reglas internas
+# Bloquear intentos de inyeccion de prompt o consulta de clientes individuales
 PATRON_ATAQUE = re.compile(
     r"ignora.{0,40}(reglas|instrucciones)|"
     r"(revela|muestra|imprime).{0,40}(instrucciones|prompt|configuraci[oó]n|secretos)|"
-    r"(dame|muestra|busca).{0,30}(correo|email|tel[eé]fono|direcci[oó]n).{0,25}(cliente|usuario)",
+    r"(dame|muestra|busca).{0,30}(correo|email|tel[eé]fono|direcci[oó]n).{0,25}(cliente|usuario)|"
+    r"\b(cliente|usuario|id|client_id)\s*#?\s*\d+\b",
     re.IGNORECASE,
 )
 

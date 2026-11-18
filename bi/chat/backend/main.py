@@ -1,6 +1,8 @@
+from contextlib import asynccontextmanager
 import json
 import logging
 import sys
+import threading
 from pathlib import Path
 from typing import Literal
 
@@ -8,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import httpx
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field
 import uvicorn
@@ -35,72 +37,86 @@ logger = logging.getLogger(__name__)
 validar_configuracion_bi()
 
 INSTRUCCIONES_BI = """
-Eres el Asistente Analítico del Dashboard de Monitoreo y Ejecutivo de BBVA PRISMA.
-Tu objetivo es responder preguntas claras, breves y precisas en español sobre:
-1. El Dashboard de Monitoreo del Asistente:
-   - Total de interacciones, conversaciones únicas, tiempo promedio de respuesta (s),
-     porcentaje de errores HTTP, promedio de tokens de entrada y salida, costo promedio
-     por consulta en USD, desglose por resultado (respuesta_generada, conversacion_ocupada,
-     bloqueo_entrada, tiempo_agotado, sesion_invalida), actividad por fecha_local y
-     uso de herramientas (Metas de ahorro, Escenarios, Consulta de historial, Cancelaciones).
-2. El Resumen Ejecutivo / Comportamiento Transaccional de Clientes (tablas Gold):
-   - Total de clientes, promedios y desviación estándar de ingresos de los últimos 3 meses,
-     ratios financieros a 3 meses (ratio de ahorro, gasto/ingreso, deuda/ingreso),
-     variación de ingresos a 3 meses y gastos principales por categoría.
+Eres Prisma BI, el asistente conversacional analítico del Dashboard de Power BI de BBVA PRISMA.
+Conversa en español de forma natural, clara, ejecutiva y directa. No generes gráficas porque el usuario ya tiene el Dashboard de Power BI frente a él; tu función es explicar, cruzar e interpretar las cifras agregadas con precisión.
 
-REGLAS DE SEGURIDAD Y ESTILO:
-- Usa exclusivamente las cifras proporcionadas en el contexto de datos reales.
-- Nunca inventes datos ni reveles información personal individual (correos, teléfonos,
-  números de tarjeta, CVV, NIP, contraseñas o credenciales internas).
-- Si el usuario pregunta por un componente del dashboard, elige en `componente_visual`
-  el gráfico que mejor acompañe tu respuesta:
-  - "resultados": cuando hablen de resultados, errores, bloqueos o estado de interacciones.
-  - "fechas": cuando hablen de volumen de interacciones por día o fecha_local.
-  - "tiempos": cuando hablen de latencia, duración o tiempo promedio de respuesta.
-  - "herramientas": cuando hablen de metas de ahorro, escenarios, historial o cancelaciones.
-  - "gold_3m": cuando hablen de ingresos, promedios de 3 meses, desviación estándar, ratios o deuda de clientes.
-  - "categorias": cuando hablen de categorías de gasto o comportamiento de compras.
-  - "ninguno": para saludos breves o preguntas que no requieran gráfica.
+FORMATO DE RESPUESTA (MARKDOWN):
+- Usa formato Markdown limpio para facilitar la lectura: **negritas** para cifras clave, listas con viñetas (`-`) para desgloses y tablas Markdown (`| Segmento | Valor |`) cuando compares segmentos, fechas, herramientas o categorías.
+- Sé conciso y conversacional: responde directamente a lo que te preguntan sin recitar todo el reporte si no te lo piden.
+
+DATOS QUE DOMINAS DEL DASHBOARD:
+1. Página "Monitoreo del asistente" (tabla Interacciones):
+   - KPIs: Total interacciones, conversaciones únicas, tiempo promedio/mínimo/máximo de respuesta (s), errores HTTP y porcentaje de errores, promedio y total de tokens de entrada y salida, costo promedio por consulta en USD y costo acumulado en USD.
+   - Desgloses: interacciones por `resultado` (respuesta_generada, bloqueo_entrada, respuesta_restringida, conversacion_ocupada, tiempo_agotado, sesion_invalida), uso de herramientas (`usos_meta`, `usos_escenario`, `usos_historial`, `usos_cancelacion`, `usos_finanzas`), actividad por `fecha_local` y por `hora_local`.
+2. Página "Resumen financiero" (tablas Clientes y Categorías en Gold, 100% agregadas):
+   - KPIs 3M (medidas DAX): Ingreso Promedio 3M, Desviación Estándar Ingresos 3M (estabilidad), Ratio de Ahorro 3M, Ratio Deuda/Ingreso 3M, Ratio Gasto/Ingreso 3M, Variación de Ingresos 3M (%) y Ticket Promedio por Transacción.
+   - Segmentación de cartera por `financial_health_status` (conteo, % de clientes, ingreso promedio 3M, gasto promedio 3M, ratio de ahorro promedio, deuda promedio y transacciones promedio por cada segmento de salud financiera).
+   - Distribución demográfica y crediticia agregada: clientes por rango de `credit_score` y por rango de edad.
+   - Top gastos por categoría (`category`: monto total MXN, porcentaje del gasto y número de transacciones).
+   - Alertas agregadas de cartera (total de clientes con pagos vencidos, saldo negativo, déficit presupuestario 3M y predicciones de ingreso aprobadas por XGBoost).
+
+REGLAS DE SEGURIDAD Y GOBERNANZA (GUARDRAILS):
+- Usa exclusivamente las cifras reales provistas en el contexto; jamás inventes números.
+- Por políticas de privacidad y gobernanza de BBVA PRISMA, solo analizas métricas agregadas y segmentos poblacionales. Si preguntan por un cliente específico (por nombre, correo o ID individual), explica amablemente que el módulo de BI opera únicamente sobre datos agregados y segmentos para proteger la privacidad de los clientes.
 """.strip()
+
+
+class MensajeHistorialBI(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    autor: Literal["user", "assistant"]
+    texto: str = Field(min_length=1, max_length=4000)
 
 
 class SolicitudChatBI(BaseModel):
     model_config = ConfigDict(extra="forbid")
     pregunta: str = Field(min_length=1, max_length=1500)
+    historial: list[MensajeHistorialBI] = Field(default_factory=list, max_length=10)
 
 
-class RespuestaEstructuradaBI(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    respuesta: str
-    componente_visual: Literal[
-        "resultados",
-        "fechas",
-        "tiempos",
-        "herramientas",
-        "gold_3m",
-        "categorias",
-        "ninguno",
-    ]
+def contenido_texto(mensaje):
+    if isinstance(mensaje.content, str):
+        return mensaje.content
+    return "".join(
+        b.get("text", "")
+        for b in mensaje.content
+        if isinstance(b, dict) and b.get("type") == "text"
+    )
 
 
-# Crear modelo con cliente HTTP estandar y respaldo para certificado local en Windows
+# Crear modelo optimizado sin sobrecarga de structured_output y con pool HTTP persistente
 def crear_modelo_bi(verificar_ssl=True):
-    cliente_http = httpx.Client(verify=verificar_ssl, timeout=20.0)
+    cliente_http = httpx.Client(verify=verificar_ssl, timeout=12.0)
     return ChatOpenAI(
         model=OPENAI_MODEL,
         api_key=OPENAI_API_KEY,
         temperature=0,
-        max_tokens=700,
-        timeout=20,
+        max_tokens=650,
+        timeout=12,
+        max_retries=0,
         http_client=cliente_http,
-    ).with_structured_output(RespuestaEstructuradaBI, method="json_schema")
+    )
 
 
 modelo_bi = crear_modelo_bi(verificar_ssl=True)
 modelo_bi_sin_ssl = crear_modelo_bi(verificar_ssl=False)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Precargar datos de S3 en segundo plano al iniciar para que la primera consulta sea instantánea
+    threading.Thread(
+        target=obtener_contexto_bi,
+        kwargs={"forzar": True},
+        daemon=True,
+    ).start()
+    yield
+
+
 app = FastAPI(
-    title="BBVA PRISMA - Asistente Dashboard BI", docs_url=None, redoc_url=None
+    title="BBVA PRISMA - Asistente Dashboard BI",
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
 )
 
 app.add_middleware(
@@ -132,42 +148,39 @@ def obtener_resumen(refresh: bool = False):
     }
 
 
-# Responder preguntas acerca de los datos del dashboard con soporte visual
+# Responder preguntas conversacionales acerca de las interacciones y segmentos del dashboard
 @app.post("/api/bi/chat")
 def consultar_dashboard(body: SolicitudChatBI):
     pregunta = body.pregunta.strip()
     if entrada_restringida_bi(pregunta):
-        return {"respuesta": RECHAZO_BI, "visual": None}
+        return {"respuesta": RECHAZO_BI}
 
     contexto = obtener_contexto_bi(forzar=False)
-    datos_prompt = {
+    datos_contexto = {
         "monitoreo_asistente": contexto["monitoreo"],
-        "comportamiento_clientes_gold": contexto["gold"],
+        "resumen_financiero_gold": contexto["gold"],
     }
 
-    salida = invocar_modelo_bi(
-        [
-            SystemMessage(content=INSTRUCCIONES_BI),
-            HumanMessage(
-                content=json.dumps(
-                    {
-                        "datos_actuales_dashboard": datos_prompt,
-                        "pregunta_usuario": pregunta,
-                    },
-                    ensure_ascii=False,
-                )
-            ),
-        ]
-    )
+    mensajes = [
+        SystemMessage(content=INSTRUCCIONES_BI),
+        SystemMessage(
+            content="DATOS AGREGADOS ACTUALES DEL DASHBOARD EN S3 (JSON):\n"
+            + json.dumps(datos_contexto, ensure_ascii=False)
+        ),
+    ]
 
-    texto = proteger_respuesta_bi(salida.respuesta if salida else "")
-    clave_visual = salida.componente_visual if salida else "ninguno"
-    visual = contexto["visuales"].get(clave_visual) if texto != RECHAZO_BI else None
+    for m in body.historial[-8:]:
+        if entrada_restringida_bi(m.texto):
+            continue
+        clase = HumanMessage if m.autor == "user" else AIMessage
+        mensajes.append(clase(content=m.texto))
 
-    return {
-        "respuesta": texto,
-        "visual": visual,
-    }
+    mensajes.append(HumanMessage(content=pregunta))
+
+    salida = invocar_modelo_bi(mensajes)
+    texto = proteger_respuesta_bi(contenido_texto(salida) if salida else "")
+
+    return {"respuesta": texto}
 
 
 app.mount("/", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend_bi")
