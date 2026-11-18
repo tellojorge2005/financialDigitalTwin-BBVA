@@ -95,6 +95,11 @@ export function mostrarPanorama(datos = {}) {
   mostrarProyeccion(
     mismoCorte ? mesesValidos(escenarios, true).slice(0, 3) : [],
   );
+  mostrarRecomendaciones(
+    datos.client_monitoring || {},
+    Array.isArray(datos.category_breakdown) ? datos.category_breakdown : [],
+    Array.isArray(datos.recommendations) ? datos.recommendations : [],
+  );
 }
 
 function mostrarResumen(meses) {
@@ -226,5 +231,104 @@ function mostrarProyeccion(meses) {
     );
     card.append(footer);
     lista.append(card);
+  }
+}
+
+function mostrarRecomendaciones(monitoreo, categorias, recomendaciones) {
+  const listaRec = buscar("[data-rec-list]");
+  const listaCat = buscar("[data-rec-categories]");
+  if (!listaRec || !listaCat) return;
+
+  listaRec.replaceChildren();
+  listaCat.replaceChildren();
+
+  const potencial = numero(monitoreo.potencial_ahorro_mensual);
+  const tasa = numero(monitoreo.tasa_ahorro_pct);
+  const cobertura = numero(monitoreo.cobertura_meses);
+
+  texto(
+    "[data-rec-savings]",
+    potencial !== null ? `${importe(potencial)} / mes` : "—",
+  );
+  texto(
+    "[data-rec-status]",
+    typeof monitoreo.estado_salud === "string" && monitoreo.estado_salud
+      ? `Monitoreo activo · ${monitoreo.estado_salud}`
+      : "Monitoreo automático protegiendo tus gastos esenciales",
+  );
+  texto("[data-rec-rate]", tasa !== null ? `${tasa.toFixed(1)}%` : "—");
+  texto(
+    "[data-rec-coverage]",
+    cobertura !== null ? `${cobertura.toFixed(1)} meses` : "—",
+  );
+
+  buscar("[data-rec-empty]").hidden = recomendaciones.length > 0;
+
+  for (const rec of recomendaciones) {
+    if (!rec || typeof rec !== "object") continue;
+    const card = elemento("article", "reccard");
+    const top = elemento("div", "rectop");
+    top.append(
+      elemento("span", "recbadge", rec.encabezado || "PRISMA TE RECOMIENDA"),
+    );
+    const ahorro = numero(rec.ahorro_mensual_estimado);
+    if (ahorro !== null && ahorro > 0) {
+      top.append(elemento("span", "recsaving", `Ahorro ~${importe(ahorro)}`));
+    }
+    card.append(
+      top,
+      elemento("strong", "rectitle", String(rec.titulo || "")),
+      elemento("p", "recdesc", String(rec.detalle || "")),
+    );
+    if (
+      typeof rec.pregunta_sugerida === "string" &&
+      rec.pregunta_sugerida.trim()
+    ) {
+      const btn = elemento("button", "recaction", "Planear con Prisma ↗");
+      btn.type = "button";
+      btn.addEventListener("click", () => {
+        const input = buscar("[data-input]");
+        if (input && !input.disabled) {
+          input.value = rec.pregunta_sugerida.trim();
+          input.dispatchEvent(new Event("input"));
+          input.focus();
+        }
+      });
+      card.append(btn);
+    }
+    listaRec.append(card);
+  }
+
+  const maxCat = Math.max(
+    1,
+    ...categorias.map((c) => numero(c?.promedio_mensual) || 0),
+  );
+  for (const cat of categorias) {
+    if (!cat || typeof cat !== "object") continue;
+    const prom = numero(cat.promedio_mensual) || 0;
+    const esEsencial = cat.tipo === "esencial";
+    const row = elemento("div", "catrow");
+    const head = elemento("div", "cathead");
+    const nombreWrap = elemento("span", "catname", String(cat.categoria || ""));
+    const tag = elemento(
+      "span",
+      `cattag ${esEsencial ? "essential" : "flexible"}`,
+      esEsencial
+        ? "Esencial"
+        : cat.tipo === "optimizable"
+          ? "Optimizable"
+          : "Reducible",
+    );
+    nombreWrap.append(tag);
+    head.append(
+      nombreWrap,
+      elemento("strong", "catval", `${importe(prom)}/mes`),
+    );
+    const track = elemento("div", "track");
+    const fill = elemento("div", esEsencial ? "fill" : "fill exp");
+    fill.style.width = `${Math.max(4, Math.round((prom / maxCat) * 100))}%`;
+    track.append(fill);
+    row.append(head, track);
+    listaCat.append(row);
   }
 }

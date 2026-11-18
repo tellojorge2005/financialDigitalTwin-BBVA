@@ -37,7 +37,13 @@ function cambiarEstado(valor) {
 
 function actualizarPanorama(datos) {
   // Una respuesta de chat sin series no borra el panorama ya recibido
-  for (const campo of ["monthly_history", "cashflow_scenarios"]) {
+  for (const campo of [
+    "monthly_history",
+    "cashflow_scenarios",
+    "client_monitoring",
+    "category_breakdown",
+    "recommendations",
+  ]) {
     if (Object.hasOwn(datos, campo)) panorama[campo] = datos[campo];
   }
   mostrarPanorama(panorama);

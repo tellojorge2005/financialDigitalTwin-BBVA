@@ -393,6 +393,90 @@ def consultar_proyecciones(cliente_id):
     return sorted(filas, key=lambda f: f["horizon_months"])
 
 
+@cache_cliente("recomendaciones")
+def consultar_monitoreo_y_recomendaciones(cliente_id):
+    from web.backend.assistant import (
+        clasificar_tipo_categoria,
+        generar_recomendaciones_cliente,
+    )
+
+    perfil = consultar_cliente(cliente_id)
+    meses = meses_completos(perfil, consultar_historial(cliente_id))[-3:]
+    num_meses = len(meses) or 1
+
+    categorias_raw = {}
+    try:
+        for f in consultar_categorias(cliente_id):
+            monto = f.get("total_expenses")
+            if (
+                f.get("currency") == "MXN"
+                and isinstance(monto, (int, float))
+                and math.isfinite(monto)
+                and monto > 0
+            ):
+                cat = str(f.get("category") or "Otros").strip().capitalize()
+                categorias_raw[cat] = categorias_raw.get(cat, 0.0) + float(monto)
+    except ErrorDatos:
+        categorias_raw = {}
+
+    total_cat = sum(categorias_raw.values()) or 1.0
+    desglose_categorias = []
+    gasto_discrecional_mensual = 0.0
+    gasto_optimizable_mensual = 0.0
+
+    for cat, total in sorted(
+        categorias_raw.items(), key=lambda x: x[1], reverse=True
+    ):
+        tipo = clasificar_tipo_categoria(cat)
+        prom_mensual = round(total / num_meses, 2)
+        if tipo == "discrecional":
+            gasto_discrecional_mensual += prom_mensual
+        elif tipo == "optimizable":
+            gasto_optimizable_mensual += prom_mensual
+
+        desglose_categorias.append(
+            {
+                "categoria": cat,
+                "total_periodo": round(total, 2),
+                "promedio_mensual": prom_mensual,
+                "porcentaje": round((total / total_cat) * 100, 1),
+                "tipo": tipo,
+            }
+        )
+
+    potencial_ahorro = round(
+        gasto_discrecional_mensual * 0.20 + gasto_optimizable_mensual * 0.10, 2
+    )
+    tasa_ahorro = float(perfil.get("savings_rate_3m") or 0.0) * 100.0
+    cobertura = float(perfil.get("expense_coverage_months") or 0.0)
+    salud_raw = str(perfil.get("financial_health_status") or "margen_positivo")
+    etiquetas_salud = {
+        "margen_positivo": "Saludable · Con margen de ahorro",
+        "sin_margen": "Ajustado · Oportunidad de optimizar gastos",
+        "requiere_atencion": "Atención prioritaria · Revisar compromisos",
+        "sin_ingresos": "Sin ingresos recientes registrados",
+        "historial_insuficiente": "En observación · Historial en construcción",
+    }
+
+    monitoreo_cliente = {
+        "estado_salud": etiquetas_salud.get(salud_raw, "Monitoreo activo"),
+        "tasa_ahorro_pct": round(tasa_ahorro, 1),
+        "cobertura_meses": round(cobertura, 1),
+        "gasto_discrecional_mensual": round(gasto_discrecional_mensual, 2),
+        "potencial_ahorro_mensual": potencial_ahorro,
+    }
+
+    recomendaciones = generar_recomendaciones_cliente(
+        monitoreo_cliente, desglose_categorias
+    )
+
+    return {
+        "client_monitoring": monitoreo_cliente,
+        "category_breakdown": desglose_categorias,
+        "recommendations": recomendaciones,
+    }
+
+
 def panorama_publico(cliente_id, perfil):
     meses = meses_completos(perfil, consultar_historial(cliente_id))[-3:]
     try:
@@ -401,6 +485,20 @@ def panorama_publico(cliente_id, perfil):
         # Un escenario no disponible no impide consultar el resumen y el chat
         logger.warning("Proyección temporalmente no disponible.")
         escenarios = []
+
+    try:
+        extras = consultar_monitoreo_y_recomendaciones(cliente_id)
+    except Exception as exc:
+        logger.warning(
+            "Monitoreo de recomendaciones temporalmente no disponible: %s",
+            type(exc).__name__,
+        )
+        extras = {
+            "client_monitoring": {},
+            "category_breakdown": [],
+            "recommendations": [],
+        }
+
     campos = [
         "feature_month",
         "prediction_month",
@@ -419,6 +517,7 @@ def panorama_publico(cliente_id, perfil):
             for fila in meses
         ],
         "cashflow_scenarios": [{c: f.get(c) for c in campos} for f in escenarios],
+        **extras,
     }
 
 

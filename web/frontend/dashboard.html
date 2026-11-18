@@ -109,6 +109,18 @@
             >
               Proyección
             </button>
+            <button
+              type="button"
+              class="tab"
+              data-tab="recomendaciones"
+              role="tab"
+              aria-selected="false"
+              aria-controls="pr3-recomendaciones"
+              id="tab-recomendaciones"
+              tabindex="-1"
+            >
+              Recomendaciones
+            </button>
           </div>
 
           <p class="feedback error" data-session-error role="alert"></p>
@@ -211,6 +223,58 @@
                 cantidades garantizadas.
               </p>
             </section>
+
+            <section
+              id="pr3-recomendaciones"
+              data-pane="recomendaciones"
+              role="tabpanel"
+              aria-labelledby="tab-recomendaciones"
+              hidden
+            >
+              <div class="bigcard">
+                <span class="kicker"
+                  >Potencial de ahorro estimado · mensual</span
+                ><strong data-rec-savings>—</strong
+                ><small data-rec-status
+                  >Monitoreo automático protegiendo tus gastos esenciales</small
+                >
+              </div>
+              <div class="twocards">
+                <div class="metric">
+                  <span>Tasa de ahorro actual</span
+                  ><strong data-rec-rate>—</strong
+                  ><small>Promedio últimos 3 meses</small>
+                </div>
+                <div class="metric">
+                  <span>Cobertura de saldo</span
+                  ><strong data-rec-coverage>—</strong
+                  ><small>Meses de gastos cubiertos</small>
+                </div>
+              </div>
+              <div class="subsection">
+                <span>Diagnóstico inteligente de Prisma</span>
+              </div>
+              <div data-rec-list></div>
+              <p class="empty-state" data-rec-empty role="status" hidden>
+                Aún no hay recomendaciones disponibles para tu perfil.
+              </p>
+              <div class="whitecard">
+                <div class="cardtitle">Monitoreo de gastos por categoría</div>
+                <div class="cardcaption">
+                  Promedio mensual · Priorizamos recortar en rubros no
+                  esenciales
+                </div>
+                <div class="legend">
+                  <span><i class="square exp"></i>Reducible / Optimizable</span
+                  ><span><i class="square inc"></i>Esencial protegido</span>
+                </div>
+                <div data-rec-categories></div>
+              </div>
+              <p class="quiet">
+                Prisma protege tus gastos esenciales (Vivienda, Alimentación y
+                Salud) y calcula tu potencial de ahorro sobre rubros flexibles.
+              </p>
+            </section>
           </div>
         </aside>
 
@@ -252,9 +316,9 @@
               <button
                 class="chip"
                 type="button"
-                data-question="¿Cuánto gasté estos meses?"
+                data-question="¿En qué categorías me recomiendas reducir gastos sin afectar lo esencial?"
               >
-                Mis gastos ↗
+                ¿Dónde puedo ahorrar? ↗
               </button>
               <button
                 class="chip"

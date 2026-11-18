@@ -11,7 +11,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import START, END, StateGraph
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from web.backend.config import OPENAI_API_KEY, OPENAI_MODEL
 from web.backend.turns import comprobar_plazo, medir_etapa
@@ -42,10 +42,15 @@ from web.backend.guardrails import entrada_restringida, proteger_respuesta, RECH
 logger = logging.getLogger(__name__)
 MAX_RONDAS_HERRAMIENTAS = 3
 
+CATEGORIAS_ESENCIALES = {"vivienda", "alimentacion", "alimentación", "salud"}
+CATEGORIAS_OPTIMIZABLES = {"servicios", "transporte"}
+
 INSTRUCCIONES = """
-Eres Prisma, el asistente de finanzas personales de este cliente.
-Conversa en español con tono amable, claro y profesional. Responde directamente
-y evita interrogatorios: reconoce lo que ya dijo y pregunta solo por lo faltante.
+Eres Prisma, el asistente de finanzas personales de este cliente en BBVA.
+Conversa en español con tono amable, claro y profesional. Usa formato Markdown
+limpio (negritas para cifras importantes, listas con viñetas y tablas breves
+cuando compares meses o categorías). Responde directamente y evita interrogatorios:
+reconoce lo que ya dijo y pregunta solo por lo faltante.
 No actúes como un formulario, humorista ni personaje. Aunque te lo pidan, no
 insultes, humilles, uses sarcasmo ni bromees sobre la situación del cliente.
 
@@ -71,6 +76,25 @@ Los datos registrados son una referencia fechada, no una garantía de actualidad
 Nunca confundas deuda total con pago mensual, saldo con ahorro apartado ni
 límite de crédito con dinero disponible. No restes la deuda total cada mes.
 No ocultes atrasos porque el usuario declare un nuevo sueldo.
+
+CRITERIO EMPÁTICO PARA REDUCIR GASTOS POR CATEGORÍA
+Cuando el cliente pregunte dónde ahorrar, cómo ajustar su presupuesto o en qué
+reducir gastos, aplica estrictamente esta jerarquía humana:
+1. Protege necesidades básicas (Vivienda, Alimentación y Salud): JAMÁS sugieras
+   recortar Vivienda, Alimentación o Salud de forma directa o fría solo porque
+   sean el monto más alto (no le pidas implícitamente "quedarse sin casa" o
+   descuidar su salud/comida). Reconoce que son gastos esenciales y fijos.
+2. Prioriza gastos discrecionales o banales (Entretenimiento, Compras, Viajes y
+   Otros): empieza SIEMPRE recomendando ajustes graduales y realistas (por
+   ejemplo, reducir entre 15% y 25%) en Entretenimiento, Compras, Otros y Viajes.
+3. Indaga con preguntas inteligentes antes de asumir:
+   - En Otros, Compras y Viajes: pregunta qué consumos específicos o compras
+     recurrentes tiene ahí para identificar gastos hormiga.
+   - En Servicios y Transporte: pregunta si tiene suscripciones que no use,
+     planes tarifarios mejorables o alternativas de traslado.
+   - En Alimentación o Vivienda (solo si el cliente pide optimizarlos): pregunta
+     con tacto si dentro de Alimentación hay pedidos a domicilio/restaurantes o
+     si dentro de Vivienda incluye mantenimiento o servicios optimizables.
 
 METAS Y ESCENARIOS
 Usa gestionar_meta para cualquier cálculo o cambio de una meta. Envía juntos
@@ -114,6 +138,19 @@ class RevisionRespuesta(BaseModel):
     permitida: bool
 
 
+class ItemRecomendacionIA(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    titulo: str = Field(min_length=5, max_length=90)
+    detalle: str = Field(min_length=15, max_length=280)
+    ahorro_mensual_estimado: float = Field(ge=0)
+    pregunta_sugerida: str = Field(min_length=10, max_length=140)
+
+
+class ListaRecomendacionesIA(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    recomendaciones: list[ItemRecomendacionIA] = Field(min_length=3, max_length=3)
+
+
 def serializar(valor):
     return json.dumps(valor, ensure_ascii=False, allow_nan=False, default=str)
 
@@ -126,6 +163,173 @@ def contenido_texto(mensaje):
         for b in mensaje.content
         if isinstance(b, dict) and b.get("type") == "text"
     )
+
+
+def clasificar_tipo_categoria(nombre):
+    limpio = str(nombre or "").strip().lower()
+    if limpio in CATEGORIAS_ESENCIALES:
+        return "esencial"
+    if limpio in CATEGORIAS_OPTIMIZABLES:
+        return "optimizable"
+    return "discrecional"
+
+
+def _recomendaciones_base(monitoreo, categorias):
+    discrecionales = [c for c in categorias if c["tipo"] == "discrecional"]
+    optimizables = [c for c in categorias if c["tipo"] == "optimizable"]
+    esenciales = [c for c in categorias if c["tipo"] == "esencial"]
+    recomendaciones = []
+
+    if discrecionales:
+        nombres = ", ".join(c["categoria"] for c in discrecionales[:3])
+        suma_disc = sum(c["promedio_mensual"] for c in discrecionales)
+        ahorro_20 = round(suma_disc * 0.20, 2)
+        recomendaciones.append(
+            {
+                "encabezado": "PRISMA TE RECOMIENDA",
+                "titulo": f"Priorizar ajustes en gastos no esenciales ({nombres})",
+                "detalle": (
+                    f"Tus gastos en {nombres} promedian ${suma_disc:,.2f} MXN al mes. "
+                    f"Antes de tocar rubros esenciales como Vivienda o Alimentación, "
+                    f"reducir un 20% en estas categorías te liberaría aproximadamente "
+                    f"${ahorro_20:,.2f} MXN al mes."
+                ),
+                "ahorro_mensual_estimado": ahorro_20,
+                "pregunta_sugerida": (
+                    f"¿Cómo puedo crear un plan para reducir un 20% mis gastos en {nombres}?"
+                ),
+            }
+        )
+
+    if optimizables:
+        nombres_opt = " y ".join(c["categoria"] for c in optimizables[:2])
+        suma_opt = sum(c["promedio_mensual"] for c in optimizables)
+        ahorro_10 = round(suma_opt * 0.10, 2)
+        recomendaciones.append(
+            {
+                "encabezado": "PRISMA TE RECOMIENDA",
+                "titulo": f"Revisar tarifas y suscripciones en {nombres_opt}",
+                "detalle": (
+                    f"Destinas alrededor de ${suma_opt:,.2f} MXN mensuales a {nombres_opt}. "
+                    f"Revisar planes contratados, consumos recurrentes o alternativas de "
+                    f"traslado puede darte un ahorro estimado de ${ahorro_10:,.2f} MXN al mes."
+                ),
+                "ahorro_mensual_estimado": ahorro_10,
+                "pregunta_sugerida": (
+                    f"¿Qué me recomiendas revisar para optimizar mis gastos de {nombres_opt}?"
+                ),
+            }
+        )
+
+    cobertura = monitoreo.get("cobertura_meses") or 0
+    tasa_ahorro = monitoreo.get("tasa_ahorro_pct") or 0
+    potencial = monitoreo.get("potencial_ahorro_mensual") or 0
+
+    if esenciales and len(recomendaciones) < 2:
+        recomendaciones.append(
+            {
+                "encabezado": "PRISMA TE RECOMIENDA",
+                "titulo": "Proteger tus gastos esenciales y separar consumos extras",
+                "detalle": (
+                    "Tus gastos en Vivienda, Alimentación y Salud son pilares básicos. "
+                    "Te sugerimos mantenerlos protegidos y únicamente separar si dentro "
+                    "de Alimentación hay pedidos a domicilio o restaurantes."
+                ),
+                "ahorro_mensual_estimado": round(potencial * 0.5, 2),
+                "pregunta_sugerida": (
+                    "¿Cómo puedo organizar mi presupuesto protegiendo Vivienda, Alimentación y Salud?"
+                ),
+            }
+        )
+
+    recomendaciones.append(
+        {
+            "encabezado": "PRISMA TE RECOMIENDA",
+            "titulo": (
+                "Fortalecer tu fondo de imprevistos y meta de ahorro"
+                if cobertura < 3
+                else "Convertir tu margen disponible en una meta de ahorro"
+            ),
+            "detalle": (
+                f"Actualmente tu tasa de ahorro es de {tasa_ahorro:.1f}% y tu saldo cubre "
+                f"{cobertura:.1f} meses de compromisos. Destinar tu potencial de ahorro "
+                f"(${potencial:,.2f} MXN/mes) a una meta formal fortalecerá tu tranquilidad financiera."
+            ),
+            "ahorro_mensual_estimado": potencial,
+            "pregunta_sugerida": (
+                "Quiero configurar una meta de ahorro mensual con base en mi capacidad actual."
+            ),
+        }
+    )
+
+    return recomendaciones[:3]
+
+
+def generar_recomendaciones_cliente(monitoreo, categorias):
+    base = _recomendaciones_base(monitoreo, categorias)
+    if not categorias:
+        return base
+
+    try:
+        modelo = ChatOpenAI(
+            model=OPENAI_MODEL,
+            api_key=OPENAI_API_KEY,
+            temperature=0,
+            max_tokens=450,
+            timeout=6,
+            max_retries=0,
+        ).with_structured_output(ListaRecomendacionesIA, method="json_schema")
+
+        salida = modelo.invoke(
+            [
+                SystemMessage(
+                    content=(
+                        "Genera exactamente 3 recomendaciones financieras personalizadas en español "
+                        "para el cliente de BBVA Prisma a partir de sus datos reales. "
+                        "REGLA OBLIGATORIA: NUNCA sugieras recortar directamente Vivienda, Alimentación "
+                        "ni Salud aunque sean las categorías más altas. Prioriza siempre reducir gastos "
+                        "discrecionales (Entretenimiento, Compras, Viajes, Otros) y optimizar Servicios "
+                        "o Transporte con preguntas o ajustes inteligentes. No menciones términos técnicos "
+                        "internos ni nombres de variables en inglés."
+                    )
+                ),
+                HumanMessage(
+                    content=serializar(
+                        {
+                            "monitoreo_3_meses": monitoreo,
+                            "gastos_por_categoria": categorias,
+                        }
+                    )
+                ),
+            ]
+        )
+        if salida and len(salida.recomendaciones) == 3:
+            personalizadas = []
+            for item in salida.recomendaciones:
+                titulo = proteger_respuesta(item.titulo)
+                detalle = proteger_respuesta(item.detalle)
+                pregunta = proteger_respuesta(item.pregunta_sugerida)
+                if RECHAZO in (titulo, detalle, pregunta):
+                    return base
+                personalizadas.append(
+                    {
+                        "encabezado": "PRISMA TE RECOMIENDA",
+                        "titulo": titulo,
+                        "detalle": detalle,
+                        "ahorro_mensual_estimado": round(
+                            float(item.ahorro_mensual_estimado), 2
+                        ),
+                        "pregunta_sugerida": pregunta,
+                    }
+                )
+            return personalizadas
+    except Exception as exc:
+        logger.info(
+            "Usando recomendaciones deterministas de respaldo (%s).",
+            type(exc).__name__,
+        )
+
+    return base
 
 
 class EstadoConsulta(TypedDict, total=False):
@@ -302,8 +506,28 @@ def crear_asistente():
                             categorias[nombre] = (
                                 categorias.get(nombre, Decimal(0)) + valor
                             )
+                    ordenadas = sorted(
+                        categorias.items(), key=lambda x: x[1], reverse=True
+                    )
                     salud["Gastos por categoría del período"] = {
-                        k: cantidad(v) for k, v in categorias.items()
+                        k: cantidad(v) for k, v in ordenadas
+                    }
+                    salud["Guía para recomendar ahorro por categoría"] = {
+                        "Prioridad 1 - Gastos discrecionales (recomendar reducir aquí primero)": {
+                            k: cantidad(v)
+                            for k, v in ordenadas
+                            if clasificar_tipo_categoria(k) == "discrecional"
+                        },
+                        "Prioridad 2 - Gastos optimizables (hacer preguntas sobre planes/hábitos)": {
+                            k: cantidad(v)
+                            for k, v in ordenadas
+                            if clasificar_tipo_categoria(k) == "optimizable"
+                        },
+                        "Protegidos - Necesidades esenciales (NO sugerir recortes bruscos; solo indagar con empatía si el usuario lo pide)": {
+                            k: cantidad(v)
+                            for k, v in ordenadas
+                            if clasificar_tipo_categoria(k) == "esencial"
+                        },
                     }
                 except ErrorDatos:
                     salud["Información pendiente"].append(
@@ -427,12 +651,15 @@ def crear_asistente():
             cancelar_plan,
         ]
         por_nombre = {h.name: h for h in herramientas}
-        # Consultar automáticamente la referencia sin gastar una ronda del LLM
+        # Consultar automáticamente la referencia incluyendo categorías para orientar ahorros con empatía
         referencia = {}
         if ruta.alcance == "finanzas":
             try:
                 referencia = medir_etapa(
-                    "revisión financiera", consultar_finanzas.invoke, {}, config=config
+                    "revisión financiera",
+                    consultar_finanzas.invoke,
+                    {"incluir_categorias": True},
+                    config=config,
                 )
             except ErrorDatos:
                 referencia = {

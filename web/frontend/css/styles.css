@@ -195,19 +195,20 @@ body {
   display: flex;
   border-bottom: 1px solid #cfd7e8;
   margin-bottom: 15px;
-  gap: 7px;
+  gap: 4px;
 }
 .pr3 .tab {
   flex: 1;
   min-width: 0;
   background: none;
   border: 0;
-  padding: 11px 6px;
+  padding: 11px 4px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   border-bottom: 3px solid transparent;
   text-align: center;
+  white-space: nowrap;
 }
 .pr3 .tab[aria-selected="true"] {
   color: var(--blue);
@@ -582,6 +583,9 @@ body {
 }
 .pr3 .assistant .bubble {
   border-top-left-radius: 4px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  box-shadow: 0 3px 12px #00139108;
 }
 .pr3 .user .bubble {
   border-top-right-radius: 4px;
@@ -725,6 +729,100 @@ body {
   font-size: 10px;
   margin-top: 14px;
 }
+
+/* Tarjetas de la pestaña Recomendaciones y monitoreo de categorías */
+.pr3 .reccard {
+  background: white;
+  border: 1px solid #cad5fc;
+  border-left: 4px solid var(--blue);
+  border-radius: 14px;
+  padding: 14px 15px;
+  margin-bottom: 11px;
+  box-shadow: 0 4px 14px #00139108;
+}
+.pr3 .rectop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.pr3 .recbadge {
+  background: var(--pale);
+  color: var(--blue);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+.pr3 .recsaving {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--deep);
+}
+.pr3 .rectitle {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 5px;
+}
+.pr3 .recdesc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 10px;
+}
+.pr3 .recaction {
+  background: var(--pale);
+  color: var(--blue);
+  border: 1px solid #cad5fc;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.pr3 .recaction:hover {
+  background: #dfe8ff;
+}
+.pr3 .catrow {
+  margin-top: 10px;
+}
+.pr3 .cathead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+}
+.pr3 .catname {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.pr3 .cattag {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.pr3 .cattag.essential {
+  background: var(--pale);
+  color: var(--blue);
+}
+.pr3 .cattag.flexible {
+  background: #e6f6fd;
+  color: #095c8a;
+}
+.pr3 .catval {
+  font-size: 11px;
+  color: var(--blue);
+}
+
 @media (max-width: 850px) {
   .pr3 .workspace {
     grid-template-columns: minmax(205px, 38fr) minmax(0, 62fr);
@@ -945,7 +1043,7 @@ body {
   }
 }
 
-/* Presentar el Markdown del asistente dentro de la burbuja existente */
+/* Markdown con identidad corporativa azul BBVA */
 .pr3 .bubble.markdown {
   white-space: normal;
   min-width: 0;
@@ -957,14 +1055,16 @@ body {
   margin-bottom: 0;
 }
 .pr3 .markdown strong {
+  color: var(--deep);
   font-weight: 700;
 }
 .pr3 .markdown h3,
 .pr3 .markdown h4 {
-  font-size: 1.08em;
+  font-size: 1.05em;
+  font-weight: 800;
   line-height: 1.4;
   margin: 0.9em 0 0.4em;
-  color: inherit;
+  color: var(--blue);
 }
 .pr3 .markdown > :first-child {
   margin-top: 0;
@@ -978,32 +1078,40 @@ body {
   padding-left: 1.6em;
 }
 .pr3 .markdown li {
-  margin: 0.25em 0;
+  margin: 0.3em 0;
+}
+.pr3 .markdown li::marker {
+  color: var(--blue);
 }
 .pr3 .markdown blockquote {
   margin: 0.7em 0;
-  padding-left: 12px;
-  border-left: 3px solid var(--blue);
-  color: var(--muted);
+  padding: 6px 12px;
+  border-left: 3px solid var(--cyan);
+  background: var(--pale);
+  border-radius: 0 8px 8px 0;
+  color: var(--ink);
 }
 .pr3 .markdown code {
   font-family: Consolas, monospace;
-  font-size: 0.93em;
-  background: #0013910a;
+  font-size: 0.92em;
+  background: var(--pale);
+  color: var(--blue);
   border-radius: 4px;
-  padding: 1px 4px;
+  padding: 1px 5px;
 }
 .pr3 .markdown pre {
   overflow-x: auto;
   white-space: pre-wrap;
   margin: 0.7em 0;
-  padding: 10px;
-  background: #0013910a;
+  padding: 10px 12px;
+  background: #f0f3fa;
+  border: 1px solid #cad5fc;
   border-radius: 8px;
 }
 .pr3 .markdown pre code {
   padding: 0;
   background: none;
+  color: var(--deep);
 }
 .pr3 .markdown hr {
   border: 0;
@@ -1013,21 +1121,27 @@ body {
 .pr3 .markdown .md-table {
   overflow-x: auto;
   max-width: 100%;
-  margin: 0.7em 0;
+  margin: 0.75em 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 .pr3 .markdown table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 0.95em;
+  font-size: 0.94em;
 }
 .pr3 .markdown th,
 .pr3 .markdown td {
-  border: 1px solid var(--line);
-  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  padding: 7px 10px;
   text-align: left;
   vertical-align: top;
 }
 .pr3 .markdown th {
   font-weight: 700;
-  background: #00139108;
+  background: var(--pale);
+  color: var(--blue);
+}
+.pr3 .markdown tr:last-child td {
+  border-bottom: none;
 }
