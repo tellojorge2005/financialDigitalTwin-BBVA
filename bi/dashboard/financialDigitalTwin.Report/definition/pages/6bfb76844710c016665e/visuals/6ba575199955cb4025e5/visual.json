@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "6ba575199955cb4025e5",
+  "position": {
+    "x": 1506.9176470588234,
+    "y": 135.95294117647057,
+    "z": 4000,
+    "height": 139.76470588235293,
+    "width": 279.52941176470586,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Clientes"
+                    }
+                  },
+                  "Property": "Ticket Promedio"
+                }
+              },
+              "queryRef": "Clientes.Ticket Promedio",
+              "nativeQueryRef": "Ticket Promedio por Transacción",
+              "displayName": "Ticket Promedio por Transacción"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Clientes"
+                  }
+                },
+                "Property": "Ticket Promedio"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

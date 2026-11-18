@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#001391" />
+    <title>Asistente de Datos · Dashboard BBVA PRISMA</title>
+    <style>
+      :root {
+        --bbva-blue: #001391;
+        --bbva-deep: #000d68;
+        --bbva-cyan: #42a9e4;
+        --bbva-pale: #edf1ff;
+        --bg-light: #f4f6fa;
+        --card-bg: #ffffff;
+        --border: #e0e5ef;
+        --text-main: #18243d;
+        --text-muted: #626d80;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, Helvetica, "Segoe UI", sans-serif;
+      }
+
+      body {
+        background: var(--bg-light);
+        color: var(--text-main);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Encabezado compacto con identidad BBVA (#001391) */
+      .header {
+        background: var(--bbva-blue);
+        color: #ffffff;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .branding {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      /* Ajustar el espacio transparente del logo cuadrado sin modificar la imagen */
+      .bank {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 68px;
+        height: 28px;
+        overflow: hidden;
+        flex-shrink: 0;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: -1px;
+      }
+
+      .banklogo {
+        position: absolute;
+        width: 68px;
+        height: 68px;
+        top: 50%;
+        left: 0;
+        transform: translateY(-50%);
+        object-fit: contain;
+        display: block;
+      }
+
+      .divider {
+        width: 1px;
+        height: 22px;
+        background: #8091dd;
+        flex-shrink: 0;
+      }
+
+      .header-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .badge {
+        border: 1px solid #a5b4e9;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .refresh-btn {
+        background: transparent;
+        border: 1px solid #a5b4e9;
+        color: #ffffff;
+        border-radius: 6px;
+        padding: 4px 9px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .refresh-btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+      }
+
+      /* Barra rapida de KPIs sincronizados con S3 */
+      .kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 8px 12px;
+        background: var(--bbva-pale);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .kpi-mini {
+        background: var(--card-bg);
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        text-align: center;
+      }
+
+      .kpi-mini .label {
+        font-size: 10px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .kpi-mini .val {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--bbva-blue);
+        margin-top: 2px;
+      }
+
+      /* Contenedor de mensajes */
+      .chat-box {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .msg {
+        max-width: 92%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .msg.assistant {
+        align-self: flex-start;
+        border-top-left-radius: 3px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+      }
+
+      .msg.user {
+        align-self: flex-end;
+        border-top-right-radius: 3px;
+        background: var(--bbva-blue);
+        color: #ffffff;
+        white-space: pre-wrap;
+      }
+
+      /* Estilos para Markdown en respuestas del asistente */
+      .msg.assistant.markdown > * + * {
+        margin-top: 8px;
+      }
+
+      .msg.assistant.markdown h3,
+      .msg.assistant.markdown h4 {
+        color: var(--bbva-blue);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .msg.assistant.markdown ul,
+      .msg.assistant.markdown ol {
+        padding-left: 18px;
+      }
+
+      .msg.assistant.markdown li + li {
+        margin-top: 4px;
+      }
+
+      .msg.assistant.markdown strong {
+        color: var(--bbva-deep);
+        font-weight: 700;
+      }
+
+      .msg.assistant.markdown code {
+        background: var(--bbva-pale);
+        color: var(--bbva-blue);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        font-size: 12px;
+      }
+
+      .msg.assistant.markdown pre {
+        background: #f0f3fa;
+        padding: 8px;
+        border-radius: 6px;
+        overflow-x: auto;
+      }
+
+      .msg.assistant.markdown pre code {
+        background: none;
+        padding: 0;
+      }
+
+      .msg.assistant.markdown blockquote {
+        border-left: 3px solid var(--bbva-cyan);
+        padding-left: 8px;
+        color: var(--text-muted);
+      }
+
+      .msg.assistant.markdown hr {
+        border: none;
+        border-top: 1px solid var(--border);
+      }
+
+      .md-table {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+
+      .md-table table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .md-table th,
+      .md-table td {
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .md-table th {
+        background: var(--bbva-pale);
+        color: var(--bbva-blue);
+        font-weight: 700;
+      }
+
+      .md-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Botones de sugerencias rapidas */
+      .chips {
+        display: flex;
+        gap: 6px;
+        padding: 6px 12px;
+        overflow-x: auto;
+        background: var(--bg-light);
+        border-top: 1px solid var(--border);
+      }
+
+      .chip {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        color: var(--bbva-blue);
+        padding: 5px 10px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .chip:hover {
+        border-color: var(--bbva-blue);
+        background: var(--bbva-pale);
+      }
+
+      /* Barra de entrada */
+      .input-bar {
+        display: flex;
+        gap: 6px;
+        padding: 8px 12px;
+        background: var(--card-bg);
+        border-top: 1px solid var(--border);
+      }
+
+      .input-bar input {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 13px;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .input-bar input:focus {
+        border-color: var(--bbva-blue);
+      }
+
+      .input-bar button {
+        background: var(--bbva-blue);
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 0 14px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .input-bar button:hover {
+        background: var(--bbva-deep);
+      }
+
+      .input-bar button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="branding">
+        <span class="bank" aria-label="BBVA">
+          <img
+            class="banklogo"
+            src="assets/bbva_logo.webp"
+            alt="BBVA"
+            width="68"
+            height="28"
+            onerror="
+              this.style.display = 'none';
+              this.nextElementSibling.hidden = false;
+            "
+          />
+          <strong hidden>BBVA</strong>
+        </span>
+        <span class="divider" aria-hidden="true"></span>
+        <div class="header-title">
+          <span>Prisma · Asistente BI</span>
+          <span class="badge">S3</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button
+          class="refresh-btn"
+          id="btnClear"
+          title="Limpiar conversación actual"
+        >
+          Limpiar
+        </button>
+        <button
+          class="refresh-btn"
+          id="btnRefresh"
+          title="Recargar datos de S3"
+        >
+          Actualizar S3
+        </button>
+      </div>
+    </header>
+
+    <div class="kpi-strip">
+      <div class="kpi-mini">
+        <div class="label">Interacciones</div>
+        <div class="val" id="kpiInteracciones">--</div>
+      </div>
+      <div class="kpi-mini">
+        <div class="label">Tiempo prom. (s)</div>
+        <div class="val" id="kpiTiempo">--</div>
+      </div>
+      <div class="kpi-mini">
+        <div class="label">% Errores</div>
+        <div class="val" id="kpiErrores">--</div>
+      </div>
+      <div class="kpi-mini">
+        <div class="label">Costo prom. USD</div>
+        <div class="val" id="kpiCosto">--</div>
+      </div>
+    </div>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="chips">
+      <button
+        class="chip"
+        data-q="Dame un resumen ejecutivo del monitoreo de interacciones y uso de herramientas."
+      >
+        Resumen de monitoreo
+      </button>
+      <button
+        class="chip"
+        data-q="¿Cuáles son los KPIs de los últimos 3 meses (ingreso promedio, desviación estándar, ahorro y variación)?"
+      >
+        KPIs 3M (Gold)
+      </button>
+      <button
+        class="chip"
+        data-q="¿Cómo se distribuyen los clientes por segmento de salud financiera y cuáles son sus promedios?"
+      >
+        Segmentos de salud financiera
+      </button>
+      <button
+        class="chip"
+        data-q="¿Cuáles son las principales categorías de gasto y las alertas de riesgo de la cartera?"
+      >
+        Categorías y alertas
+      </button>
+    </div>
+
+    <form class="input-bar" id="chatForm">
+      <input
+        type="text"
+        id="chatInput"
+        placeholder="Pregunta sobre interacciones, tiempos, segmentos de clientes o métricas Gold..."
+        autocomplete="off"
+      />
+      <button type="submit" id="btnSend">Preguntar</button>
+    </form>
+
+    <script>
+      const chatBox = document.getElementById("chatBox");
+      const chatForm = document.getElementById("chatForm");
+      const chatInput = document.getElementById("chatInput");
+      const btnSend = document.getElementById("btnSend");
+      const btnRefresh = document.getElementById("btnRefresh");
+      const btnClear = document.getElementById("btnClear");
+
+      const MENSAJE_INICIAL =
+        "¡Hola! Soy **Prisma BI**. Estoy conectado a las métricas de **Monitoreo del Asistente** y al **Resumen Financiero (Gold)** en S3.\n\nPuedo ayudarte a analizar interacciones, tiempos de respuesta, uso de herramientas, categorías de gasto y segmentos de salud financiera de la cartera. ¿Qué deseas consultar?";
+
+      let historial = [];
+
+      // Renderizador seguro de Markdown con nodos DOM (sin innerHTML de mensajes)
+      function nodo(etiqueta, contenido) {
+        const el = document.createElement(etiqueta);
+        if (contenido !== undefined) el.textContent = contenido;
+        return el;
+      }
+
+      function enLinea(destino, texto, nivel = 0) {
+        if (nivel > 4) {
+          destino.append(document.createTextNode(texto));
+          return;
+        }
+        const patron =
+          /(`[^`\n]+`|\*\*[^\n]+?\*\*|__[^\n]+?__|\*[^*\n]+\*|_[^_\n]+_)/g;
+        let posicion = 0;
+        for (const coincidencia of texto.matchAll(patron)) {
+          destino.append(
+            document.createTextNode(texto.slice(posicion, coincidencia.index)),
+          );
+          const pieza = coincidencia[0];
+          const codigo = pieza.startsWith("`");
+          const fuerte = pieza.startsWith("**") || pieza.startsWith("__");
+          const marca = fuerte ? 2 : 1;
+          const el = nodo(codigo ? "code" : fuerte ? "strong" : "em");
+          if (codigo) el.textContent = pieza.slice(1, -1);
+          else enLinea(el, pieza.slice(marca, -marca), nivel + 1);
+          destino.append(el);
+          posicion = coincidencia.index + pieza.length;
+        }
+        destino.append(document.createTextNode(texto.slice(posicion)));
+      }
+
+      const celdas = (linea) =>
+        linea
+          .trim()
+          .replace(/^\|/, "")
+          .replace(/\|$/, "")
+          .split("|")
+          .map((c) => c.trim());
+
+      const separadorTabla = (linea) =>
+        linea.includes("|") &&
+        celdas(linea).every((c) => /^:?-{3,}:?$/.test(c));
+      const esLista = (linea) => /^\s*(?:[-+*]|\d+[.)])\s+/.test(linea);
+      const esBloque = (linea) =>
+        /^(?:#{1,6}\s|>\s?|```|~~~)/.test(linea) ||
+        esLista(linea) ||
+        /^\s*(?:---+|\*\*\*+)\s*$/.test(linea);
+
+      function renderizarMarkdown(contenido) {
+        const fragmento = document.createDocumentFragment();
+        const lineas = String(contenido).replace(/\r\n?/g, "\n").split("\n");
+        let i = 0;
+        while (i < lineas.length) {
+          const linea = lineas[i];
+          if (!linea.trim()) {
+            i++;
+            continue;
+          }
+          if (/^(```|~~~)/.test(linea)) {
+            const marca = linea.slice(0, 3);
+            const codigo = [];
+            i++;
+            while (i < lineas.length && !lineas[i].startsWith(marca))
+              codigo.push(lineas[i++]);
+            if (i < lineas.length) i++;
+            const pre = nodo("pre");
+            pre.append(nodo("code", codigo.join("\n")));
+            fragmento.append(pre);
+            continue;
+          }
+          const titulo = /^(#{1,6})\s+(.+)$/.exec(linea);
+          if (titulo) {
+            const el = nodo(titulo[1].length <= 2 ? "h3" : "h4");
+            enLinea(el, titulo[2]);
+            fragmento.append(el);
+            i++;
+            continue;
+          }
+          if (
+            i + 1 < lineas.length &&
+            linea.includes("|") &&
+            separadorTabla(lineas[i + 1])
+          ) {
+            const envoltura = nodo("div");
+            envoltura.className = "md-table";
+            const tabla = nodo("table");
+            const cabecera = nodo("thead");
+            const fila = nodo("tr");
+            for (const valor of celdas(linea)) {
+              const celda = nodo("th");
+              celda.scope = "col";
+              enLinea(celda, valor);
+              fila.append(celda);
+            }
+            cabecera.append(fila);
+            tabla.append(cabecera);
+            const cuerpo = nodo("tbody");
+            i += 2;
+            while (
+              i < lineas.length &&
+              lineas[i].trim() &&
+              lineas[i].includes("|")
+            ) {
+              const filaCuerpo = nodo("tr");
+              for (const valor of celdas(lineas[i++])) {
+                const celda = nodo("td");
+                enLinea(celda, valor);
+                filaCuerpo.append(celda);
+              }
+              cuerpo.append(filaCuerpo);
+            }
+            tabla.append(cuerpo);
+            envoltura.append(tabla);
+            fragmento.append(envoltura);
+            continue;
+          }
+          if (/^\s*(?:---+|\*\*\*+)\s*$/.test(linea)) {
+            fragmento.append(nodo("hr"));
+            i++;
+            continue;
+          }
+          if (esLista(linea)) {
+            const ordenada = /^\s*\d+[.)]\s/.test(linea);
+            const el = nodo(ordenada ? "ol" : "ul");
+            if (ordenada) el.start = Number(linea.trim().match(/^\d+/)[0]);
+            while (
+              i < lineas.length &&
+              esLista(lineas[i]) &&
+              /^\s*\d+[.)]\s/.test(lineas[i]) === ordenada
+            ) {
+              const item = nodo("li");
+              enLinea(
+                item,
+                lineas[i++].replace(/^\s*(?:[-+*]|\d+[.)])\s+/, ""),
+              );
+              el.append(item);
+            }
+            fragmento.append(el);
+            continue;
+          }
+          if (/^>/.test(linea)) {
+            const cita = nodo("blockquote");
+            while (i < lineas.length && /^>/.test(lineas[i])) {
+              if (cita.childNodes.length) cita.append(nodo("br"));
+              enLinea(cita, lineas[i++].replace(/^>\s?/, ""));
+            }
+            fragmento.append(cita);
+            continue;
+          }
+          const parrafo = nodo("p");
+          do {
+            if (parrafo.childNodes.length) parrafo.append(nodo("br"));
+            enLinea(parrafo, lineas[i++]);
+          } while (
+            i < lineas.length &&
+            lineas[i].trim() &&
+            !esBloque(lineas[i]) &&
+            !(i + 1 < lineas.length && separadorTabla(lineas[i + 1]))
+          );
+          fragmento.append(parrafo);
+        }
+        return fragmento;
+      }
+
+      async function cargarResumen(refresh = false) {
+        try {
+          const res = await fetch(`/api/bi/summary?refresh=${refresh}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const m = data.monitoreo || {};
+          document.getElementById("kpiInteracciones").textContent =
+            m.total_interacciones ?? "--";
+          document.getElementById("kpiTiempo").textContent =
+            m.tiempo_promedio_s != null ? `${m.tiempo_promedio_s}s` : "--";
+          document.getElementById("kpiErrores").textContent =
+            m.porcentaje_errores != null ? `${m.porcentaje_errores}%` : "--";
+          document.getElementById("kpiCosto").textContent =
+            m.costo_promedio_consulta_usd != null
+              ? `$${m.costo_promedio_consulta_usd}`
+              : "--";
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function agregarMensaje(texto, autor) {
+        const div = document.createElement("div");
+        div.className = `msg ${autor}`;
+        if (autor === "assistant") {
+          div.classList.add("markdown");
+          div.appendChild(renderizarMarkdown(texto));
+        } else {
+          div.textContent = texto;
+        }
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return div;
+      }
+
+      function reiniciarChat() {
+        historial = [];
+        chatBox.replaceChildren();
+        agregarMensaje(MENSAJE_INICIAL, "assistant");
+      }
+
+      async function enviarPregunta(pregunta) {
+        const texto = pregunta.trim();
+        if (!texto) return;
+        agregarMensaje(texto, "user");
+        chatInput.value = "";
+        btnSend.disabled = true;
+
+        const cargando = agregarMensaje("Consultando métricas...", "assistant");
+
+        try {
+          const res = await fetch("/api/bi/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pregunta: texto,
+              historial: historial.slice(-8),
+            }),
+          });
+          const data = await res.json();
+          cargando.remove();
+          const respuesta = data.respuesta || "Sin respuesta.";
+          agregarMensaje(respuesta, "assistant");
+          historial.push(
+            { autor: "user", texto },
+            { autor: "assistant", texto: respuesta },
+          );
+          if (historial.length > 10) historial = historial.slice(-10);
+        } catch (e) {
+          cargando.remove();
+          agregarMensaje(
+            "No se pudo conectar con el servicio local del dashboard.",
+            "assistant",
+          );
+        } finally {
+          btnSend.disabled = false;
+          chatInput.focus();
+        }
+      }
+
+      chatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        enviarPregunta(chatInput.value);
+      });
+
+      document.querySelectorAll(".chip").forEach((btn) => {
+        btn.addEventListener("click", () => enviarPregunta(btn.dataset.q));
+      });
+
+      btnRefresh.addEventListener("click", () => cargarResumen(true));
+      btnClear.addEventListener("click", reiniciarChat);
+
+      reiniciarChat();
+      cargarResumen(false);
+    </script>
+  </body>
+</html>

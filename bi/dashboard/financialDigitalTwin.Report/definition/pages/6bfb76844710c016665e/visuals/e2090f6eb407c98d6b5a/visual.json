@@ -1,0 +1,148 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "e2090f6eb407c98d6b5a",
+  "position": {
+    "x": 960.00000000000011,
+    "y": 331.42857142857144,
+    "z": 6000,
+    "height": 358.57142857142861,
+    "width": 830,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "barChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Categorias"
+                    }
+                  },
+                  "Property": "category"
+                }
+              },
+              "queryRef": "Categorias.category",
+              "nativeQueryRef": "Categoría",
+              "active": true,
+              "displayName": "Categoría"
+            }
+          ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Categorias"
+                        }
+                      },
+                      "Property": "expense_transactions"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(Categorias.expense_transactions)",
+              "nativeQueryRef": "Frecuencia de Transacciones",
+              "displayName": "Frecuencia de Transacciones"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Categorias"
+                        }
+                      },
+                      "Property": "total_expenses"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(Categorias.total_expenses)",
+              "nativeQueryRef": "Gasto Total (MXN)",
+              "displayName": "Gasto Total (MXN)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Aggregation": {
+                "Expression": {
+                  "Column": {
+                    "Expression": {
+                      "SourceRef": {
+                        "Entity": "Categorias"
+                      }
+                    },
+                    "Property": "total_expenses"
+                  }
+                },
+                "Function": 0
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "objects": {
+      "valueAxis": [
+        {
+          "properties": {
+            "showAxisTitle": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "titleText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Monto Total Gastado (MXN)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Gasto y Frecuencia por Categoría (Últimos 3 Meses)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

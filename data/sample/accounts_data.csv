@@ -1,0 +1,5 @@
+﻿account_id,client_id,currency,opened_at,opening_balance,account_type,overdraft_allowed,closing_balance,balance_as_of
+A-0,0,MXN,2026-07-01 00:00:00,-3471389.49,cash_account,true,-3523942.56,2026-07-31 23:59:59
+A-1,1,MXN,2026-07-01 00:00:00,-1612922.89,cash_account,true,-1628592.64,2026-07-31 23:59:59
+A-2,2,MXN,2026-07-01 00:00:00,1931716.82,cash_account,true,1943462.18,2026-07-31 23:59:59
+A-3,3,MXN,2026-07-01 00:00:00,3291986.22,cash_account,true,3312088.11,2026-07-31 23:59:59
