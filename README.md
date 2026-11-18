@@ -16,12 +16,12 @@ La aplicación reúne un panorama financiero y un chat con historial temporal. E
 
 ## 🚀 Componentes principales
 
-- **ETL:** limpieza, validación, separación de rechazados y consolidación de clientes, tarjetas, transacciones, cuentas y pagos en capas Bronze, Silver y Gold, incluyendo promedios, desviaciones estándar, ratios y variaciones de los últimos tres meses.
+- **ETL:** Limpieza, validación, separación de rechazados y consolidación de clientes, tarjetas, transacciones, cuentas y pagos en capas Bronze, Silver y Gold, incluyendo promedios, desviaciones estándar, ratios y variaciones de los últimos tres meses.
 - **Automatización:** Airflow encadena Bronze → Silver → Gold. Gold genera los datos base, ejecuta el modelo de ingresos junto con Monte Carlo e integra las predicciones validadas. Monte Carlo se invoca desde `income_model.py`; no necesita un DAG separado.
 - **Modelaje y simulación:** XGBoost para estimar ingresos del siguiente mes y Monte Carlo para generar escenarios de ingresos, gastos y saldo a uno, dos y tres meses. El asistente puede consultar la estimación de ingresos cuando está disponible y aprobada por las validaciones del pipeline.
-- **Aplicación web:** panorama del cliente, asistente conversacional, metas y escenarios financieros.
-- **Monitoreo:** registro de tiempos, errores, uso de herramientas, tokens y costos estimados del asistente, con persistencia local y exportación de lotes CSV a S3.
-- **BI y asistente del dashboard:** reporte y modelo semántico en Power BI (`bi/dashboard/`) con métricas de monitoreo del asistente y comportamiento transaccional de los clientes en Gold, acompañado de un asistente analítico local (`bi/chat/`) con guardrails y visualizaciones integradas.
+- **Aplicación web:** Panorama del cliente con monitoreo automático de ahorro y recomendaciones personalizadas por categoría, asistente conversacional, metas y escenarios financieros.
+- **Monitoreo:** Registro de tiempos, errores, uso de herramientas, tokens y costos estimados del asistente, con persistencia local y exportación de lotes CSV a S3.
+- **BI y asistente del dashboard:** Reporte y modelo semántico en Power BI (`bi/dashboard/`) con métricas de monitoreo del asistente y comportamiento transaccional de los clientes en Gold, acompañado de un asistente analítico conversacional local (`bi/chat/`) con guardrails de privacidad y formato Markdown.
 
 ## 🛠️ Tecnologías
 
@@ -29,7 +29,7 @@ La aplicación reúne un panorama financiero y un chat con historial temporal. E
 - **Aplicación:** FastAPI, Pydantic, Uvicorn, HTML, CSS y JavaScript.
 - **IA y modelaje:** LangGraph, LangChain, OpenAI API, scikit-learn y XGBoost.
 - **Infraestructura:** Airflow, Docker, Docker Compose, PostgreSQL y Oracle Cloud Infrastructure (OCI).
-- **Análisis y seguimiento:** Power BI, Jupyter, SQLite, pytest y GitHub Actions (CI/CD).
+- **Análisis, calidad y seguimiento:** Power BI, Jupyter, SQLite, pytest, Black, Prettier y GitHub Actions (CI/CD).
 
 ## 👩‍💻 Ejecución
 
@@ -94,8 +94,8 @@ Con las dependencias y Java disponibles, ejecutar las pruebas indicando explíci
 python -m pytest tests/test_bronze_cleaning.py tests/test_silver_cleaning.py tests/test_gold_analysis.py tests/test_monte_carlo.py -v
 ```
 
-- **Integración continua (CI):** el [workflow de CI](.github/workflows/ci.yml) ejecuta esos mismos cuatro archivos, en ese orden, en pull requests dirigidos a `main` o mediante ejecución manual. Utiliza Python 3.11 y Java 17 en Ubuntu.
-- **Despliegue continuo (CD):** el [workflow de CD](.github/workflows/cd.yml) empaqueta y despliega automáticamente la aplicación web (`web/`) en una instancia de Oracle Cloud Infrastructure (OCI) al integrar cambios en `main` o mediante ejecución manual, gestionando el servicio con `systemd`.
+- **Integración continua (CI):** El [workflow de CI](.github/workflows/ci.yml) verifica primero el formato del código con **Black** (Python) y **Prettier** (Frontend, Markdown y YAML, excluyendo `bi/dashboard/`) y, si ambos pasan, ejecuta esos mismos cuatro archivos de prueba en ese orden en pull requests dirigidos a `main` o mediante ejecución manual. Utiliza Python 3.11, Node.js 24 y Java 17 en Ubuntu 24.04.
+- **Despliegue continuo (CD):** El [workflow de CD](.github/workflows/cd.yml) empaqueta y despliega automáticamente la aplicación web (`web/`) en una instancia de Oracle Cloud Infrastructure (OCI) al integrar cambios en `main` o mediante ejecución manual, gestionando el servicio con `systemd`.
 
 Las pruebas usan datos de prueba y rutas temporales. Cubren procesamiento e integración de predicciones en Gold, además de casos de simulación Monte Carlo; no ejecutan el entrenamiento completo de XGBoost ni validan el asistente web, Airflow o el acceso al S3 real.
 
