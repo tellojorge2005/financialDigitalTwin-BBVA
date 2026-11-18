@@ -3,7 +3,7 @@ name: CD
 on:
   push:
     branches:
-      - main
+      - dev
 
   workflow_dispatch:
 
@@ -16,12 +16,12 @@ concurrency:
 
 jobs:
   deploy-web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       # Descargar codigo del repositorio
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Generar archivo .env desde GitHub Secrets
       - name: Generate .env file
@@ -50,7 +50,7 @@ jobs:
 
       # Copiar paquete al servidor OCI
       - name: Upload web bundle to OCI
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
@@ -61,7 +61,7 @@ jobs:
 
       # Configurar servidor, instalar dependencias y reiniciar servicio
       - name: Configure server and restart service on OCI
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
