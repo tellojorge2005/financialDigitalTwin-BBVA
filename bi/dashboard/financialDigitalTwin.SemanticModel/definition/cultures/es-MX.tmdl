@@ -477,6 +477,16 @@ cultureInfo es-MX
 			            "State": "Generated",
 			            "Weight": 0.99
 			          }
+			        },
+			        {
+			          "Duración (s)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -606,6 +616,16 @@ cultureInfo es-MX
 			            },
 			            "Weight": 0.727
 			          }
+			        },
+			        {
+			          "Código HTTP": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -621,6 +641,26 @@ cultureInfo es-MX
 			        {
 			          "resultado": {
 			            "State": "Generated"
+			          }
+			        },
+			        {
+			          "Estado de la Interacción": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        },
+			        {
+			          "Estado": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -674,6 +714,16 @@ cultureInfo es-MX
 			            "Type": "Noun",
 			            "State": "Generated",
 			            "Weight": 0.99
+			          }
+			        },
+			        {
+			          "Llamadas al Modelo": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -735,6 +785,16 @@ cultureInfo es-MX
 			            "State": "Generated",
 			            "Weight": 0.99
 			          }
+			        },
+			        {
+			          "Herramientas Usadas": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -764,6 +824,16 @@ cultureInfo es-MX
 			            "Type": "Noun",
 			            "State": "Generated",
 			            "Weight": 0.99
+			          }
+			        },
+			        {
+			          "Errores de Herramienta": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -914,6 +984,16 @@ cultureInfo es-MX
 			            "State": "Generated",
 			            "Weight": 0.7
 			          }
+			        },
+			        {
+			          "Fecha y Hora": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ],
 			      "SemanticType": "Time"
@@ -1057,6 +1137,26 @@ cultureInfo es-MX
 			          "date": {
 			            "State": "Generated",
 			            "Weight": 0.7
+			          }
+			        },
+			        {
+			          "Fecha": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        },
+			        {
+			          "Fecha de Consulta (Hora Local)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ],
@@ -1381,6 +1481,16 @@ cultureInfo es-MX
 			            },
 			            "Weight": 0.582
 			          }
+			        },
+			        {
+			          "Total de Interacciones": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -1396,6 +1506,16 @@ cultureInfo es-MX
 			        {
 			          "conversaciones": {
 			            "State": "Generated"
+			          }
+			        },
+			        {
+			          "Sesiones Únicas": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -1417,6 +1537,16 @@ cultureInfo es-MX
 			        {
 			          "tiempo promedio (s)": {
 			            "State": "Generated"
+			          }
+			        },
+			        {
+			          "Tiempo Promedio de Respuesta (s)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ],
@@ -1454,6 +1584,16 @@ cultureInfo es-MX
 			          "porcentaje errores": {
 			            "State": "Generated"
 			          }
+			        },
+			        {
+			          "Tasa de Incidencias (%)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -1469,6 +1609,16 @@ cultureInfo es-MX
 			        {
 			          "tokens entrada promedio": {
 			            "State": "Generated"
+			          }
+			        },
+			        {
+			          "Tokens de Entrada Promedio": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -1486,6 +1636,16 @@ cultureInfo es-MX
 			          "tokens salida promedio": {
 			            "State": "Generated"
 			          }
+			        },
+			        {
+			          "Tokens de Salida Promedio": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -1501,6 +1661,16 @@ cultureInfo es-MX
 			        {
 			          "costo promedio por consulta USD": {
 			            "State": "Generated"
+			          }
+			        },
+			        {
+			          "Costo Promedio por Consulta (USD)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -1590,6 +1760,16 @@ cultureInfo es-MX
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.714
+			          }
+			        },
+			        {
+			          "Cliente": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ],
@@ -9300,6 +9480,16 @@ cultureInfo es-MX
 			            },
 			            "Weight": 0.739
 			          }
+			        },
+			        {
+			          "Estado de Salud Financiera": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -10228,6 +10418,16 @@ cultureInfo es-MX
 			          "ratio ahorro 3M": {
 			            "State": "Generated"
 			          }
+			        },
+			        {
+			          "Ratio de Ahorro 3M (%)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -10295,6 +10495,16 @@ cultureInfo es-MX
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.748
+			          }
+			        },
+			        {
+			          "Variación de Ingresos 3M (%)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -10588,17 +10798,17 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual.month": {
+			    "mensual.periodo": {
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Mensual",
-			          "ConceptualProperty": "month"
+			          "ConceptualProperty": "Periodo"
 			        }
 			      },
 			      "State": "Generated",
 			      "Terms": [
 			        {
-			          "month": {
+			          "periodo": {
 			            "State": "Generated"
 			          }
 			        },
@@ -10607,145 +10817,15 @@ cultureInfo es-MX
 			            "State": "Generated",
 			            "Weight": 0.7
 			          }
-			        },
-			        {
-			          "mth": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.736
-			          }
 			        }
 			      ],
 			      "SemanticType": "Time"
 			    },
-			    "mensual.month.jerarquía_de_fecha": {
+			    "mensual.periodo.día": {
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Mensual",
-			          "VariationSource": "month",
-			          "VariationSet": "Variation",
-			          "Hierarchy": "Jerarquía de fechas"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "jerarquía de fecha": {
-			            "State": "Generated"
-			          }
-			        }
-			      ]
-			    },
-			    "mensual.month.año": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Mensual",
-			          "VariationSource": "month",
-			          "VariationSet": "Variation",
-			          "Hierarchy": "Jerarquía de fechas",
-			          "HierarchyLevel": "Año"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "año": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "month año": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "mth año": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.6
-			          }
-			        }
-			      ]
-			    },
-			    "mensual.month.trimestre": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Mensual",
-			          "VariationSource": "month",
-			          "VariationSet": "Variation",
-			          "Hierarchy": "Jerarquía de fechas",
-			          "HierarchyLevel": "Trimestre"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "trimestre": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "month trimestre": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "mth trimestre": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.6
-			          }
-			        }
-			      ]
-			    },
-			    "mensual.month.me": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Mensual",
-			          "VariationSource": "month",
-			          "VariationSet": "Variation",
-			          "Hierarchy": "Jerarquía de fechas",
-			          "HierarchyLevel": "Mes"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "me": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "month me": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "mth me": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.75
-			          }
-			        }
-			      ]
-			    },
-			    "mensual.month.día": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Mensual",
-			          "VariationSource": "month",
+			          "VariationSource": "Periodo",
 			          "VariationSet": "Variation",
 			          "Hierarchy": "Jerarquía de fechas",
 			          "HierarchyLevel": "Día"
@@ -10759,18 +10839,98 @@ cultureInfo es-MX
 			          }
 			        },
 			        {
-			          "month día": {
+			          "periodo día": {
+			            "State": "Generated"
+			          }
+			        }
+			      ]
+			    },
+			    "mensual.periodo.me": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Mensual",
+			          "VariationSource": "Periodo",
+			          "VariationSet": "Variation",
+			          "Hierarchy": "Jerarquía de fechas",
+			          "HierarchyLevel": "Mes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "me": {
 			            "State": "Generated"
 			          }
 			        },
 			        {
-			          "mth día": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.6
+			          "periodo me": {
+			            "State": "Generated"
+			          }
+			        }
+			      ]
+			    },
+			    "mensual.periodo.trimestre": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Mensual",
+			          "VariationSource": "Periodo",
+			          "VariationSet": "Variation",
+			          "Hierarchy": "Jerarquía de fechas",
+			          "HierarchyLevel": "Trimestre"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "trimestre": {
+			            "State": "Generated"
+			          }
+			        },
+			        {
+			          "periodo trimestre": {
+			            "State": "Generated"
+			          }
+			        }
+			      ]
+			    },
+			    "mensual.periodo.año": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Mensual",
+			          "VariationSource": "Periodo",
+			          "VariationSet": "Variation",
+			          "Hierarchy": "Jerarquía de fechas",
+			          "HierarchyLevel": "Año"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "año": {
+			            "State": "Generated"
+			          }
+			        },
+			        {
+			          "periodo año": {
+			            "State": "Generated"
+			          }
+			        }
+			      ]
+			    },
+			    "mensual.periodo.jerarquía_de_fecha": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Mensual",
+			          "VariationSource": "Periodo",
+			          "VariationSet": "Variation",
+			          "Hierarchy": "Jerarquía de fechas"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "jerarquía de fecha": {
+			            "State": "Generated"
 			          }
 			        }
 			      ]
@@ -13464,6 +13624,16 @@ cultureInfo es-MX
 			            },
 			            "Weight": 0.714
 			          }
+			        },
+			        {
+			          "Categoría": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -13727,20 +13897,20 @@ cultureInfo es-MX
 			    }
 			  },
 			  "Relationships": {
-			    "mensual_month_jerarquía_de_fecha_has_mensual_month_me": {
+			    "mensual_periodo_jerarquía_de_fecha_has_mensual_periodo_me": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
 			      "State": "Generated",
 			      "Roles": {
-			        "mensual.month.jerarquía_de_fecha": {
+			        "mensual.periodo.jerarquía_de_fecha": {
 			          "Target": {
-			            "Entity": "mensual.month.jerarquía_de_fecha"
+			            "Entity": "mensual.periodo.jerarquía_de_fecha"
 			          }
 			        },
-			        "mensual.month.me": {
+			        "mensual.periodo.me": {
 			          "Target": {
-			            "Entity": "mensual.month.me"
+			            "Entity": "mensual.periodo.me"
 			          }
 			        }
 			      },
@@ -13748,10 +13918,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.jerarquía_de_fecha"
+			              "Role": "mensual.periodo.jerarquía_de_fecha"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.me"
+			              "Role": "mensual.periodo.me"
 			            }
 			          },
 			          "State": "Generated",
@@ -13760,20 +13930,20 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual_month_jerarquía_de_fecha_has_mensual_month_trimestre": {
+			    "mensual_periodo_jerarquía_de_fecha_has_mensual_periodo_trimestre": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
 			      "State": "Generated",
 			      "Roles": {
-			        "mensual.month.jerarquía_de_fecha": {
+			        "mensual.periodo.jerarquía_de_fecha": {
 			          "Target": {
-			            "Entity": "mensual.month.jerarquía_de_fecha"
+			            "Entity": "mensual.periodo.jerarquía_de_fecha"
 			          }
 			        },
-			        "mensual.month.trimestre": {
+			        "mensual.periodo.trimestre": {
 			          "Target": {
-			            "Entity": "mensual.month.trimestre"
+			            "Entity": "mensual.periodo.trimestre"
 			          }
 			        }
 			      },
@@ -13781,10 +13951,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.jerarquía_de_fecha"
+			              "Role": "mensual.periodo.jerarquía_de_fecha"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.trimestre"
+			              "Role": "mensual.periodo.trimestre"
 			            }
 			          },
 			          "State": "Generated",
@@ -13793,20 +13963,20 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual_month_jerarquía_de_fecha_has_mensual_month_año": {
+			    "mensual_periodo_jerarquía_de_fecha_has_mensual_periodo_año": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
 			      "State": "Generated",
 			      "Roles": {
-			        "mensual.month.jerarquía_de_fecha": {
+			        "mensual.periodo.jerarquía_de_fecha": {
 			          "Target": {
-			            "Entity": "mensual.month.jerarquía_de_fecha"
+			            "Entity": "mensual.periodo.jerarquía_de_fecha"
 			          }
 			        },
-			        "mensual.month.año": {
+			        "mensual.periodo.año": {
 			          "Target": {
-			            "Entity": "mensual.month.año"
+			            "Entity": "mensual.periodo.año"
 			          }
 			        }
 			      },
@@ -13814,10 +13984,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.jerarquía_de_fecha"
+			              "Role": "mensual.periodo.jerarquía_de_fecha"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.año"
+			              "Role": "mensual.periodo.año"
 			            }
 			          },
 			          "State": "Generated",
@@ -13826,20 +13996,20 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual_month_has_jerarquía_de_fecha": {
+			    "mensual_periodo_has_jerarquía_de_fecha": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
 			      "State": "Generated",
 			      "Roles": {
-			        "mensual.month": {
+			        "mensual.periodo": {
 			          "Target": {
-			            "Entity": "mensual.month"
+			            "Entity": "mensual.periodo"
 			          }
 			        },
-			        "mensual.month.jerarquía_de_fecha": {
+			        "mensual.periodo.jerarquía_de_fecha": {
 			          "Target": {
-			            "Entity": "mensual.month.jerarquía_de_fecha"
+			            "Entity": "mensual.periodo.jerarquía_de_fecha"
 			          }
 			        }
 			      },
@@ -13847,15 +14017,15 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month"
+			              "Role": "mensual.periodo"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.jerarquía_de_fecha"
+			              "Role": "mensual.periodo.jerarquía_de_fecha"
 			            }
 			          },
 			          "State": "Generated",
 			          "Weight": 0.99,
-			          "ID": "months_have_jerarquía_de_fechas"
+			          "ID": "periodos_have_jerarquía_de_fechas"
 			        }
 			      ]
 			    },
@@ -17925,7 +18095,7 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual_has_month": {
+			    "mensual_has_periodo": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
@@ -17936,9 +18106,9 @@ cultureInfo es-MX
 			            "Entity": "mensual"
 			          }
 			        },
-			        "mensual.month": {
+			        "mensual.periodo": {
 			          "Target": {
-			            "Entity": "mensual.month"
+			            "Entity": "mensual.periodo"
 			          }
 			        }
 			      },
@@ -17949,12 +18119,12 @@ cultureInfo es-MX
 			              "Role": "mensual"
 			            },
 			            "Object": {
-			              "Role": "mensual.month"
+			              "Role": "mensual.periodo"
 			            }
 			          },
 			          "State": "Generated",
 			          "Weight": 0.99,
-			          "ID": "mensuals_have_months"
+			          "ID": "mensuals_have_periodos"
 			        }
 			      ]
 			    },
@@ -17988,39 +18158,6 @@ cultureInfo es-MX
 			          "State": "Generated",
 			          "Weight": 0.99,
 			          "ID": "mensuals_have_currencies"
-			        }
-			      ]
-			    },
-			    "cliente_has_medida": {
-			      "Binding": {
-			        "ConceptualEntity": "Clientes"
-			      },
-			      "State": "Generated",
-			      "Roles": {
-			        "cliente": {
-			          "Target": {
-			            "Entity": "cliente"
-			          }
-			        },
-			        "cliente.medida": {
-			          "Target": {
-			            "Entity": "cliente.medida"
-			          }
-			        }
-			      },
-			      "Phrasings": [
-			        {
-			          "Attribute": {
-			            "Subject": {
-			              "Role": "cliente"
-			            },
-			            "Object": {
-			              "Role": "cliente.medida"
-			            }
-			          },
-			          "State": "Generated",
-			          "Weight": 0.99,
-			          "ID": "clientes_have_medida"
 			        }
 			      ]
 			    },
@@ -22880,20 +23017,20 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual_month_jerarquía_de_fecha_has_mensual_month_día": {
+			    "mensual_periodo_jerarquía_de_fecha_has_mensual_periodo_día": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
 			      "State": "Generated",
 			      "Roles": {
-			        "mensual.month.jerarquía_de_fecha": {
+			        "mensual.periodo.jerarquía_de_fecha": {
 			          "Target": {
-			            "Entity": "mensual.month.jerarquía_de_fecha"
+			            "Entity": "mensual.periodo.jerarquía_de_fecha"
 			          }
 			        },
-			        "mensual.month.día": {
+			        "mensual.periodo.día": {
 			          "Target": {
-			            "Entity": "mensual.month.día"
+			            "Entity": "mensual.periodo.día"
 			          }
 			        }
 			      },
@@ -22901,10 +23038,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.jerarquía_de_fecha"
+			              "Role": "mensual.periodo.jerarquía_de_fecha"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.día"
+			              "Role": "mensual.periodo.día"
 			            }
 			          },
 			          "State": "Generated",
@@ -22913,20 +23050,20 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual_month_año_has_mensual_month_trimestre": {
+			    "mensual_periodo_año_has_mensual_periodo_trimestre": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
 			      "State": "Generated",
 			      "Roles": {
-			        "mensual.month.año": {
+			        "mensual.periodo.año": {
 			          "Target": {
-			            "Entity": "mensual.month.año"
+			            "Entity": "mensual.periodo.año"
 			          }
 			        },
-			        "mensual.month.trimestre": {
+			        "mensual.periodo.trimestre": {
 			          "Target": {
-			            "Entity": "mensual.month.trimestre"
+			            "Entity": "mensual.periodo.trimestre"
 			          }
 			        }
 			      },
@@ -22934,10 +23071,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.año"
+			              "Role": "mensual.periodo.año"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.trimestre"
+			              "Role": "mensual.periodo.trimestre"
 			            }
 			          },
 			          "State": "Generated",
@@ -22947,10 +23084,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.trimestre"
+			              "Role": "mensual.periodo.trimestre"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.año"
+			              "Role": "mensual.periodo.año"
 			            }
 			          },
 			          "State": "Generated",
@@ -22960,7 +23097,7 @@ cultureInfo es-MX
 			        {
 			          "Preposition": {
 			            "Subject": {
-			              "Role": "mensual.month.trimestre"
+			              "Role": "mensual.periodo.trimestre"
 			            },
 			            "Prepositions": [
 			              {
@@ -22970,7 +23107,7 @@ cultureInfo es-MX
 			              }
 			            ],
 			            "Object": {
-			              "Role": "mensual.month.año"
+			              "Role": "mensual.periodo.año"
 			            }
 			          },
 			          "State": "Generated",
@@ -22979,20 +23116,20 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual_month_trimestre_has_mensual_month_me": {
+			    "mensual_periodo_trimestre_has_mensual_periodo_me": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
 			      "State": "Generated",
 			      "Roles": {
-			        "mensual.month.trimestre": {
+			        "mensual.periodo.trimestre": {
 			          "Target": {
-			            "Entity": "mensual.month.trimestre"
+			            "Entity": "mensual.periodo.trimestre"
 			          }
 			        },
-			        "mensual.month.me": {
+			        "mensual.periodo.me": {
 			          "Target": {
-			            "Entity": "mensual.month.me"
+			            "Entity": "mensual.periodo.me"
 			          }
 			        }
 			      },
@@ -23000,10 +23137,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.trimestre"
+			              "Role": "mensual.periodo.trimestre"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.me"
+			              "Role": "mensual.periodo.me"
 			            }
 			          },
 			          "State": "Generated",
@@ -23013,10 +23150,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.me"
+			              "Role": "mensual.periodo.me"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.trimestre"
+			              "Role": "mensual.periodo.trimestre"
 			            }
 			          },
 			          "State": "Generated",
@@ -23026,7 +23163,7 @@ cultureInfo es-MX
 			        {
 			          "Preposition": {
 			            "Subject": {
-			              "Role": "mensual.month.me"
+			              "Role": "mensual.periodo.me"
 			            },
 			            "Prepositions": [
 			              {
@@ -23036,7 +23173,7 @@ cultureInfo es-MX
 			              }
 			            ],
 			            "Object": {
-			              "Role": "mensual.month.trimestre"
+			              "Role": "mensual.periodo.trimestre"
 			            }
 			          },
 			          "State": "Generated",
@@ -23045,20 +23182,20 @@ cultureInfo es-MX
 			        }
 			      ]
 			    },
-			    "mensual_month_me_has_mensual_month_día": {
+			    "mensual_periodo_me_has_mensual_periodo_día": {
 			      "Binding": {
 			        "ConceptualEntity": "Mensual"
 			      },
 			      "State": "Generated",
 			      "Roles": {
-			        "mensual.month.me": {
+			        "mensual.periodo.me": {
 			          "Target": {
-			            "Entity": "mensual.month.me"
+			            "Entity": "mensual.periodo.me"
 			          }
 			        },
-			        "mensual.month.día": {
+			        "mensual.periodo.día": {
 			          "Target": {
-			            "Entity": "mensual.month.día"
+			            "Entity": "mensual.periodo.día"
 			          }
 			        }
 			      },
@@ -23066,10 +23203,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.me"
+			              "Role": "mensual.periodo.me"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.día"
+			              "Role": "mensual.periodo.día"
 			            }
 			          },
 			          "State": "Generated",
@@ -23079,10 +23216,10 @@ cultureInfo es-MX
 			        {
 			          "Attribute": {
 			            "Subject": {
-			              "Role": "mensual.month.día"
+			              "Role": "mensual.periodo.día"
 			            },
 			            "Object": {
-			              "Role": "mensual.month.me"
+			              "Role": "mensual.periodo.me"
 			            }
 			          },
 			          "State": "Generated",
@@ -23092,7 +23229,7 @@ cultureInfo es-MX
 			        {
 			          "Preposition": {
 			            "Subject": {
-			              "Role": "mensual.month.día"
+			              "Role": "mensual.periodo.día"
 			            },
 			            "Prepositions": [
 			              {
@@ -23102,7 +23239,7 @@ cultureInfo es-MX
 			              }
 			            ],
 			            "Object": {
-			              "Role": "mensual.month.me"
+			              "Role": "mensual.periodo.me"
 			            }
 			          },
 			          "State": "Generated",

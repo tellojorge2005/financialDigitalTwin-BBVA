@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "Interacciones.Costo promedio por consulta USD",
-              "nativeQueryRef": "Costo promedio por consulta USD",
+              "nativeQueryRef": "Costo Promedio por Consulta (USD)",
+              "displayName": "Costo Promedio por Consulta (USD)",
               "format": "0.000000"
             }
           ]

@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "Interacciones.Porcentaje errores",
-              "nativeQueryRef": "Porcentaje errores",
+              "nativeQueryRef": "Tasa de Incidencias (%)",
+              "displayName": "Tasa de Incidencias (%)",
               "format": "0.00%;-0.00%;0.00%"
             }
           ]

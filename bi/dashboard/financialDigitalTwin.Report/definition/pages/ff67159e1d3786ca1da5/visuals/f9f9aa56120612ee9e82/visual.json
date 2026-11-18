@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "Interacciones.fecha_hora_local",
-              "nativeQueryRef": "fecha_hora_local"
+              "nativeQueryRef": "Fecha y Hora",
+              "displayName": "Fecha y Hora"
             },
             {
               "field": {
@@ -41,7 +42,8 @@
                 }
               },
               "queryRef": "Interacciones.resultado",
-              "nativeQueryRef": "resultado"
+              "nativeQueryRef": "Estado",
+              "displayName": "Estado"
             },
             {
               "field": {
@@ -55,7 +57,8 @@
                 }
               },
               "queryRef": "Sum(Interacciones.duracion_segundos)",
-              "nativeQueryRef": "duracion_segundos1"
+              "nativeQueryRef": "Duración (s)",
+              "displayName": "Duración (s)"
             },
             {
               "field": {
@@ -69,7 +72,8 @@
                 }
               },
               "queryRef": "Sum(Interacciones.http_status)",
-              "nativeQueryRef": "http_status"
+              "nativeQueryRef": "Código HTTP",
+              "displayName": "Código HTTP"
             },
             {
               "field": {
@@ -83,7 +87,8 @@
                 }
               },
               "queryRef": "Sum(Interacciones.llamadas_modelo)",
-              "nativeQueryRef": "llamadas_modelo"
+              "nativeQueryRef": "Llamadas al Modelo",
+              "displayName": "Llamadas al Modelo"
             },
             {
               "field": {
@@ -97,7 +102,8 @@
                 }
               },
               "queryRef": "Sum(Interacciones.llamadas_herramientas)",
-              "nativeQueryRef": "llamadas_herramientas"
+              "nativeQueryRef": "Herramientas Usadas",
+              "displayName": "Herramientas Usadas"
             },
             {
               "field": {
@@ -111,12 +117,137 @@
                 }
               },
               "queryRef": "Sum(Interacciones.errores_herramientas)",
-              "nativeQueryRef": "errores_herramientas"
+              "nativeQueryRef": "Errores de Herramienta",
+              "displayName": "Errores de Herramienta"
             }
           ]
         }
       }
     },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Bitácora Detallada de Interacciones'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "b0be8e34785425000bae",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "fecha_hora_local"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9f338a6016e8c10d70bd",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "resultado"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e9dd3f82d7a3c0bdb502",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "duracion_segundos"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "d3e7a9f4da832e81bab2",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "http_status"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "2f56f0aa9d4b6ba65e38",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "llamadas_modelo"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f22012e00d22dbc08c96",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "llamadas_herramientas"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f34f4e95b01b57b0a2e3",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "errores_herramientas"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

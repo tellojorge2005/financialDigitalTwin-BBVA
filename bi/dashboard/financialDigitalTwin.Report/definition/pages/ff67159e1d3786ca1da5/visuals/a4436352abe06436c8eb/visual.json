@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "Interacciones.Conversaciones",
-              "nativeQueryRef": "Conversaciones"
+              "nativeQueryRef": "Sesiones Únicas",
+              "displayName": "Sesiones Únicas"
             }
           ]
         }

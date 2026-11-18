@@ -27,7 +27,9 @@
                 }
               },
               "queryRef": "Interacciones.Tokens entrada promedio",
-              "nativeQueryRef": "Tokens entrada promedio"
+              "nativeQueryRef": "Tokens entrada promedio",
+              "displayName": "Tokens de Entrada Promedio",
+              "format": "0.000"
             }
           ]
         }
@@ -52,5 +54,23 @@
       }
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "9f0ae02d0e7d71d079b4",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "Tokens entrada promedio"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

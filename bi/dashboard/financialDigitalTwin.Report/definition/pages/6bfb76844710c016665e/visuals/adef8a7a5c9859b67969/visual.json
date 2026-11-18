@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "adef8a7a5c9859b67969",
   "position": {
-    "x": 811.60714285714334,
-    "y": 28.750000000000004,
+    "x": 808.09411764705885,
+    "y": 135.95294117647057,
     "z": 3000,
-    "height": 280,
-    "width": 280,
+    "height": 139.76470588235293,
+    "width": 279.52941176470586,
     "tabOrder": 3000
   },
   "visual": {
@@ -17,37 +17,17 @@
           "projections": [
             {
               "field": {
-                "Arithmetic": {
-                  "Left": {
-                    "Measure": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "Clientes"
-                        }
-                      },
-                      "Property": "Variacion Ingreso 3M %"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Clientes"
                     }
                   },
-                  "Right": {
-                    "ScopedEval": {
-                      "Expression": {
-                        "Measure": {
-                          "Expression": {
-                            "SourceRef": {
-                              "Entity": "Clientes"
-                            }
-                          },
-                          "Property": "Variacion Ingreso 3M %"
-                        }
-                      },
-                      "Scope": []
-                    }
-                  },
-                  "Operator": 3
+                  "Property": "Variacion Ingreso 3M %"
                 }
               },
               "queryRef": "Clientes.Variacion Ingreso 3M %",
-              "nativeQueryRef": "Variación de Ingresos 3M (%)",
+              "nativeQueryRef": "Variacion Ingreso 3M %",
               "displayName": "Variación de Ingresos 3M (%)"
             }
           ]
@@ -57,33 +37,13 @@
         "sort": [
           {
             "field": {
-              "Arithmetic": {
-                "Left": {
-                  "Measure": {
-                    "Expression": {
-                      "SourceRef": {
-                        "Entity": "Clientes"
-                      }
-                    },
-                    "Property": "Variacion Ingreso 3M %"
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Clientes"
                   }
                 },
-                "Right": {
-                  "ScopedEval": {
-                    "Expression": {
-                      "Measure": {
-                        "Expression": {
-                          "SourceRef": {
-                            "Entity": "Clientes"
-                          }
-                        },
-                        "Property": "Variacion Ingreso 3M %"
-                      }
-                    },
-                    "Scope": []
-                  }
-                },
-                "Operator": 3
+                "Property": "Variacion Ingreso 3M %"
               }
             },
             "direction": "Descending"

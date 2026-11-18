@@ -12,9 +12,8 @@ table Clientes
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Ratio Ahorro 3M' = AVERAGE(Clientes[savings_rate_3m])
+		formatString: 0.00%;-0.00%;0.00%
 		lineageTag: 3817d89f-c04e-4c14-89b5-febbe53ce907
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Ratio Deuda Ingreso 3M' = AVERAGE(clientes[debt_payment_ratio_3m])
 		lineageTag: 1ce3e5de-39fa-4dde-aada-ecad0bede990
@@ -35,13 +34,12 @@ table Clientes
 	measure 'Variacion Ingreso 3M %' =
 			
 			DIVIDE(
-			    AVERAGE(clientes[monthly_income]) - AVERAGE(clientes[average_income_3m]),
-			    AVERAGE(clientes[average_income_3m]),
+			    AVERAGE(Clientes[monthly_income]) - AVERAGE(Clientes[average_income_3m]),
+			    AVERAGE(Clientes[average_income_3m]),
 			    0
 			)
+		formatString: 0.00%;-0.00%;0.00%
 		lineageTag: 6e443b90-71e7-4516-a601-0ff7374750d8
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Ticket Promedio' = AVERAGE(clientes[average_transaction])
 		lineageTag: bb324a09-2102-4ef0-8e0f-dc5ee11ea7ac
@@ -1034,9 +1032,11 @@ table Clientes
 				        each LeerParquet(Text.From(_))
 				    ),
 				
-				    Resultado = Table.Combine(Tablas)
+				    Resultado = Table.Combine(Tablas),
+				  #"Valor reemplazado" = Table.ReplaceValue(Resultado, "margen_positivo", "Margen Positivo", Replacer.ReplaceValue, {"financial_health_status"}),
+				  #"Valor reemplazado 1" = Table.ReplaceValue(#"Valor reemplazado", "requiere_atencion", "Requiere Atención", Replacer.ReplaceValue, {"financial_health_status"})
 				in
-				    Resultado
+				    #"Valor reemplazado 1"
 
 	annotation PBI_ResultType = Table
 

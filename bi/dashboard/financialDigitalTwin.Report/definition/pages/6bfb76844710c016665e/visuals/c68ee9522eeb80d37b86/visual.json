@@ -27,8 +27,9 @@
                 }
               },
               "queryRef": "Clientes.financial_health_status",
-              "nativeQueryRef": "financial_health_status",
-              "active": true
+              "nativeQueryRef": "Estado de Salud Financiera",
+              "active": true,
+              "displayName": "Estado de Salud Financiera"
             }
           ]
         },
@@ -51,7 +52,8 @@
                 }
               },
               "queryRef": "CountNonNull(Clientes.id)",
-              "nativeQueryRef": "Recuento de id"
+              "nativeQueryRef": "Total de Clientes",
+              "displayName": "Total de Clientes"
             }
           ]
         }

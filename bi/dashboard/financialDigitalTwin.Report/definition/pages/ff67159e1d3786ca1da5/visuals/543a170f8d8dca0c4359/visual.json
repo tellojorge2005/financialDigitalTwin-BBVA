@@ -27,8 +27,9 @@
                 }
               },
               "queryRef": "Interacciones.fecha_local",
-              "nativeQueryRef": "fecha_local",
-              "active": true
+              "nativeQueryRef": "Fecha",
+              "active": true,
+              "displayName": "Fecha"
             }
           ]
         },

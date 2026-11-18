@@ -28,7 +28,7 @@
                             }
                           },
                           "Name": "Variation",
-                          "Property": "month"
+                          "Property": "Periodo"
                         }
                       },
                       "Hierarchy": "Jerarquía de fechas"
@@ -37,8 +37,8 @@
                   "Level": "Año"
                 }
               },
-              "queryRef": "Mensual.month.Variation.Jerarquía de fechas.Año",
-              "nativeQueryRef": "month Año",
+              "queryRef": "Mensual.Periodo.Variation.Jerarquía de fechas.Año",
+              "nativeQueryRef": "Periodo Año",
               "active": true
             },
             {
@@ -54,33 +54,7 @@
                             }
                           },
                           "Name": "Variation",
-                          "Property": "month"
-                        }
-                      },
-                      "Hierarchy": "Jerarquía de fechas"
-                    }
-                  },
-                  "Level": "Trimestre"
-                }
-              },
-              "queryRef": "Mensual.month.Variation.Jerarquía de fechas.Trimestre",
-              "nativeQueryRef": "month Trimestre",
-              "active": false
-            },
-            {
-              "field": {
-                "HierarchyLevel": {
-                  "Expression": {
-                    "Hierarchy": {
-                      "Expression": {
-                        "PropertyVariationSource": {
-                          "Expression": {
-                            "SourceRef": {
-                              "Entity": "Mensual"
-                            }
-                          },
-                          "Name": "Variation",
-                          "Property": "month"
+                          "Property": "Periodo"
                         }
                       },
                       "Hierarchy": "Jerarquía de fechas"
@@ -89,34 +63,8 @@
                   "Level": "Mes"
                 }
               },
-              "queryRef": "Mensual.month.Variation.Jerarquía de fechas.Mes",
-              "nativeQueryRef": "month Mes",
-              "active": false
-            },
-            {
-              "field": {
-                "HierarchyLevel": {
-                  "Expression": {
-                    "Hierarchy": {
-                      "Expression": {
-                        "PropertyVariationSource": {
-                          "Expression": {
-                            "SourceRef": {
-                              "Entity": "Mensual"
-                            }
-                          },
-                          "Name": "Variation",
-                          "Property": "month"
-                        }
-                      },
-                      "Hierarchy": "Jerarquía de fechas"
-                    }
-                  },
-                  "Level": "Día"
-                }
-              },
-              "queryRef": "Mensual.month.Variation.Jerarquía de fechas.Día",
-              "nativeQueryRef": "month Día",
+              "queryRef": "Mensual.Periodo.Variation.Jerarquía de fechas.Mes",
+              "nativeQueryRef": "Periodo Mes",
               "active": false
             }
           ]
@@ -140,7 +88,8 @@
                 }
               },
               "queryRef": "Sum(Mensual.monthly_income)",
-              "nativeQueryRef": "Suma de monthly_income"
+              "nativeQueryRef": "Ingresos Totales",
+              "displayName": "Ingresos Totales"
             },
             {
               "field": {
@@ -159,7 +108,8 @@
                 }
               },
               "queryRef": "Sum(Mensual.monthly_expenses)",
-              "nativeQueryRef": "Suma de monthly_expenses"
+              "nativeQueryRef": "Gastos Totales",
+              "displayName": "Gastos Totales"
             }
           ]
         },
@@ -182,11 +132,41 @@
                 }
               },
               "queryRef": "Sum(Mensual.monthly_savings)",
-              "nativeQueryRef": "Suma de monthly_savings"
+              "nativeQueryRef": "Ahorro Neto",
+              "displayName": "Ahorro Neto"
             }
           ]
         }
       }
+    },
+    "objects": {
+      "valueAxis": [
+        {
+          "properties": {
+            "secShow": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "secLabelDisplayUnits": {
+              "expr": {
+                "Literal": {
+                  "Value": "1000000D"
+                }
+              }
+            },
+            "secLabelPrecision": {
+              "expr": {
+                "Literal": {
+                  "Value": "0L"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "visualContainerObjects": {
       "title": [
@@ -195,7 +175,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Evolución Mensual de Flujo Transaccional'"
+                  "Value": "'Evolución del Flujo Transaccional'"
                 }
               }
             }
@@ -217,5 +197,116 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "9da55a8b15702aece800",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Mensual"
+                  }
+                },
+                "Property": "monthly_income"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "275d5b5a140c71207198",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Mensual"
+                  }
+                },
+                "Property": "monthly_expenses"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "656a08cc96cb73d501d0",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Mensual"
+                  }
+                },
+                "Property": "monthly_savings"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "54924a271cc1b871a0b2",
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "PropertyVariationSource": {
+                    "Expression": {
+                      "SourceRef": {
+                        "Entity": "Mensual"
+                      }
+                    },
+                    "Name": "Variation",
+                    "Property": "Periodo"
+                  }
+                },
+                "Hierarchy": "Jerarquía de fechas"
+              }
+            },
+            "Level": "Año"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f1a7b573ba8ea8becceb",
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "PropertyVariationSource": {
+                    "Expression": {
+                      "SourceRef": {
+                        "Entity": "Mensual"
+                      }
+                    },
+                    "Name": "Variation",
+                    "Property": "Periodo"
+                  }
+                },
+                "Hierarchy": "Jerarquía de fechas"
+              }
+            },
+            "Level": "Mes"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

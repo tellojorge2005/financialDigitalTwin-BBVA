@@ -27,8 +27,9 @@
                 }
               },
               "queryRef": "Interacciones.fecha_local",
-              "nativeQueryRef": "fecha_local",
-              "active": true
+              "nativeQueryRef": "Fecha",
+              "active": true,
+              "displayName": "Fecha"
             }
           ]
         },
@@ -137,5 +138,99 @@
       }
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "0f28d5531a8d04be22e8",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "fecha_local"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "7a139362b0b8186a6253",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "usos_meta"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "873fc3a40c743e43ac0c",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "usos_escenario"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "0230ab437e75a22e1d94",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "usos_historial"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "19299649e225714aa407",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Interacciones"
+                  }
+                },
+                "Property": "usos_cancelacion"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

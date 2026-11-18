@@ -548,9 +548,14 @@ table Interacciones
 				        "hora_local",
 				        each Time.Hour(Time.From([fecha_hora_local])),
 				        Int64.Type
-				    )
+				    ),
+				  #"Valor reemplazado" = Table.ReplaceValue(HoraLocal, "respuesta_generada", "Respuesta Exitosa", Replacer.ReplaceValue, {"resultado"}),
+				  #"Valor reemplazado 1" = Table.ReplaceValue(#"Valor reemplazado", "tiempo_agotado", "Tiempo Agotado (Timeout)", Replacer.ReplaceValue, {"resultado"}),
+				  #"Valor reemplazado 2" = Table.ReplaceValue(#"Valor reemplazado 1", "conversacion_ocupada", "Conversación en Curso", Replacer.ReplaceValue, {"resultado"}),
+				  #"Valor reemplazado 3" = Table.ReplaceValue(#"Valor reemplazado 2", "bloqueo_entrada", "Bloqueo de Seguridad (Guardrail)", Replacer.ReplaceValue, {"resultado"}),
+				  #"Valor reemplazado 4" = Table.ReplaceValue(#"Valor reemplazado 3", "sesion_invalida", "Sesión Expirada", Replacer.ReplaceValue, {"resultado"})
 				in
-				    HoraLocal
+				    #"Valor reemplazado 4"
 
 	annotation PBI_ResultType = Table
 

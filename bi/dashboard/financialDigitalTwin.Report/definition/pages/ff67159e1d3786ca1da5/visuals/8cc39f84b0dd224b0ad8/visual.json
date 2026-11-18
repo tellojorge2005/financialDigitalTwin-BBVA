@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "Interacciones.Tiempo promedio (s)",
-              "nativeQueryRef": "Tiempo promedio (s)"
+              "nativeQueryRef": "Tiempo Promedio de Respuesta (s)",
+              "displayName": "Tiempo Promedio de Respuesta (s)"
             }
           ]
         }

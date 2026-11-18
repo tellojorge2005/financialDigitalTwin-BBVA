@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
   "name": "72579d10b49664280dd3",
   "position": {
-    "x": 346.87058823529406,
-    "y": 86.399999999999935,
+    "x": 346.73854447439351,
+    "y": 41.401617250673851,
     "z": 8000,
-    "height": 103.58662613981762,
-    "width": 465.41033434650456,
+    "height": 148.78706199460916,
+    "width": 1408.9487870619946,
     "tabOrder": 8000
   },
   "visual": {
@@ -27,8 +27,9 @@
                 }
               },
               "queryRef": "Interacciones.fecha_local",
-              "nativeQueryRef": "fecha_local",
-              "active": true
+              "nativeQueryRef": "Fecha de Consulta (Hora Local)",
+              "active": true,
+              "displayName": "Fecha de Consulta (Hora Local)"
             }
           ]
         }
@@ -66,7 +67,7 @@
             "endDate": {
               "expr": {
                 "Literal": {
-                  "Value": "datetime'2026-11-06T00:00:00'"
+                  "Value": "datetime'2026-11-18T00:00:00'"
                 }
               }
             },
@@ -132,7 +133,7 @@
                             },
                             "Right": {
                               "Literal": {
-                                "Value": "datetime'2026-11-07T00:00:00'"
+                                "Value": "datetime'2026-11-19T00:00:00'"
                               }
                             }
                           }

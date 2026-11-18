@@ -18,12 +18,12 @@ table Mensual
 
 		annotation SummarizationSetBy = Automatic
 
-	column month
+	column Periodo
 		dataType: dateTime
 		formatString: Long Date
 		lineageTag: dafea577-d737-47be-9488-2ed376b57544
 		summarizeBy: none
-		sourceColumn: month
+		sourceColumn: Periodo
 
 		variation Variation
 			isDefault
@@ -349,9 +349,10 @@ table Mensual
 				        each LeerParquet(Text.From(_))
 				    ),
 				
-				    Resultado = Table.Combine(Tablas)
+				    Resultado = Table.Combine(Tablas),
+				    #"Columnas con nombre cambiado" = Table.RenameColumns(Resultado,{{"month", "Periodo"}})
 				in
-				    Resultado
+				    #"Columnas con nombre cambiado"
 
 	annotation PBI_ResultType = Table
 

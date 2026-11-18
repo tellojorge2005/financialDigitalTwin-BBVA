@@ -27,8 +27,9 @@
                 }
               },
               "queryRef": "Clientes.id",
-              "nativeQueryRef": "id",
-              "active": true
+              "nativeQueryRef": "Cliente",
+              "active": true,
+              "displayName": "Cliente"
             }
           ]
         },
@@ -46,7 +47,8 @@
                 }
               },
               "queryRef": "Clientes.financial_health_status",
-              "nativeQueryRef": "financial_health_status"
+              "nativeQueryRef": "Estado de Salud Financiera",
+              "displayName": "Estado de Salud Financiera"
             }
           ]
         },
@@ -69,7 +71,8 @@
                 }
               },
               "queryRef": "Sum(Clientes.transactions_3m)",
-              "nativeQueryRef": "Suma de transactions_3m"
+              "nativeQueryRef": "Transacciones (3M)",
+              "displayName": "Transacciones (3M)"
             }
           ]
         },
@@ -114,6 +117,41 @@
       "sortDefinition": {
         "isDefaultSort": true
       }
+    },
+    "objects": {
+      "categoryAxis": [
+        {
+          "properties": {
+            "labelDisplayUnits": {
+              "expr": {
+                "Literal": {
+                  "Value": "1000D"
+                }
+              }
+            },
+            "labelPrecision": {
+              "expr": {
+                "Literal": {
+                  "Value": "0L"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "valueAxis": [
+        {
+          "properties": {
+            "titleText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Tasa de Ahorro 3M (%)'"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "visualContainerObjects": {
       "title": [

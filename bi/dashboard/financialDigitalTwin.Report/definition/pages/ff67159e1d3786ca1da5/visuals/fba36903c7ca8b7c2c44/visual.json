@@ -27,8 +27,9 @@
                 }
               },
               "queryRef": "Interacciones.resultado",
-              "nativeQueryRef": "resultado",
-              "active": true
+              "nativeQueryRef": "Resultado",
+              "active": true,
+              "displayName": "Resultado"
             }
           ]
         },

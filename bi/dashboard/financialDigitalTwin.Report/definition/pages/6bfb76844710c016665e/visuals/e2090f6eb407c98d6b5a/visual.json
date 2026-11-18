@@ -27,8 +27,33 @@
                 }
               },
               "queryRef": "Categorias.category",
-              "nativeQueryRef": "category",
-              "active": true
+              "nativeQueryRef": "Categoría",
+              "active": true,
+              "displayName": "Categoría"
+            }
+          ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Categorias"
+                        }
+                      },
+                      "Property": "expense_transactions"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(Categorias.expense_transactions)",
+              "nativeQueryRef": "Frecuencia de Transacciones",
+              "displayName": "Frecuencia de Transacciones"
             }
           ]
         },
@@ -51,7 +76,8 @@
                 }
               },
               "queryRef": "Sum(Categorias.total_expenses)",
-              "nativeQueryRef": "Suma de total_expenses"
+              "nativeQueryRef": "Gasto Total (MXN)",
+              "displayName": "Gasto Total (MXN)"
             }
           ]
         }
@@ -79,6 +105,28 @@
         ],
         "isDefaultSort": true
       }
+    },
+    "objects": {
+      "valueAxis": [
+        {
+          "properties": {
+            "showAxisTitle": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "titleText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Monto Total Gastado (MXN)'"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "visualContainerObjects": {
       "title": [

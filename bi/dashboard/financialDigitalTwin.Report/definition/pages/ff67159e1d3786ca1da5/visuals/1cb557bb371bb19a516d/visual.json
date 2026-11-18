@@ -27,7 +27,8 @@
                 }
               },
               "queryRef": "Interacciones.Total_interacciones",
-              "nativeQueryRef": "Total interacciones"
+              "nativeQueryRef": "Total de Interacciones",
+              "displayName": "Total de Interacciones"
             }
           ]
         }
@@ -52,5 +53,23 @@
       }
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "5c7153188b0007249060",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "Total interacciones"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

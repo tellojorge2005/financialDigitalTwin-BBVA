@@ -27,7 +27,9 @@
                 }
               },
               "queryRef": "Interacciones.Tokens salida promedio",
-              "nativeQueryRef": "Tokens salida promedio"
+              "nativeQueryRef": "Tokens de Salida Promedio",
+              "displayName": "Tokens de Salida Promedio",
+              "format": "0.0"
             }
           ]
         }
