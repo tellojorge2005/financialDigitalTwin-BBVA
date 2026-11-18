@@ -424,9 +424,7 @@ def consultar_monitoreo_y_recomendaciones(cliente_id):
     gasto_discrecional_mensual = 0.0
     gasto_optimizable_mensual = 0.0
 
-    for cat, total in sorted(
-        categorias_raw.items(), key=lambda x: x[1], reverse=True
-    ):
+    for cat, total in sorted(categorias_raw.items(), key=lambda x: x[1], reverse=True):
         tipo = clasificar_tipo_categoria(cat)
         prom_mensual = round(total / num_meses, 2)
         if tipo == "discrecional":
