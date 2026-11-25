@@ -438,19 +438,18 @@
       </button>
     </div>
 
-    <form class="input-bar" id="chatForm">
+    <div class="input-bar" id="chatForm">
       <input
         type="text"
         id="chatInput"
         placeholder="Pregunta sobre interacciones, tiempos, segmentos de clientes o métricas Gold..."
         autocomplete="off"
       />
-      <button type="submit" id="btnSend">Preguntar</button>
-    </form>
+      <button type="button" id="btnSend">Preguntar</button>
+    </div>
 
     <script>
       const chatBox = document.getElementById("chatBox");
-      const chatForm = document.getElementById("chatForm");
       const chatInput = document.getElementById("chatInput");
       const btnSend = document.getElementById("btnSend");
       const btnRefresh = document.getElementById("btnRefresh");
@@ -706,9 +705,15 @@
         }
       }
 
-      chatForm.addEventListener("submit", (e) => {
-        e.preventDefault();
+      btnSend.addEventListener("click", () => {
         enviarPregunta(chatInput.value);
+      });
+
+      chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.isComposing) {
+          e.preventDefault();
+          if (!btnSend.disabled) enviarPregunta(chatInput.value);
+        }
       });
 
       document.querySelectorAll(".chip").forEach((btn) => {
