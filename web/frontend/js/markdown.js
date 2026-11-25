@@ -148,7 +148,13 @@ function parsearExpresionLatex(src) {
         cmd = src[i++];
       }
 
-      if (cmd === "!" || cmd === "displaystyle" || cmd === "textstyle" || cmd === "scriptstyle" || cmd === "limits") {
+      if (
+        cmd === "!" ||
+        cmd === "displaystyle" ||
+        cmd === "textstyle" ||
+        cmd === "scriptstyle" ||
+        cmd === "limits"
+      ) {
         return null;
       }
 
