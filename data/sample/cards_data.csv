@@ -1,0 +1,5 @@
+﻿id,client_id,card_brand,card_type,card_number,expires,cvv,has_chip,num_cards_issued,credit_limit,acct_open_date,year_pin_last_changed,card_on_dark_web,currency
+4327,3,Mastercard,Debit (Prepaid),5.56804E+15,abr-23,833,NO,1,1440.00,ago-10,2010,No,MXN
+4639,0,Mastercard,Credit,5.80276E+15,dic-19,312,YES,1,316800.00,sep-07,2014,No,MXN
+4400,1,Visa,Debit,4.84349E+15,ene-17,625,YES,1,325890.00,ago-12,2012,No,MXN
+3298,2,Mastercard,Credit,5.19162E+15,nov-20,485,YES,1,133200.00,jun-05,2011,No,MXN

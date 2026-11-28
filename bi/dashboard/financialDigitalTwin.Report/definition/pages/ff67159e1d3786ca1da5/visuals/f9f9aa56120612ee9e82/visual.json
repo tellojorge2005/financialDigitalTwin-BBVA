@@ -1,0 +1,253 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "f9f9aa56120612ee9e82",
+  "position": {
+    "x": 1121.9294117647057,
+    "y": 384.9882352941176,
+    "z": 10000,
+    "height": 602.25882352941176,
+    "width": 679.76470588235293,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "fecha_hora_local"
+                }
+              },
+              "queryRef": "Interacciones.fecha_hora_local",
+              "nativeQueryRef": "Fecha y Hora",
+              "displayName": "Fecha y Hora"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "resultado"
+                }
+              },
+              "queryRef": "Interacciones.resultado",
+              "nativeQueryRef": "Estado",
+              "displayName": "Estado"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "duracion_segundos"
+                }
+              },
+              "queryRef": "Sum(Interacciones.duracion_segundos)",
+              "nativeQueryRef": "Duración (s)",
+              "displayName": "Duración (s)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "http_status"
+                }
+              },
+              "queryRef": "Sum(Interacciones.http_status)",
+              "nativeQueryRef": "Código HTTP",
+              "displayName": "Código HTTP"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "llamadas_modelo"
+                }
+              },
+              "queryRef": "Sum(Interacciones.llamadas_modelo)",
+              "nativeQueryRef": "Llamadas al Modelo",
+              "displayName": "Llamadas al Modelo"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "llamadas_herramientas"
+                }
+              },
+              "queryRef": "Sum(Interacciones.llamadas_herramientas)",
+              "nativeQueryRef": "Herramientas Usadas",
+              "displayName": "Herramientas Usadas"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Interacciones"
+                    }
+                  },
+                  "Property": "errores_herramientas"
+                }
+              },
+              "queryRef": "Sum(Interacciones.errores_herramientas)",
+              "nativeQueryRef": "Errores de Herramienta",
+              "displayName": "Errores de Herramienta"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Bitácora Detallada de Interacciones'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "b0be8e34785425000bae",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "fecha_hora_local"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9f338a6016e8c10d70bd",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "resultado"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e9dd3f82d7a3c0bdb502",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "duracion_segundos"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "d3e7a9f4da832e81bab2",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "http_status"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "2f56f0aa9d4b6ba65e38",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "llamadas_modelo"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f22012e00d22dbc08c96",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "llamadas_herramientas"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f34f4e95b01b57b0a2e3",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Interacciones"
+              }
+            },
+            "Property": "errores_herramientas"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

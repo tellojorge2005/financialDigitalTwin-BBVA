@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "995811f18075e9310275",
+  "position": {
+    "x": 1010.4582210242587,
+    "y": 20.700808625336926,
+    "z": 10000,
+    "height": 115.14824797843666,
+    "width": 780.16172506738542,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "slicer",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Clientes"
+                    }
+                  },
+                  "Property": "financial_health_status"
+                }
+              },
+              "queryRef": "Clientes.financial_health_status",
+              "nativeQueryRef": "Estado de Salud Financiera",
+              "active": true,
+              "displayName": "Estado de Salud Financiera"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "data": [
+        {
+          "properties": {
+            "mode": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Basic'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {}
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "d5220cef2697bb860694",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Clientes"
+              }
+            },
+            "Property": "financial_health_status"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+# Power BI Desktop
+bi/dashboard/
+
+# Notebooks de Jupyter
+notebooks/
+*.ipynb
+
+# Datasets y archivos de datos
+data/sample/
+data/raw/*
+!data/raw/README.md
+data/modified/
+data/processed/
+*.csv
+*.parquet
+*.parquet/
+*.crc
+_SUCCESS
+
+# Diagramas vectoriales e imágenes
+*.svg
+*.png
+*.webp
+*.ico
+
+# Entornos locales, cachés, bases de datos y configuración de IDE
+.venv/
+venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+.idea/
+anaconda_projects/
+logs/
+*.log
+*.tmp
+*.sqlite
+*.sqlite3
+*.db
+airflow.cfg
+.env
+.env.*

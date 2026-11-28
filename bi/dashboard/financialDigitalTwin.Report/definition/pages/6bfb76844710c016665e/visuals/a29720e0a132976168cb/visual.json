@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "a29720e0a132976168cb",
+  "position": {
+    "x": 468.84705882352944,
+    "y": 135.95294117647057,
+    "z": 1000,
+    "height": 139.76470588235293,
+    "width": 280.79999999999995,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Clientes"
+                    }
+                  },
+                  "Property": "Desviacion Estandar Ingreso 3M"
+                }
+              },
+              "queryRef": "Clientes.Desviacion Estandar Ingreso 3M",
+              "nativeQueryRef": "Desviación Estándar Ingresos 3M (Estabilidad)",
+              "displayName": "Desviación Estándar Ingresos 3M (Estabilidad)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Clientes"
+                  }
+                },
+                "Property": "Desviacion Estandar Ingreso 3M"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
